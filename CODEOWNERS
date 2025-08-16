@@ -1,0 +1,8 @@
+-   @tmaster628 @pseay
+
+# Things plugin authors need
+
+/src/plugins/ @tmaster628 @pseay
+/package.json @tmaster628 @pseay
+/package-lock.json @tmaster628 @pseay
+/public/plugins-manifest.json @tmaster628 @pseay
