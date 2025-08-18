@@ -24,6 +24,11 @@
       "implUrl": "/plugins-code/force-components/languages/BasicJS/implementation.js"
     }
   },
+  "graph": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/graph/languages/BasicJS/implementation.js"
+    }
+  },
   "marginal-utility": {
     "BasicJS": {
       "implUrl": "/plugins-code/marginal-utility/languages/BasicJS/implementation.js"
