@@ -2,7 +2,7 @@
  * NOTE: THIS FILE IS DEPRECATED.
  * It is highly likely that this file is out of date and does not contain
  * full functionality. If you wish to use/edit this file, you should confirm
- * with @pseay or @tmaster before starting your work.
+ * with @pseay or @tmaster628 before starting your work.
  */
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router";
