@@ -12,7 +12,7 @@ const createExports = (
       sendMessage({ input: inputMessage });
       return new Promise<string>((res) => {
         const unsubscribe = onMessage((message: any) => {
-          res(message.text);
+          res(message.input);
           unsubscribe();
         });
       });
