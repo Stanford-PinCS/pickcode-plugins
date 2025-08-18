@@ -1,3 +1,9 @@
+/**
+ * NOTE: THIS FILE IS DEPRECATED.
+ * It is highly likely that this file is out of date and does not contain
+ * full functionality. If you wish to use/edit this file, you should confirm
+ * with @pseay or @tmaster before starting your work.
+ */
 const messageSubscribers: { [key: symbol]: (message: any) => void } = {};
 const subscribeToMessages = (onMessage: any) => {
   const key = Symbol();
