@@ -8,7 +8,7 @@ When you first get the code locally, you'll need to run `npm i` from the root of
 
 To run the app locally, run the command `npm start` from the root of this repo. The command will give you the url of the running app, usually `http://localhost:5173/`.
 
-NOTE: The `/Sandbox` folder is deprecated. It may no longer be up to date or have all the proper plugin functionality. If you wish to use the sandbox for local testing, you may want to confirm with @pseay or @tmaster628 before starting your work.
+NOTE: The `/Sandbox` folder is deprecated. It may no longer be up to date or have all the proper plugin functionality. If you wish to use the sandbox for local testing, you may want to confirm with Preston (@pseay) or Trip (@tmaster628) before starting your work.
 
 To test out a plugin (for example, music), you can go to the sandbox by navigating to `http://localhost:5173/sandbox/music` (or replace `music` with the name of the plugin you want to test). You can write test code on the left, and press the play button to see its output on the right.
 
