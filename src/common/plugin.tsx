@@ -3,24 +3,36 @@ import { PluginComponentBase } from "./PluginComponentBase";
 import { PluginStateBase } from "./PluginStateBase";
 
 export const plugin =
-    <T extends PluginStateBase>(
-        Component: PluginComponentBase<T>,
-        State: new () => T
-    ) =>
-    () => {
-        const [pluginState, setPluginState] = useState(new State());
+  <T extends PluginStateBase>(
+    Component: PluginComponentBase<T>,
+    State: new () => T
+  ) =>
+  () => {
+    function makeState() {
+      let state = new State();
+      //@ts-ignore
+      // Forward messages from the plugin component to the window.
+      state.init((messageContent) => {
+        const message = { type: "plugin", contents: messageContent };
+        window.parent.postMessage(message, "*");
+      });
+      return state;
+    }
 
-        useEffect(() => {
-            const onWindowMessage = ({ data }: MessageEvent<any>) => {
-                if (data.type === "start") {
-                    setPluginState(new State());
-                } else if (data.type === "message") {
-                    pluginState.onMessage(data.message as any);
-                }
-            };
-            window.addEventListener("message", onWindowMessage);
-            return () => window.removeEventListener("message", onWindowMessage);
-        }, [pluginState]);
+    const [pluginState, setPluginState] = useState(makeState);
 
-        return <Component state={pluginState} />;
-    };
+    useEffect(() => {
+      // Forward messages from the window to the plugin component.
+      const onWindowMessage = ({ data }: MessageEvent<any>) => {
+        if (data.type === "start") {
+          setPluginState(makeState());
+        } else if (data.type === "message") {
+          pluginState.onMessage(data.message as any);
+        }
+      };
+      window.addEventListener("message", onWindowMessage);
+      return () => window.removeEventListener("message", onWindowMessage);
+    }, [pluginState]);
+
+    return <Component state={pluginState} />;
+  };
