@@ -6,21 +6,29 @@ import State from "./state";
 const Component = observer(({ state }: { state: State | undefined }) => {
   const [terminalLineData, setTerminalLineData] = useState<JSX.Element[]>([]);
   const [waitingForInput, setWaitingForInput] = useState(false);
+  const [inputMessage, setInputMessage] = useState("---");
 
   const addLine = (line: string) => {
-    setTerminalLineData([
-      ...terminalLineData,
-      <TerminalOutput key={terminalLineData.length}>{line}</TerminalOutput>,
+    setTerminalLineData((curLines) => [
+      ...curLines,
+      <TerminalOutput key={curLines.length}>{line}</TerminalOutput>,
     ]);
   };
 
   useEffect(() => {
     if (state?.history && state.history.length > 0) {
+      // Messages from the code.
       let latestMessage = state.history[state.history.length - 1];
       if ("output" in latestMessage) {
+        // Just write it to the console.
         addLine(latestMessage.output);
       } else {
-        addLine(latestMessage.input);
+        // Wait for user input.
+        let messageLines = latestMessage.input.split("\n");
+        for (let i = 0; i < messageLines.length - 1; i++) {
+          addLine(messageLines[i]);
+        }
+        setInputMessage(messageLines[messageLines.length - 1] || ">");
         setWaitingForInput(true);
       }
     } else if (state?.history.length == 0) {
@@ -32,13 +40,16 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     <Terminal
       name="Console"
       colorMode={ColorMode.Dark}
-      prompt={waitingForInput ? ">>>" : "---"}
+      prompt={inputMessage}
       height="100%"
       onInput={(terminalInput) => {
         if (waitingForInput) {
-          addLine(">>> " + terminalInput);
+          // Add to history and return to user code.
+          addLine(inputMessage + " " + terminalInput);
           state?.sendUserInput(terminalInput);
+          // Reset.
           setWaitingForInput(false);
+          setInputMessage("---");
         }
       }}
     >

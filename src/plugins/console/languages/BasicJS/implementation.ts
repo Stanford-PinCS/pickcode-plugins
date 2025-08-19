@@ -9,13 +9,14 @@ const createExports = (
       sendMessage({ output });
     },
     getInput: async (inputMessage: string) => {
-      sendMessage({ input: inputMessage });
-      return new Promise<string>((res) => {
+      const promise = new Promise<string>((res) => {
         const unsubscribe = onMessage((message: any) => {
           res(message.input);
           unsubscribe();
         });
       });
+      sendMessage({ input: inputMessage });
+      return promise;
     },
   });
 };
