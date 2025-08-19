@@ -52,6 +52,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
           setInputMessage("---");
         }
       }}
+      TopButtonsPanel={() => null}
     >
       {terminalLineData}
     </Terminal>
