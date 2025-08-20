@@ -4,6 +4,11 @@
       "implUrl": "/plugins-code/chat-demo/languages/BasicJS/implementation.js"
     }
   },
+  "console": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/console/languages/BasicJS/implementation.js"
+    }
+  },
   "dialogue-maker": {
     "BasicJS": {
       "implUrl": "/plugins-code/dialogue-maker/languages/BasicJS/implementation.js"
@@ -22,6 +27,11 @@
   "force-components": {
     "BasicJS": {
       "implUrl": "/plugins-code/force-components/languages/BasicJS/implementation.js"
+    }
+  },
+  "graph": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/graph/languages/BasicJS/implementation.js"
     }
   },
   "marginal-utility": {
