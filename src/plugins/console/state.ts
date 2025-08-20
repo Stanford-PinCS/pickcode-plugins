@@ -16,6 +16,21 @@ export class State {
     this.history.push(m);
   };
 
+  @action
+  public onLog = ({
+    logType,
+    message,
+  }: {
+    logType: "log" | "error";
+    message: string;
+  }) => {
+    if (logType == "error") {
+      this.history.push({ error: message });
+    } else {
+      this.history.push({ output: message });
+    }
+  };
+
   public sendUserInput(message: string) {
     this.sendMessage({ input: message });
   }

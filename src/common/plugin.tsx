@@ -28,6 +28,8 @@ export const plugin =
           setPluginState(makeState());
         } else if (data.type === "message") {
           pluginState.onMessage(data.message as any);
+        } else if (data.type === "log") {
+          pluginState.onLog(data as any);
         }
       };
       window.addEventListener("message", onWindowMessage);

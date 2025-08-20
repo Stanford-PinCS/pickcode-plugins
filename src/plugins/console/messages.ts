@@ -4,7 +4,10 @@ export type OutputMessage = {
 export type InputMessage = {
   input: string;
 };
-export type FromRuntimeMessage = OutputMessage | InputMessage;
+export type ErrorMessage = {
+  error: string;
+};
+export type FromRuntimeMessage = OutputMessage | InputMessage | ErrorMessage;
 
 export type ToRuntimeMessage = {
   input: string;
