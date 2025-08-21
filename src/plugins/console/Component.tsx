@@ -5,56 +5,38 @@ import State from "./state";
 
 const Component = observer(({ state }: { state: State | undefined }) => {
   const [terminalLineData, setTerminalLineData] = useState<JSX.Element[]>([]);
-  const [waitingForInput, setWaitingForInput] = useState(false);
-  const [inputMessage, setInputMessage] = useState("---");
-
-  const addLine = (line: string, error = false) => {
-    setTerminalLineData((curLines) => [
-      ...curLines,
-      <TerminalOutput key={curLines.length}>
-        <span className={error ? "text-red-500" : ""}>{line}</span>
-      </TerminalOutput>,
-    ]);
-  };
 
   useEffect(() => {
-    if (state?.history && state.history.length > 0) {
-      // Messages from the code.
-      let latestMessage = state.history[state.history.length - 1];
-      if ("output" in latestMessage) {
-        // Just write it to the console.
-        addLine(latestMessage.output);
-      } else if ("input" in latestMessage) {
-        // Wait for user input.
-        let messageLines = latestMessage.input.split("\n");
-        for (let i = 0; i < messageLines.length - 1; i++) {
-          addLine(messageLines[i]);
-        }
-        setInputMessage(messageLines[messageLines.length - 1] || ">");
-        setWaitingForInput(true);
-      } else {
-        // Error message - write it in red.
-        addLine(latestMessage.error, true);
-      }
-    } else if (state?.history.length == 0) {
-      setTerminalLineData([]);
+    if (state?.terminalLineData) {
+      setTerminalLineData(
+        state.terminalLineData.map((lineData, i) => {
+          return (
+            <TerminalOutput key={i + "#" + lineData.line}>
+              <span className={lineData.error ? "text-red-500" : ""}>
+                {lineData.line}
+              </span>
+            </TerminalOutput>
+          );
+        })
+      );
     }
-  }, [state?.history.length]);
+  }, [state?.terminalLineData.length]);
 
   return (
     <Terminal
       name="Console"
       colorMode={ColorMode.Dark}
-      prompt={inputMessage}
+      prompt={state?.inputMessage ?? "---"}
       height="100%"
       onInput={(terminalInput) => {
-        if (waitingForInput) {
+        if (!state) return;
+        if (state.waitingForInput) {
           // Add to history and return to user code.
-          addLine(inputMessage + " " + terminalInput);
-          state?.sendUserInput(terminalInput);
+          state.addLine(state.inputMessage + " " + terminalInput);
+          state.sendUserInput(terminalInput);
           // Reset.
-          setWaitingForInput(false);
-          setInputMessage("---");
+          state.waitingForInput = false;
+          state.inputMessage = "---";
         }
       }}
       TopButtonsPanel={() => null}
