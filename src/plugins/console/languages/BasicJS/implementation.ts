@@ -4,19 +4,27 @@ const createExports = (
   sendMessage: (message: FromRuntimeMessage) => void,
   onMessage: Function
 ) => {
-  return Promise.resolve({
-    writeOutput: (output: string) => {
-      sendMessage({ output });
-    },
-    getInput: async (inputMessage: string) => {
-      const promise = new Promise<string>((res) => {
-        const unsubscribe = onMessage((message: any) => {
-          res(message.input);
-          unsubscribe();
-        });
+  // Define input function to mimick getting a console input via messaging the plugin.
+  function getInput(input: string) {
+    const promise = new Promise<string>((res) => {
+      const unsubscribe = onMessage((message: any) => {
+        res(message.input);
+        unsubscribe();
       });
-      sendMessage({ input: inputMessage });
-      return promise;
+    });
+    sendMessage({ input });
+    return promise;
+  }
+
+  // Return user functions.
+  return Promise.resolve({
+    // Python version
+    input: (inputMessage: string) => {
+      return getInput(inputMessage);
+    },
+    // JavaScript version
+    prompt: (inputMessage: string) => {
+      return getInput(inputMessage);
     },
   });
 };

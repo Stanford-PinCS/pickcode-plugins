@@ -8,10 +8,12 @@ const Component = observer(({ state }: { state: State | undefined }) => {
   const [waitingForInput, setWaitingForInput] = useState(false);
   const [inputMessage, setInputMessage] = useState("---");
 
-  const addLine = (line: string) => {
+  const addLine = (line: string, error = false) => {
     setTerminalLineData((curLines) => [
       ...curLines,
-      <TerminalOutput key={curLines.length}>{line}</TerminalOutput>,
+      <TerminalOutput key={curLines.length}>
+        <span className={error ? "text-red-500" : ""}>{line}</span>
+      </TerminalOutput>,
     ]);
   };
 
@@ -22,7 +24,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       if ("output" in latestMessage) {
         // Just write it to the console.
         addLine(latestMessage.output);
-      } else {
+      } else if ("input" in latestMessage) {
         // Wait for user input.
         let messageLines = latestMessage.input.split("\n");
         for (let i = 0; i < messageLines.length - 1; i++) {
@@ -30,6 +32,9 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         }
         setInputMessage(messageLines[messageLines.length - 1] || ">");
         setWaitingForInput(true);
+      } else {
+        // Error message - write it in red.
+        addLine(latestMessage.error, true);
       }
     } else if (state?.history.length == 0) {
       setTerminalLineData([]);
