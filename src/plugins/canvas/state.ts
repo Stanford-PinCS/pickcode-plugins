@@ -8,6 +8,7 @@ type Line = {
   x2: number;
   y2: number;
   color: string;
+  id?: string;
 };
 
 type Point = {
@@ -15,6 +16,7 @@ type Point = {
   x: number;
   y: number;
   color: string;
+  id?: string;
 };
 
 type Circle = {
@@ -23,13 +25,16 @@ type Circle = {
   y: number;
   radius: number;
   color: string;
+  filled?: boolean;
+  id?: string;
 };
 
 type Vector = {
   type: "vector";
-  x1: number;
-  y1: number;
+  x: number;
+  y: number;
   color: string;
+  id?: string;
 };
 
 type Text = {
@@ -38,6 +43,7 @@ type Text = {
   x: number;
   y: number;
   color: string;
+  id?: string;
 };
 
 export type Drawable = Line | Point | Circle | Vector | Text;
@@ -45,6 +51,9 @@ export type Drawable = Line | Point | Circle | Vector | Text;
 export class State {
   @observable
   accessor drawables: Drawable[] = [];
+
+  @observable
+  accessor changeCount: number = 0;
 
   @observable
   accessor currentColor: string = "black";
@@ -96,6 +105,44 @@ export class State {
         ...m.drawText,
         color: this.currentColor,
       });
+    } else if (m.moveBy) {
+      const { id, xChange, yChange } = m.moveBy;
+      this.drawables.forEach((drawable) => {
+        if (drawable?.id == id) {
+          // Shift drawable by the change amount.
+          if (drawable.type == "line") {
+            drawable.x1 += xChange;
+            drawable.x2 += xChange;
+            drawable.y1 += yChange;
+            drawable.y2 += yChange;
+          } else {
+            drawable.x += xChange;
+            drawable.y += yChange;
+          }
+        }
+      });
+    } else if (m.moveTo) {
+      const { id, x, y } = m.moveTo;
+      this.drawables.forEach((drawable) => {
+        if (drawable?.id == id) {
+          if (drawable.type == "line") {
+            // Move starting position of line.
+            drawable.x2 = drawable.x2 - drawable.x1 + x;
+            drawable.x1 = x;
+            drawable.y2 = drawable.y2 - drawable.y1 + y;
+            drawable.y1 = y;
+          } else {
+            // Move position to (x, y).
+            drawable.x = x;
+            drawable.y = y;
+          }
+        }
+      });
+    } else if (m.delete) {
+      const { id } = m.delete;
+      this.drawables = this.drawables.filter((drawable) => {
+        return drawable.id !== id;
+      });
     } else if (m.setColor) {
       this.currentColor = m.setColor.color;
     } else if (m.clear) {
@@ -111,7 +158,10 @@ export class State {
         // Turn off the grid.
         this.showGrid = false;
       }
+    } else {
+      return;
     }
+    this.changeCount += 1;
   };
 
   public send = (m: ToRuntimeMessage) => {

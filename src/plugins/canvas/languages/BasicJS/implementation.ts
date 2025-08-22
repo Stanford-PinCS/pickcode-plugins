@@ -2,23 +2,41 @@ import { FromRuntimeMessage } from "../../messages";
 
 const createExports = (sendMessage: (message: FromRuntimeMessage) => void) => {
   return Promise.resolve({
-    drawLine: (x1: number, y1: number, x2: number, y2: number) => {
-      sendMessage({ drawLine: { x1, y1, x2, y2 } });
+    drawLine: (x1: number, y1: number, x2: number, y2: number, id?: string) => {
+      sendMessage({ drawLine: { x1, y1, x2, y2, id } });
     },
-    drawPoint: (x: number, y: number) => {
-      sendMessage({ drawPoint: { x, y } });
+    drawPoint: (x: number, y: number, id?: string) => {
+      sendMessage({ drawPoint: { x, y, id } });
     },
-    drawCircle: (x: number, y: number, radius: number) => {
-      sendMessage({ drawCircle: { x, y, radius } });
+    drawCircle: (
+      x: number,
+      y: number,
+      radius: number,
+      filled?: boolean,
+      id?: string
+    ) => {
+      sendMessage({ drawCircle: { x, y, radius, filled, id } });
     },
+    drawVector: (x: number, y: number, id?: string) => {
+      sendMessage({ drawVector: { x, y, id } });
+    },
+    drawText: (text: string, x: number, y: number, id?: string) => {
+      sendMessage({ drawText: { text, x, y, id } });
+    },
+    // The following commands allow the user to move certain drawables.
+    moveBy: (id: string, xChange: number, yChange: number) => {
+      sendMessage({ moveBy: { id, xChange, yChange } });
+    },
+    moveTo: (id: string, x: number, y: number) => {
+      sendMessage({ moveTo: { id, x, y } });
+    },
+    // The following allows the user to delete certain drawables.
+    delete: (id: string) => {
+      sendMessage({ delete: { id } });
+    },
+    // The following are basic commands that apply to the canvas settings.
     setColor: (color: string) => {
       sendMessage({ setColor: { color } });
-    },
-    drawVector: (x1: number, y1: number) => {
-      sendMessage({ drawVector: { x1, y1 } });
-    },
-    drawText: (text: string, x: number, y: number) => {
-      sendMessage({ drawText: { text, x, y } });
     },
     clear: () => {
       sendMessage({ clear: true });

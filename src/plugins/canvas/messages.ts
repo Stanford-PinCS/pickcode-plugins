@@ -4,27 +4,46 @@ export type FromRuntimeMessage = {
     y1: number;
     x2: number;
     y2: number;
+    id?: string;
   };
   drawPoint?: {
     x: number;
     y: number;
+    id?: string;
   };
   drawCircle?: {
     x: number;
     y: number;
     radius: number;
-  };
-  setColor?: {
-    color: string;
+    filled?: boolean;
+    id?: string;
   };
   drawVector?: {
-    x1: number;
-    y1: number;
+    x: number;
+    y: number;
+    id?: string;
   };
   drawText?: {
     text: string;
     x: number;
     y: number;
+    id?: string;
+  };
+  moveBy?: {
+    id: string;
+    xChange: number;
+    yChange: number;
+  };
+  moveTo?: {
+    id: string;
+    x: number;
+    y: number;
+  };
+  delete?: {
+    id: string;
+  };
+  setColor?: {
+    color: string;
   };
   clear?: boolean;
   grid?: {

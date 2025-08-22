@@ -8,10 +8,11 @@ const Component = observer(({ state }: { state: State | undefined }) => {
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   const drawables = state?.drawables || [];
-  const { showGrid, minSize, unitsPerGridLine } = state ?? {
+  const { showGrid, minSize, unitsPerGridLine, changeCount } = state ?? {
     showGrid: false,
     minSize: 10,
     unitsPerGridLine: 1,
+    changeCount: 0,
   };
   console.log({ state });
 
@@ -210,7 +211,8 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       x: number,
       y: number,
       radius: number,
-      color: string
+      color: string,
+      filled?: boolean
     ) => {
       ctx.beginPath();
       ctx.arc(
@@ -220,9 +222,14 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         0,
         Math.PI * 2
       );
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      if (filled) {
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     };
 
     const drawText = (text: string, x: number, y: number, color: string) => {
@@ -254,10 +261,16 @@ const Component = observer(({ state }: { state: State | undefined }) => {
             drawPoint(drawable.x, drawable.y, drawable.color);
             break;
           case "circle":
-            drawCircle(drawable.x, drawable.y, drawable.radius, drawable.color);
+            drawCircle(
+              drawable.x,
+              drawable.y,
+              drawable.radius,
+              drawable.color,
+              drawable.filled
+            );
             break;
           case "vector":
-            drawVector(drawable.x1, drawable.y1, drawable.color);
+            drawVector(drawable.x, drawable.y, drawable.color);
             break;
           case "text":
             drawText(drawable.text, drawable.x, drawable.y, drawable.color);
@@ -275,6 +288,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     showGrid,
     unitsPerGridLine,
     minSize,
+    changeCount,
   ]);
 
   return (
