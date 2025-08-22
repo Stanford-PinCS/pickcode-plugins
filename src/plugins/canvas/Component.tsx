@@ -8,8 +8,12 @@ const Component = observer(({ state }: { state: State | undefined }) => {
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   const drawables = state?.drawables || [];
-  const minSize = 10; // The canvas will be no smaller than minSize x minSize units
-  const unitsPerGridLine = 1; // How often the grid lines are.
+  const { showGrid, minSize, unitsPerGridLine } = state ?? {
+    showGrid: false,
+    minSize: 10,
+    unitsPerGridLine: 1,
+  };
+  console.log({ state });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,7 +39,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     return () => {
       window.removeEventListener("resize", setCanvasDimensions);
     };
-  }, []);
+  }, [minSize, unitsPerGridLine]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -229,14 +233,10 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawGrid();
-      drawAxes();
-
-      // Draw origin
-      ctx.beginPath();
-      ctx.arc(offsetX, offsetY, 5, 0, Math.PI * 2);
-      ctx.fillStyle = "black";
-      ctx.fill();
+      if (showGrid) {
+        drawGrid();
+        drawAxes();
+      }
 
       // Draw drawables.
       for (const drawable of drawables) {
@@ -267,7 +267,15 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     };
 
     draw();
-  }, [drawables.length, scale, offsetX, offsetY]);
+  }, [
+    drawables.length,
+    scale,
+    offsetX,
+    offsetY,
+    showGrid,
+    unitsPerGridLine,
+    minSize,
+  ]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">

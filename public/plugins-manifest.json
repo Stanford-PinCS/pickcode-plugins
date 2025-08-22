@@ -1,4 +1,9 @@
 {
+  "canvas": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/canvas/languages/BasicJS/implementation.js"
+    }
+  },
   "chat-demo": {
     "BasicJS": {
       "implUrl": "/plugins-code/chat-demo/languages/BasicJS/implementation.js"
@@ -27,11 +32,6 @@
   "force-components": {
     "BasicJS": {
       "implUrl": "/plugins-code/force-components/languages/BasicJS/implementation.js"
-    }
-  },
-  "graph": {
-    "BasicJS": {
-      "implUrl": "/plugins-code/graph/languages/BasicJS/implementation.js"
     }
   },
   "marginal-utility": {
