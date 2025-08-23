@@ -40,7 +40,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     return () => {
       window.removeEventListener("resize", setCanvasDimensions);
     };
-  }, [minSize, unitsPerGridLine]);
+  }, [minSize, unitsPerGridLine, changeCount]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

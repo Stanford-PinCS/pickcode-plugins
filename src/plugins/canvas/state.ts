@@ -158,6 +158,8 @@ export class State {
         // Turn off the grid.
         this.showGrid = false;
       }
+    } else if (m.minSize) {
+      this.minSize = m.minSize;
     } else {
       return;
     }

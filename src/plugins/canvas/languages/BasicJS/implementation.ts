@@ -41,6 +41,9 @@ const createExports = (sendMessage: (message: FromRuntimeMessage) => void) => {
     clear: () => {
       sendMessage({ clear: true });
     },
+    resize: (minSize: number) => {
+      sendMessage({ minSize });
+    },
     showGrid: (gridSize?: number, tickSize?: number) => {
       sendMessage({ grid: { on: true, gridSize, tickSize } });
     },

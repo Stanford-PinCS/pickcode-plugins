@@ -51,6 +51,7 @@ export type FromRuntimeMessage = {
     gridSize?: number;
     tickSize?: number;
   };
+  minSize?: number;
 };
 
 export type ToRuntimeMessage = {};
