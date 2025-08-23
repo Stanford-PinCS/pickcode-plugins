@@ -8,8 +8,13 @@ const Component = observer(({ state }: { state: State | undefined }) => {
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   const drawables = state?.drawables || [];
-  const minSize = 10; // The canvas will be no smaller than minSize x minSize units
-  const unitsPerGridLine = 1; // How often the grid lines are.
+  const { showGrid, minSize, unitsPerGridLine, changeCount } = state ?? {
+    showGrid: false,
+    minSize: 10,
+    unitsPerGridLine: 1,
+    changeCount: 0,
+  };
+  console.log({ state });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,7 +40,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     return () => {
       window.removeEventListener("resize", setCanvasDimensions);
     };
-  }, []);
+  }, [minSize, unitsPerGridLine, changeCount]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -206,7 +211,8 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       x: number,
       y: number,
       radius: number,
-      color: string
+      color: string,
+      filled?: boolean
     ) => {
       ctx.beginPath();
       ctx.arc(
@@ -216,9 +222,14 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         0,
         Math.PI * 2
       );
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      if (filled) {
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     };
 
     const drawText = (text: string, x: number, y: number, color: string) => {
@@ -229,14 +240,10 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawGrid();
-      drawAxes();
-
-      // Draw origin
-      ctx.beginPath();
-      ctx.arc(offsetX, offsetY, 5, 0, Math.PI * 2);
-      ctx.fillStyle = "black";
-      ctx.fill();
+      if (showGrid) {
+        drawGrid();
+        drawAxes();
+      }
 
       // Draw drawables.
       for (const drawable of drawables) {
@@ -254,10 +261,16 @@ const Component = observer(({ state }: { state: State | undefined }) => {
             drawPoint(drawable.x, drawable.y, drawable.color);
             break;
           case "circle":
-            drawCircle(drawable.x, drawable.y, drawable.radius, drawable.color);
+            drawCircle(
+              drawable.x,
+              drawable.y,
+              drawable.radius,
+              drawable.color,
+              drawable.filled
+            );
             break;
           case "vector":
-            drawVector(drawable.x1, drawable.y1, drawable.color);
+            drawVector(drawable.x, drawable.y, drawable.color);
             break;
           case "text":
             drawText(drawable.text, drawable.x, drawable.y, drawable.color);
@@ -267,7 +280,16 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     };
 
     draw();
-  }, [drawables.length, scale, offsetX, offsetY]);
+  }, [
+    drawables.length,
+    scale,
+    offsetX,
+    offsetY,
+    showGrid,
+    unitsPerGridLine,
+    minSize,
+    changeCount,
+  ]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
