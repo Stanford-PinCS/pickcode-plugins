@@ -14,7 +14,6 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     unitsPerGridLine: 1,
     changeCount: 0,
   };
-  console.log({ state });
 
   useEffect(() => {
     const canvas = canvasRef.current;
