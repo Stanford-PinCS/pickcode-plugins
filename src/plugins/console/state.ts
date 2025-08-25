@@ -3,7 +3,23 @@ import { FromRuntimeMessage, ToRuntimeMessage } from "./messages";
 
 export class State {
   @observable
-  accessor history: FromRuntimeMessage[] = [];
+  accessor terminalLineData: { line: string; error: boolean }[] = [];
+
+  @observable
+  accessor inputMessage: string = "---";
+
+  @observable
+  accessor waitingForInput: boolean = false;
+
+  public addLine(line: string, error = false) {
+    this.terminalLineData = [
+      ...this.terminalLineData,
+      {
+        line,
+        error,
+      },
+    ];
+  }
 
   private sendMessage = (_message: ToRuntimeMessage) => {};
 
@@ -12,8 +28,23 @@ export class State {
   };
 
   @action
-  public onMessage = (m: FromRuntimeMessage) => {
-    this.history.push(m);
+  public onMessage = (message: FromRuntimeMessage) => {
+    // Messages from the code.
+    if ("output" in message) {
+      // Just write it to the console.
+      this.addLine(message.output);
+    } else if ("input" in message) {
+      // Wait for user input.
+      let messageLines = message.input.split("\n");
+      for (let i = 0; i < messageLines.length - 1; i++) {
+        this.addLine(messageLines[i]);
+      }
+      this.inputMessage = messageLines[messageLines.length - 1] || ">";
+      this.waitingForInput = true;
+    } else {
+      // Error message - write it in red.
+      this.addLine(message.error, true);
+    }
   };
 
   @action
@@ -25,9 +56,9 @@ export class State {
     message: string;
   }) => {
     if (logType == "error") {
-      this.history.push({ error: message });
+      this.addLine(message, true);
     } else {
-      this.history.push({ output: message });
+      this.addLine(message);
     }
   };
 
