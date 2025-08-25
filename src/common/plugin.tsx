@@ -26,9 +26,9 @@ export const plugin =
       const onWindowMessage = ({ data }: MessageEvent<any>) => {
         if (data.type === "start") {
           setPluginState(makeState());
-        } else if (data.type === "message") {
+        } else if (data.type === "message" && pluginState.onMessage) {
           pluginState.onMessage(data.message as any);
-        } else if (data.type === "log") {
+        } else if (data.type === "log" && pluginState.onLog) {
           pluginState.onLog(data as any);
         }
       };

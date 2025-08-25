@@ -1,6 +1,6 @@
 export interface PluginStateBase {
   onMessage: (data: any) => void;
-  onLog: ({
+  onLog?: ({
     logType,
     message,
   }: {
