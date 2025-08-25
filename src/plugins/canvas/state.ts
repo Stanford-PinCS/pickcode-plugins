@@ -153,7 +153,13 @@ export class State {
         this.showGrid = true;
         // Update values if given.
         if (m.grid.gridSize) this.minSize = m.grid.gridSize;
-        if (m.grid.tickSize) this.unitsPerGridLine = m.grid.tickSize;
+        if (m.grid.tickSize) {
+          // Tick size is specified, so set it.
+          this.unitsPerGridLine = m.grid.tickSize;
+        } else {
+          // Make the default tick size be 5 on each side of the origin.
+          this.unitsPerGridLine = this.minSize / 10;
+        }
       } else {
         // Turn off the grid.
         this.showGrid = false;

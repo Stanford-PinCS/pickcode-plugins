@@ -118,7 +118,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         ctx.save();
         ctx.translate(x, offsetY + 10);
         ctx.rotate(Math.PI / 4);
-        ctx.fillText(i.toString(), 0, 0);
+        ctx.fillText((Math.round(i * 1000) / 1000).toString(), 0, 0);
         ctx.restore();
       }
       for (
@@ -129,7 +129,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         ctx.save();
         ctx.translate(x, offsetY + 10);
         ctx.rotate(Math.PI / 4);
-        ctx.fillText(i.toString(), 0, 0);
+        ctx.fillText((Math.round(i * 1000) / 1000).toString(), 0, 0);
         ctx.restore();
       }
 
@@ -141,14 +141,14 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         y < canvas.height;
         y += gridSize, i -= unitsPerGridLine
       ) {
-        ctx.fillText(i.toString(), offsetX - 20, y);
+        ctx.fillText((Math.round(i * 1000) / 1000).toString(), offsetX - 20, y);
       }
       for (
         let y = offsetY - gridSize, i = unitsPerGridLine;
         y >= 0;
         y -= gridSize, i += unitsPerGridLine
       ) {
-        ctx.fillText(i.toString(), offsetX - 20, y);
+        ctx.fillText((Math.round(i * 1000) / 1000).toString(), offsetX - 20, y);
       }
     };
 
