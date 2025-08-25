@@ -165,6 +165,9 @@ export class State {
         this.showGrid = false;
       }
     } else if (m.minSize) {
+      // Keep relative tick size the same.
+      this.unitsPerGridLine *= m.minSize / this.minSize;
+      // Update min size.
       this.minSize = m.minSize;
     } else {
       return;
