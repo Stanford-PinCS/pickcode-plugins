@@ -24,12 +24,15 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
     const setCanvasDimensions = () => {
       const { clientWidth, clientHeight } = container;
-      canvas.width = clientWidth;
-      canvas.height = clientHeight;
-      setOffsetX(clientWidth / 2);
-      setOffsetY(clientHeight / 2);
+      // Subtract one pixel so it doesn't have any overflow issues (it would randomly have a scrollbar before).
+      const width = clientWidth - 1;
+      const height = clientHeight - 1;
+      canvas.width = width;
+      canvas.height = height;
+      setOffsetX(width / 2);
+      setOffsetY(height / 2);
 
-      const newScale = Math.min(clientWidth / minSize, clientHeight / minSize);
+      const newScale = Math.min(width / minSize, height / minSize);
       setScale(newScale);
     };
 
