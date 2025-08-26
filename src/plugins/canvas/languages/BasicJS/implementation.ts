@@ -23,6 +23,25 @@ const createExports = (sendMessage: (message: FromRuntimeMessage) => void) => {
     drawText: (text: string, x: number, y: number, id?: string) => {
       sendMessage({ drawText: { text, x, y, id } });
     },
+    drawRectangle: (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      filled: boolean,
+      id?: string
+    ) => {
+      sendMessage({ drawRectangle: { x, y, w, h, filled, id } });
+    },
+    drawTriangle: (
+      x: number,
+      y: number,
+      sideLength: number,
+      filled?: boolean,
+      id?: string
+    ) => {
+      sendMessage({ drawTriangle: { x, y, sideLength, filled, id } });
+    },
     // The following commands allow the user to move certain drawables.
     moveBy: (id: string, xChange: number, yChange: number) => {
       sendMessage({ moveBy: { id, xChange, yChange } });

@@ -46,7 +46,35 @@ type Text = {
   id?: string;
 };
 
-export type Drawable = Line | Point | Circle | Vector | Text;
+type Rectangle = {
+  type: "rectangle";
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  color: string;
+  filled?: boolean;
+  id?: string;
+};
+
+type Triangle = {
+  type: "triangle";
+  x: number;
+  y: number;
+  sideLength: number;
+  color: string;
+  filled?: boolean;
+  id?: string;
+};
+
+export type Drawable =
+  | Line
+  | Point
+  | Circle
+  | Vector
+  | Text
+  | Rectangle
+  | Triangle;
 
 export class State {
   @observable
@@ -103,6 +131,18 @@ export class State {
       this.drawables.push({
         type: "text",
         ...m.drawText,
+        color: this.currentColor,
+      });
+    } else if (m.drawRectangle) {
+      this.drawables.push({
+        type: "rectangle",
+        ...m.drawRectangle,
+        color: this.currentColor,
+      });
+    } else if (m.drawTriangle) {
+      this.drawables.push({
+        type: "triangle",
+        ...m.drawTriangle,
         color: this.currentColor,
       });
     } else if (m.moveBy) {

@@ -231,6 +231,67 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       }
     };
 
+    const drawRectangle = (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      color: string,
+      filled?: boolean
+    ) => {
+      ctx.beginPath();
+      ctx.rect(offsetX + x * scale, offsetY - y * scale, w * scale, h * scale);
+      if (filled) {
+        console.log("filled");
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      }
+    };
+
+    const drawTriangle = (
+      x: number,
+      y: number,
+      sideLength: number,
+      color: string,
+      filled?: boolean
+    ) => {
+      if (!sideLength) return;
+      // Use trigonometry to get relative coordinates.
+      const height = (scale * sideLength * Math.sqrt(3)) / 2;
+      const centerOffsetFromBottom =
+        (scale * Math.tan(Math.PI / 6)) / (sideLength * 2);
+      const centerOffsetFromTop = height - centerOffsetFromBottom;
+      const centerOffsetFromSide = (scale * sideLength) / 2;
+
+      const centerX = offsetX + x * scale;
+      const centerY = offsetY - y * scale;
+
+      // Draw path.
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY - centerOffsetFromTop); // Top center.
+      ctx.lineTo(
+        centerX + centerOffsetFromSide,
+        centerY + centerOffsetFromBottom
+      );
+      ctx.lineTo(
+        centerX - centerOffsetFromSide,
+        centerY + centerOffsetFromBottom
+      );
+      ctx.lineTo(centerX, centerY - centerOffsetFromTop);
+
+      // Fill accordingly.
+      if (filled) {
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      }
+    };
+
     const drawText = (text: string, x: number, y: number, color: string) => {
       ctx.fillStyle = color;
       ctx.font = "16px Arial";
@@ -273,6 +334,25 @@ const Component = observer(({ state }: { state: State | undefined }) => {
             break;
           case "text":
             drawText(drawable.text, drawable.x, drawable.y, drawable.color);
+            break;
+          case "rectangle":
+            drawRectangle(
+              drawable.x,
+              drawable.y,
+              drawable.w,
+              drawable.h,
+              drawable.color,
+              drawable.filled
+            );
+            break;
+          case "triangle":
+            drawTriangle(
+              drawable.x,
+              drawable.y,
+              drawable.sideLength,
+              drawable.color,
+              drawable.filled
+            );
             break;
         }
       }

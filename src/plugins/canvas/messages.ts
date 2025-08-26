@@ -29,6 +29,21 @@ export type FromRuntimeMessage = {
     y: number;
     id?: string;
   };
+  drawRectangle?: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    filled?: boolean;
+    id?: string;
+  };
+  drawTriangle?: {
+    x: number;
+    y: number;
+    sideLength: number;
+    filled?: boolean;
+    id?: string;
+  };
   moveBy?: {
     id: string;
     xChange: number;
