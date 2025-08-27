@@ -50,7 +50,7 @@ const createExports = (sendMessage: (message: FromRuntimeMessage) => void) => {
       sendMessage({ moveTo: { id, x, y } });
     },
     // The following allows the user to delete certain drawables.
-    delete: (id: string) => {
+    deleteId: (id: string) => {
       sendMessage({ delete: { id } });
     },
     // The following are basic commands that apply to the canvas settings.
