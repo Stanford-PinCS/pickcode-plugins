@@ -8,8 +8,12 @@ const Component = observer(({ state }: { state: State | undefined }) => {
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
   const drawables = state?.drawables || [];
-  const minSize = 10; // The canvas will be no smaller than minSize x minSize units
-  const unitsPerGridLine = 1; // How often the grid lines are.
+  const { showGrid, minSize, unitsPerGridLine, changeCount } = state ?? {
+    showGrid: false,
+    minSize: 10,
+    unitsPerGridLine: 1,
+    changeCount: 0,
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,12 +24,15 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
     const setCanvasDimensions = () => {
       const { clientWidth, clientHeight } = container;
-      canvas.width = clientWidth;
-      canvas.height = clientHeight;
-      setOffsetX(clientWidth / 2);
-      setOffsetY(clientHeight / 2);
+      // Subtract one pixel so it doesn't have any overflow issues (it would randomly have a scrollbar before).
+      const width = clientWidth - 1;
+      const height = clientHeight - 1;
+      canvas.width = width;
+      canvas.height = height;
+      setOffsetX(width / 2);
+      setOffsetY(height / 2);
 
-      const newScale = Math.min(clientWidth / minSize, clientHeight / minSize);
+      const newScale = Math.min(width / minSize, height / minSize);
       setScale(newScale);
     };
 
@@ -35,7 +42,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     return () => {
       window.removeEventListener("resize", setCanvasDimensions);
     };
-  }, []);
+  }, [minSize, unitsPerGridLine, changeCount]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -114,7 +121,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         ctx.save();
         ctx.translate(x, offsetY + 10);
         ctx.rotate(Math.PI / 4);
-        ctx.fillText(i.toString(), 0, 0);
+        ctx.fillText((Math.round(i * 1000) / 1000).toString(), 0, 0);
         ctx.restore();
       }
       for (
@@ -125,7 +132,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         ctx.save();
         ctx.translate(x, offsetY + 10);
         ctx.rotate(Math.PI / 4);
-        ctx.fillText(i.toString(), 0, 0);
+        ctx.fillText((Math.round(i * 1000) / 1000).toString(), 0, 0);
         ctx.restore();
       }
 
@@ -137,14 +144,14 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         y < canvas.height;
         y += gridSize, i -= unitsPerGridLine
       ) {
-        ctx.fillText(i.toString(), offsetX - 20, y);
+        ctx.fillText((Math.round(i * 1000) / 1000).toString(), offsetX - 20, y);
       }
       for (
         let y = offsetY - gridSize, i = unitsPerGridLine;
         y >= 0;
         y -= gridSize, i += unitsPerGridLine
       ) {
-        ctx.fillText(i.toString(), offsetX - 20, y);
+        ctx.fillText((Math.round(i * 1000) / 1000).toString(), offsetX - 20, y);
       }
     };
 
@@ -206,7 +213,8 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       x: number,
       y: number,
       radius: number,
-      color: string
+      color: string,
+      filled?: boolean
     ) => {
       ctx.beginPath();
       ctx.arc(
@@ -216,9 +224,75 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         0,
         Math.PI * 2
       );
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      if (filled) {
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    };
+
+    const drawRectangle = (
+      x: number,
+      y: number,
+      w: number,
+      h: number,
+      color: string,
+      filled?: boolean
+    ) => {
+      ctx.beginPath();
+      ctx.rect(offsetX + x * scale, offsetY - y * scale, w * scale, h * scale);
+      if (filled) {
+        console.log("filled");
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      }
+    };
+
+    const drawTriangle = (
+      x: number,
+      y: number,
+      sideLength: number,
+      color: string,
+      filled?: boolean
+    ) => {
+      if (!sideLength) return;
+      // Use trigonometry to get relative coordinates.
+      const height = (scale * sideLength * Math.sqrt(3)) / 2;
+      const centerOffsetFromBottom =
+        (scale * Math.tan(Math.PI / 6)) / (sideLength * 2);
+      const centerOffsetFromTop = height - centerOffsetFromBottom;
+      const centerOffsetFromSide = (scale * sideLength) / 2;
+
+      const centerX = offsetX + x * scale;
+      const centerY = offsetY - y * scale;
+
+      // Draw path.
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY - centerOffsetFromTop); // Top center.
+      ctx.lineTo(
+        centerX + centerOffsetFromSide,
+        centerY + centerOffsetFromBottom
+      );
+      ctx.lineTo(
+        centerX - centerOffsetFromSide,
+        centerY + centerOffsetFromBottom
+      );
+      ctx.lineTo(centerX, centerY - centerOffsetFromTop);
+
+      // Fill accordingly.
+      if (filled) {
+        ctx.fillStyle = color;
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      }
     };
 
     const drawText = (text: string, x: number, y: number, color: string) => {
@@ -229,14 +303,10 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawGrid();
-      drawAxes();
-
-      // Draw origin
-      ctx.beginPath();
-      ctx.arc(offsetX, offsetY, 5, 0, Math.PI * 2);
-      ctx.fillStyle = "black";
-      ctx.fill();
+      if (showGrid) {
+        drawGrid();
+        drawAxes();
+      }
 
       // Draw drawables.
       for (const drawable of drawables) {
@@ -254,20 +324,54 @@ const Component = observer(({ state }: { state: State | undefined }) => {
             drawPoint(drawable.x, drawable.y, drawable.color);
             break;
           case "circle":
-            drawCircle(drawable.x, drawable.y, drawable.radius, drawable.color);
+            drawCircle(
+              drawable.x,
+              drawable.y,
+              drawable.radius,
+              drawable.color,
+              drawable.filled
+            );
             break;
           case "vector":
-            drawVector(drawable.x1, drawable.y1, drawable.color);
+            drawVector(drawable.x, drawable.y, drawable.color);
             break;
           case "text":
             drawText(drawable.text, drawable.x, drawable.y, drawable.color);
+            break;
+          case "rectangle":
+            drawRectangle(
+              drawable.x,
+              drawable.y,
+              drawable.w,
+              drawable.h,
+              drawable.color,
+              drawable.filled
+            );
+            break;
+          case "triangle":
+            drawTriangle(
+              drawable.x,
+              drawable.y,
+              drawable.sideLength,
+              drawable.color,
+              drawable.filled
+            );
             break;
         }
       }
     };
 
     draw();
-  }, [drawables.length, scale, offsetX, offsetY]);
+  }, [
+    drawables.length,
+    scale,
+    offsetX,
+    offsetY,
+    showGrid,
+    unitsPerGridLine,
+    minSize,
+    changeCount,
+  ]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center">
