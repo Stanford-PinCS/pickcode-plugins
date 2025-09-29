@@ -7,7 +7,10 @@
         "init-plugin": "tsx .scripts/init-module.ts",
         "update-plugin": "tsx .scripts/update-plugin.ts",
         "start": "vite",
-        "build": "vite build"
+        "build": "vite build",                       
+        "build:plugins": "vite build --mode plugins",
+        "preview": "vite preview --host 127.0.0.1 --port 5173 --strictPort",
+        "preview:plugins": "vite preview --mode plugins --host 127.0.0.1 --port 5173 --strictPort"
     },
     "dependencies": {
         "@babel/plugin-proposal-class-properties": "^7.18.6",
