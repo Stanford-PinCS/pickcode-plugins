@@ -33,10 +33,8 @@ function manifestPlugin() {
         const langPath = path.join(languagesDir, lang);
         if (!(await fs.stat(langPath)).isDirectory()) continue;
 
-        // IMPORTANT: prefix with base so it works under /pickcode-plugins/ in prod
-        const prefix = base.endsWith("/") ? base : base + "/";
         manifest[pluginName][lang] = {
-          implUrl: `${prefix}plugins-code/${pluginName}/languages/${lang}/implementation.js`,
+          implUrl: `/plugins-code/${pluginName}/languages/${lang}/implementation.js`,
         };
       }
     }
