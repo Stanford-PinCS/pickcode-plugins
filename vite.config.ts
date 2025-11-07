@@ -74,7 +74,7 @@ export default defineConfig(({mode}) => {
 
   return {
     base,
-    preview: { host: "127.0.0.1", port: 5173, strictPort: true },
+    preview: { host: "127.0.0.1", port: 5173, strictPort: true, allowedHosts: ["pincs.stanford.edu"] },
     build: {
       outDir: "dist/site",
     },
