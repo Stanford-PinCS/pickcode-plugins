@@ -1,25 +1,18 @@
-function resulting_nh3(n2, h2) {
-    /**
-     * Returns:
-     *   nh3_made: moles NH3 produced
-     *   n2_left:  moles N2 leftover
-     *   h2_left:  moles H2 leftover
-     *   limiting: which reactant limits ("N2", "H2", or "None" for perfect balance)
-     */
+function resulting_nh3() {
+
+    let h2 = 0;
+    let n2 = 0;
+
+    let nh3_made = 0;
+    let limiting = "???"; // write "n2" or "h2" or "None"
 
     // How much NH3 could we make if ONLY N2 limited us?
-    const nh3_from_n2 = n2 * 2;
+    // const nh3_from_n2 = n2 * 2;
 
     // How much NH3 could we make if ONLY H2 limited us?
-    const nh3_from_h2 = h2 * (2/3);
+    // const nh3_from_h2 = h2 * (2/3);
 
-    // TODO replace these! 
-    let nh3_made = 0;
-    let n2_left = n2;
-    let h2_left = h2;
-    let limiting = "???";
-
-    return [nh3_made, n2_left, h2_left, limiting];
+    return [h2, n2, nh3_made, limiting];
 }
 
 proceed(resulting_nh3);
