@@ -100,7 +100,20 @@ const ReactantCard = ({
     const animConsumed = useAnimatedValue(consumed, 1800, 200, runId);
     const animRemaining = input - animConsumed;
 
-    const border = isLimiting
+    // Delay the limiting-reactant highlight until after NH₃ finishes counting
+    // NH₃ anim = 700ms delay + 2000ms duration = 2700ms, so reveal at ~2800ms
+    const [showHighlight, setShowHighlight] = useState(false);
+    useEffect(() => {
+        if (!isLimiting) {
+            setShowHighlight(false);
+            return;
+        }
+        setShowHighlight(false);
+        const timer = setTimeout(() => setShowHighlight(true), 2800);
+        return () => clearTimeout(timer);
+    }, [runId, isLimiting]);
+
+    const border = showHighlight
         ? "border-2 border-amber-400 bg-amber-50 shadow-md"
         : "border border-gray-200 bg-white shadow-sm";
 
@@ -109,12 +122,12 @@ const ReactantCard = ({
 
     return (
         <div
-            className={`p-4 rounded-xl w-56 flex-shrink-0 transition-all duration-300 ${border}`}
+            className={`p-4 rounded-xl w-56 flex-shrink-0 transition-all duration-700 ${border}`}
         >
             <h3 className="text-base font-bold text-gray-800 mb-1">{title}</h3>
 
-            {isLimiting && (
-                <span className="inline-block mb-2 px-2 py-0.5 bg-amber-200 text-amber-800 text-[10px] font-bold uppercase rounded-full tracking-wide">
+            {isLimiting && showHighlight && (
+                <span className="inline-block mb-2 px-2 py-0.5 bg-amber-200 text-amber-800 text-[10px] font-bold uppercase rounded-full tracking-wide animate-fade-in">
                     Limiting Reactant
                 </span>
             )}
