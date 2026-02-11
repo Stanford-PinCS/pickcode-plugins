@@ -5,6 +5,10 @@ export class State {
     @observable
     accessor value: string = "";
 
+    // Run counter — increments on every play press
+    @observable
+    accessor run_id: number = 0;
+
     // Input values
     @observable
     accessor input_n2: number = 0;
@@ -54,6 +58,7 @@ export class State {
     @action
     public onMessage = (m: FromRuntimeMessage) => {
         if (m.setValue !== undefined) this.value = m.setValue;
+        if (m.run_id !== undefined) this.run_id = m.run_id;
         if (m.input_n2 !== undefined) this.input_n2 = m.input_n2;
         if (m.input_h2 !== undefined) this.input_h2 = m.input_h2;
         if (m.true_nh3 !== undefined) this.true_nh3 = m.true_nh3;

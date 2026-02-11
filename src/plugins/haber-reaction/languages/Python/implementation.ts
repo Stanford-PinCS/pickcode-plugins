@@ -27,36 +27,41 @@ function computeTrueValues(n2: number, h2: number) {
     return { true_nh3, true_limiting, n2_consumed, h2_consumed, n2_remaining, h2_remaining };
 }
 
+let runCounter = 0;
+
 const createExports = (
     sendMessage: (message: FromRuntimeMessage) => void
 ) => {
     return Promise.resolve({
         proceed: async (resulting_nh3: any) => {
-            const testN2 = 5;
-            const testH2 = 10;
-
-            // Compute the TRUE answer from stoichiometry
-            const trueVals = computeTrueValues(testN2, testH2);
-
-            // Call the student's function and extract their answer
+            runCounter++;
+            // Default fallback inputs (used if student function throws)
+            let input_h2 = 0;
+            let input_n2 = 0;
             let student_nh3 = 0;
             let student_limiting = "???";
+
             try {
                 let result;
                 if (typeof resulting_nh3 === 'function') {
-                    result = resulting_nh3(testN2, testH2);
+                    result = resulting_nh3(0, 0);
                 } else {
                     // Pyodide proxies may be callable but not typeof 'function'
-                    result = resulting_nh3(testN2, testH2);
+                    result = resulting_nh3(0, 0);
                 }
                 result = await Promise.resolve(result);
 
-                // Handle array or tuple-like returns from Python
+                // Starter code returns [h2, n2, nh3_made, limiting]
+                // result[0] = h2 the student used, result[1] = n2 they used
                 if (Array.isArray(result) && result.length >= 4) {
+                    input_h2 = Number(result[0]) || 0;
+                    input_n2 = Number(result[1]) || 0;
                     student_nh3 = Number(result[2]) || 0;
                     student_limiting = String(result[3]) || "???";
                 } else if (result && typeof result === 'object') {
                     if ('0' in result || '1' in result) {
+                        input_h2 = Number(result[0] ?? result['0'] ?? 0);
+                        input_n2 = Number(result[1] ?? result['1'] ?? 0);
                         student_nh3 = Number(result[2] ?? result['2'] ?? 0);
                         student_limiting = String(result[3] ?? result['3'] ?? "???");
                     }
@@ -66,14 +71,18 @@ const createExports = (
                 student_limiting = "Error";
             }
 
+            // Compute the TRUE answer from the student's actual inputs
+            const trueVals = computeTrueValues(input_n2, input_h2);
+
             // Check correctness
             const nh3_correct = Math.abs(student_nh3 - trueVals.true_nh3) < 0.01;
             const limiting_correct =
                 student_limiting.toLowerCase() === trueVals.true_limiting.toLowerCase();
 
             sendMessage({
-                input_n2: testN2,
-                input_h2: testH2,
+                run_id: runCounter,
+                input_n2,
+                input_h2,
                 true_nh3: trueVals.true_nh3,
                 true_limiting: trueVals.true_limiting,
                 n2_consumed: trueVals.n2_consumed,

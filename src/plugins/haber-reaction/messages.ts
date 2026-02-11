@@ -1,5 +1,7 @@
 export type FromRuntimeMessage = {
     setValue?: string;
+    // Increments every time "proceed" is called, so the UI can replay animations
+    run_id?: number;
     // Input values fed to the student function
     input_n2?: number;
     input_h2?: number;
