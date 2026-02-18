@@ -54,6 +54,11 @@
       "implUrl": "/plugins-code/planets/languages/BasicJS/implementation.js"
     }
   },
+  "population-ecology": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js"
+    }
+  },
   "supply-demand": {
     "BasicJS": {
       "implUrl": "/plugins-code/supply-demand/languages/BasicJS/implementation.js"
