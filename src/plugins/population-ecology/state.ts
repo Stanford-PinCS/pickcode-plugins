@@ -3,8 +3,9 @@ import { Message } from "./messages";
 
 export interface SimulationConfig {
     initialSize: number;
-    growthRate: number;
-    dayDuration: number; // milliseconds per simulated day
+    growthRate: number | null;
+    dayDuration: number;
+    label: string;
 }
 
 export interface DayRecord {
@@ -40,7 +41,8 @@ export class State {
                 this.config = {
                     initialSize: message.initialSize,
                     growthRate: message.growthRate,
-                    dayDuration: message.dayDuration ?? 3000,
+                    dayDuration: message.dayDuration,
+                    label: message.label,
                 };
                 this.history = [{ day: 0, population: message.initialSize }];
                 this.currentDay = 0;
@@ -48,6 +50,22 @@ export class State {
                 this.isRunning = true;
                 this.error = null;
                 return true;
+
+            case "addCustomPopulation": {
+                const initialSize = message.populations[0] ?? 0;
+                this.config = {
+                    initialSize,
+                    growthRate: null,
+                    dayDuration: message.dayDuration,
+                    label: "Custom",
+                };
+                this.history = [{ day: 0, population: initialSize }];
+                this.currentDay = 0;
+                this.currentPopulation = initialSize;
+                this.isRunning = true;
+                this.error = null;
+                return true;
+            }
 
             case "tick":
                 this.currentDay = message.day;
