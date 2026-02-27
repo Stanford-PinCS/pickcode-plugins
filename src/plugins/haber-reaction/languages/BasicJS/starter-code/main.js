@@ -11,7 +11,12 @@ function resulting_nh3() {
 
     // TODO 2: write if statements here
 
-    return [h2, n2, nh3_made, limiting];
+    return {
+        "h2_reactant_amount": h2, 
+        "n2_reactant_amount": n2, 
+        "nh3_product_made": nh3_made, 
+        "limiting_reactant": limiting
+    };
 }
 
 proceed(resulting_nh3);

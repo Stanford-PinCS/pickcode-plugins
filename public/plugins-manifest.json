@@ -37,9 +37,6 @@
   "haber-reaction": {
     "BasicJS": {
       "implUrl": "/plugins-code/haber-reaction/languages/BasicJS/implementation.js"
-    },
-    "Python": {
-      "implUrl": "/plugins-code/haber-reaction/languages/Python/implementation.js"
     }
   },
   "marginal-utility": {

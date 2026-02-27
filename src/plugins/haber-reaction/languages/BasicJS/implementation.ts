@@ -31,29 +31,44 @@ function computeTrueValues(n2: number, h2: number) {
 
 let runCounter = 0;
 
+type StudentResultObject = {
+    h2_reactant_amount?: number;
+    n2_reactant_amount?: number;
+    nh3_product_made?: number;
+    limiting_reactant?: string;
+};
+
 const createExports = (
     sendMessage: (message: FromRuntimeMessage) => void
 ) => {
     return Promise.resolve({
-        proceed: (resulting_nh3: (n2: number, h2: number) => [number, number, number, string]) => {
+        proceed: (resulting_nh3: () => StudentResultObject | [number, number, number, string]) => {
             runCounter++;
             // Default fallback inputs (used if student function throws)
+            // Mb throw in an error next time
             let input_h2 = 0;
             let input_n2 = 0;
             let student_nh3 = 0;
             let student_limiting = "???";
 
             try {
-                // Call the student's function (pass dummy args in case they use params)
-                const result = resulting_nh3(0, 0);
+                // Preferred flow: student code calls proceed(resulting_nh3),
+                // then we invoke their function directly with no forced inputs.
+                const result = resulting_nh3();
 
-                // Starter code returns [h2, n2, nh3_made, limiting]
-                // result[0] = h2 the student used, result[1] = n2 they used
                 if (Array.isArray(result) && result.length >= 4) {
+                    // Backward-compatible support for legacy array return shape.
                     input_h2 = Number(result[0]) || 0;
                     input_n2 = Number(result[1]) || 0;
                     student_nh3 = Number(result[2]) || 0;
                     student_limiting = String(result[3]) || "???";
+                } else if (result && typeof result === "object") {
+                    // Current starter code returns an object with named fields.
+                    const obj = result as StudentResultObject;
+                    input_h2 = Number(obj.h2_reactant_amount) || 0;
+                    input_n2 = Number(obj.n2_reactant_amount) || 0;
+                    student_nh3 = Number(obj.nh3_product_made) || 0;
+                    student_limiting = String(obj.limiting_reactant || "???");
                 }
             } catch (error) {
                 console.error("Error calling student function:", error);
