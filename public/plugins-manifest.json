@@ -34,6 +34,11 @@
       "implUrl": "/plugins-code/force-components/languages/BasicJS/implementation.js"
     }
   },
+  "haber-reaction": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/haber-reaction/languages/BasicJS/implementation.js"
+    }
+  },
   "marginal-utility": {
     "BasicJS": {
       "implUrl": "/plugins-code/marginal-utility/languages/BasicJS/implementation.js"
