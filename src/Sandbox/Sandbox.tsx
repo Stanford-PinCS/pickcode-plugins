@@ -17,6 +17,17 @@ async function loadImplementationCode(name: string): Promise<string> {
   return res.text();
 }
 
+async function loadStarterCode(name: string): Promise<string> {
+  const url = `/plugins-code/${name}/languages/BasicJS/starter-code/main.js`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return "";
+    return res.text();
+  } catch {
+    return "";
+  }
+}
+
 export const Sandbox = () => {
   const { pluginName } = useParams();
   const jsRuntimeRef = useRef<JSRuntime>(null);
@@ -26,17 +37,21 @@ export const Sandbox = () => {
   const [codeText, setCodeText] = useState("");
 
   useEffect(() => {
-    const codeText = localStorage.getItem("codeText");
-    if (codeText) {
-      setCodeText(codeText);
-    }
-  }, []);
-
-  useEffect(() => {
     if (!pluginName) return;
+
     loadImplementationCode(pluginName).then((c) => {
       setImplementation(c);
     });
+
+    const storageKey = `codeText-${pluginName}`;
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      setCodeText(saved);
+    } else {
+      loadStarterCode(pluginName).then((code) => {
+        if (code) setCodeText(code);
+      });
+    }
   }, [pluginName]);
 
   return (
@@ -49,7 +64,7 @@ export const Sandbox = () => {
           extensions={[javascript()]}
           onChange={(value) => {
             setCodeText(value);
-            localStorage.setItem("codeText", value);
+            localStorage.setItem(`codeText-${pluginName}`, value);
           }}
         />
       </div>
