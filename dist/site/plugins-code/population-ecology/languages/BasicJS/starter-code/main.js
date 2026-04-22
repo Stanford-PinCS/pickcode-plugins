@@ -1,1 +1,0 @@
-createSimulationExponential(50, 0.2, 15, 2000);
