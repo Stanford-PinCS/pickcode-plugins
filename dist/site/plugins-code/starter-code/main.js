@@ -1,1 +1,1 @@
-createSimulationExponential(50, 0.2, 15, 2000);
+playNote("C4", 300);

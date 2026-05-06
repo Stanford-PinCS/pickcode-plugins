@@ -1,89 +1,87 @@
-import { Message } from "../../messages";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+const createChatExports = (
+    sendMessage: (message: any) => void,
+    onMessage: any
+): Promise<{ chat: any }> => {
+    const send = (newMessage: string, options?: string[]) => {
+        const executionMessage = {
+            contents: "text",
+            messageText: newMessage.toString(),
+            responseOptions: options,
+        };
+        sendMessage(executionMessage);
+    };
 
-const createExports = (sendMessage: (message: Message) => void) => {
-    const runSimulation = (
-        initialSize: number,
-        dayDuration: number,
-        getTick: (day: number) => number,
-        totalDays: number,
-        initMessage: Message
-    ) => {
-        sendMessage({ type: "reset" });
-        setTimeout(() => {
-            sendMessage(initMessage);
-            for (let day = 1; day <= totalDays; day++) {
-                const population = getTick(day);
-                setTimeout(() => {
-                    sendMessage({ type: "tick", day, population });
-                }, day * dayDuration);
-            }
-        }, 100);
+    const waitForInput = (
+        expectedType: "text" | "number" = "text"
+    ): Promise<string> => {
+        const executionMessage = {
+            contents: "waitingForInput",
+            expectedType,
+        };
+        const promise = new Promise<string>((res) => {
+            const unsubscribe = onMessage((message: any) => {
+                res(message.text);
+                unsubscribe();
+            });
+        });
+        sendMessage(executionMessage);
+        return promise;
     };
 
     return Promise.resolve({
-        /**
-         * Simulates exponential population growth: N(t) = N₀·e^(r·t)
-         *
-         * @param initialSize - Starting population (N₀)
-         * @param growthRate  - Intrinsic growth rate r (e.g. 0.2)
-         * @param days        - Number of days to simulate (default: 10)
-         * @param dayDuration - Milliseconds per simulated day (default: 3000)
-         *
-         * @example
-         * createSimulationExponential(100, 0.3, 10, 2000);
-         */
-        createSimulationExponential: (
-            initialSize: number,
-            growthRate: number,
-            days: number = 10,
-            dayDuration: number = 3000
-        ) => {
-            if (initialSize <= 0) throw new Error("initialSize must be positive");
-            if (days <= 0) throw new Error("days must be positive");
-            if (dayDuration < 500) throw new Error("dayDuration must be at least 500ms");
+        chat: {
+            async ask(prompt: string): Promise<string> {
+                send(prompt);
+                return await waitForInput();
+            },
 
-            runSimulation(
-                initialSize,
-                dayDuration,
-                (day) => Math.round(initialSize * Math.exp(growthRate * day)),
-                days,
-                { type: "addPopulation", initialSize, growthRate, dayDuration, label: "Exponential" }
-            );
-        },
+            async askForNumber(prompt: string): Promise<number> {
+                send(prompt);
+                const s = await waitForInput("number");
+                return Number(s);
+            },
 
-        /**
-         * Simulates a custom population schedule from a list of population values.
-         * The first value is the initial population (day 0), and each subsequent
-         * value is the population at the next day.
-         *
-         * @param populations - Array of population sizes, e.g. [1000, 1500, 2200, 3000]
-         * @param dayDuration - Milliseconds per simulated day (default: 3000)
-         *
-         * @example
-         * createSimulationCustom([1000, 1200, 1500, 1900, 2400], 2000);
-         */
-        createSimulationCustom: (
-            populations: number[],
-            dayDuration: number = 3000
-        ) => {
-            if (!Array.isArray(populations) || populations.length < 2)
-                throw new Error("populations must be an array with at least 2 values");
-            if (populations.some((p) => p < 0))
-                throw new Error("all population values must be non-negative");
-            if (dayDuration < 500) throw new Error("dayDuration must be at least 500ms");
+            async multipleChoice(
+                prompt: string,
+                options: any
+            ): Promise<string> {
+                const promise = new Promise<string>((res) => {
+                    const unsubscribe = onMessage((message: any) => {
+                        res(message.text);
+                        unsubscribe();
+                    });
+                });
+                send(
+                    prompt,
+                    options.items.map((a: any) => a.toString())
+                );
+                return promise;
+            },
 
-            const initialSize = populations[0];
-            const totalDays = populations.length - 1;
+            async send(newMessage: string) {
+                send(newMessage);
+            },
 
-            runSimulation(
-                initialSize,
-                dayDuration,
-                (day) => populations[day],
-                totalDays,
-                { type: "addCustomPopulation", populations, dayDuration }
-            );
+            async sendImage(image: {
+                type: "imageFile";
+                filename: string;
+            }): Promise<void> {
+                const executionMessage = {
+                    contents: "image",
+                    messageImageFilename: image.filename,
+                };
+                sendMessage(executionMessage);
+            },
+
+            async clear(): Promise<void> {
+                const executionMessage = {
+                    contents: "clear",
+                };
+                sendMessage(executionMessage);
+            },
         },
     });
 };
 
-export default createExports;
+export default createChatExports;

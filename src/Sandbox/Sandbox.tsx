@@ -19,10 +19,25 @@ async function loadImplementationCode(
   name: string,
   language: SandboxLanguage
 ): Promise<string> {
-  const url = `/plugins-code/${name}/languages/${language}/implementation.js`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch ${name}: ${res.statusText}`);
-  return res.text();
+  if (language === "Python") {
+    // Prefer Python implementation if present, but default to BasicJS implementation.
+    // PyRuntime handles camelCase <-> snake_case bridging.
+    const pythonUrl = `/plugins-code/${name}/languages/Python/implementation.js`;
+    const pythonRes = await fetch(pythonUrl);
+    if (pythonRes.ok) {
+      return pythonRes.text();
+    }
+    const basicUrl = `/plugins-code/${name}/languages/BasicJS/implementation.js`;
+    const basicRes = await fetch(basicUrl);
+    if (!basicRes.ok) {
+      throw new Error(`Failed to fetch ${name}: ${basicRes.statusText}`);
+    }
+    return basicRes.text();
+  }
+  const basicUrl = `/plugins-code/${name}/languages/BasicJS/implementation.js`;
+  const basicRes = await fetch(basicUrl);
+  if (!basicRes.ok) throw new Error(`Failed to fetch ${name}: ${basicRes.statusText}`);
+  return basicRes.text();
 }
 
 async function loadStarterCode(
@@ -45,10 +60,12 @@ async function loadLanguages(name: string): Promise<SandboxLanguage[]> {
   const manifest = (await res.json()) as PluginsManifest;
   const pluginEntry = manifest[name];
   if (!pluginEntry) return ["BasicJS"];
-  const languages = Object.keys(pluginEntry).filter(
-    (lang): lang is SandboxLanguage => lang === "BasicJS" || lang === "Python"
-  );
-  return languages.length > 0 ? languages : ["BasicJS"];
+  const supportsBasicJS = "BasicJS" in pluginEntry;
+  const supportsPython = "Python" in pluginEntry || supportsBasicJS;
+  if (supportsBasicJS && supportsPython) return ["BasicJS", "Python"];
+  if (supportsBasicJS) return ["BasicJS"];
+  if (supportsPython) return ["Python"];
+  return ["BasicJS"];
 }
 
 export const Sandbox = () => {
@@ -63,15 +80,16 @@ export const Sandbox = () => {
     undefined
   );
   const [codeText, setCodeText] = useState("");
+  const storageKey = `codeText:${pluginName ?? "unknown"}:${language}`;
 
   useEffect(() => {
-    const savedCode = localStorage.getItem(`codeText:${language}`);
+    const savedCode = localStorage.getItem(storageKey);
     if (savedCode) {
       setCodeText(savedCode);
     } else {
       setCodeText("");
     }
-  }, [language]);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!pluginName) return;
@@ -93,9 +111,9 @@ export const Sandbox = () => {
     loadStarterCode(pluginName, language).then((starter) => {
       if (!starter) return;
       setCodeText(starter);
-      localStorage.setItem(`codeText:${language}`, starter);
+      localStorage.setItem(storageKey, starter);
     });
-  }, [pluginName, language]);
+  }, [pluginName, language, storageKey]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -143,7 +161,7 @@ export const Sandbox = () => {
           extensions={language === "BasicJS" ? [javascript()] : []}
           onChange={(value) => {
             setCodeText(value);
-            localStorage.setItem(`codeText:${language}`, value);
+            localStorage.setItem(storageKey, value);
           }}
         />
       </div>
