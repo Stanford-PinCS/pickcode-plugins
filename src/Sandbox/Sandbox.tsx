@@ -108,11 +108,14 @@ export const Sandbox = () => {
     }).catch(() => {
       setImplementation(undefined);
     });
-    loadStarterCode(pluginName, language).then((starter) => {
-      if (!starter) return;
-      setCodeText(starter);
-      localStorage.setItem(storageKey, starter);
-    });
+    const savedCode = localStorage.getItem(storageKey);
+    if (!savedCode) {
+      loadStarterCode(pluginName, language).then((starter) => {
+        if (!starter) return;
+        setCodeText(starter);
+        localStorage.setItem(storageKey, starter);
+      });
+    }
   }, [pluginName, language, storageKey]);
 
   useEffect(() => {

@@ -24,6 +24,11 @@
       "implUrl": "/plugins-code/drag/languages/BasicJS/implementation.js"
     }
   },
+  "escape-velocity": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/escape-velocity/languages/BasicJS/implementation.js"
+    }
+  },
   "force-addition": {
     "BasicJS": {
       "implUrl": "/plugins-code/force-addition/languages/BasicJS/implementation.js"
@@ -70,6 +75,11 @@
   "population-ecology": {
     "BasicJS": {
       "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js"
+    }
+  },
+  "riemann-sum": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/riemann-sum/languages/BasicJS/implementation.js"
     }
   },
   "supply-demand": {
