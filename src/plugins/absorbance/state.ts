@@ -1,29 +1,22 @@
-import { makeAutoObservable } from "mobx";
+import { action, observable } from "mobx";
+import { FromRuntimeMessage, ToRuntimeMessage } from "./messages";
 
-class State {
-    concentration = 0.3;
-    epsilon = 1.5;
-    pathLength = 1.0;
+export default class State {
+    @observable
+    accessor value: any = null;
 
-    constructor() {
-        makeAutoObservable(this);
-    }
+    private sendMessage = (_message: ToRuntimeMessage) => {};
 
-    init() {
-        // Required by the Pickcode plugin system.
-    }
+    public init = (sendMessage: (message: ToRuntimeMessage) => void) => {
+        this.sendMessage = sendMessage;
+    };
 
-    setConcentration(value: number) {
-        this.concentration = value;
-    }
+    @action
+    public onMessage = (message: FromRuntimeMessage) => {
+        this.value = message.setValue;
+    };
 
-    setEpsilon(value: number) {
-        this.epsilon = value;
-    }
-
-    setPathLength(value: number) {
-        this.pathLength = value;
-    }
+    public send = (message: ToRuntimeMessage) => {
+        this.sendMessage(message);
+    };
 }
-
-export default State;
