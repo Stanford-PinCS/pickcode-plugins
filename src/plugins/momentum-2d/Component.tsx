@@ -623,10 +623,6 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                     0.52
                 );
             }
-
-            if (visualCollisionVertex) {
-
-            }
         }
 
         if (state.derived.collisionPoint || visualCollisionVertex) {
