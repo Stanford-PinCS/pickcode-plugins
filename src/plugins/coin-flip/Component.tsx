@@ -16,17 +16,13 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
     const vw = 540;
     const vh = 380;
-    const pad = { top: 24, right: 24, bottom: 48, left: 56 };
+    const pad = { top: 24, right: 30, bottom: 48, left: 56 };
     const plotW = vw - pad.left - pad.right;
     const plotH = vh - pad.top - pad.bottom;
 
     const xMax = Math.max(n, 10);
-    const yMin = 0;
-    const yMax = 1;
-
     const sx = (x: number) => pad.left + (x / xMax) * plotW;
-    const sy = (y: number) =>
-        pad.top + plotH - ((y - yMin) / (yMax - yMin)) * plotH;
+    const sy = (y: number) => pad.top + plotH - y * plotH;
 
     const linePoints = points
         .map((y, i) => `${sx(i + 1)},${sy(y)}`)
@@ -45,7 +41,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                 flexDirection: "column",
                 height: "100%",
                 width: "100%",
-                background: "#101828",
+                background: "linear-gradient(135deg, #0a0a1a, #111827, #0f172a)",
                 color: "#e0e0e0",
                 fontFamily: "'Segoe UI', system-ui, sans-serif",
                 overflow: "hidden",
@@ -54,11 +50,15 @@ const Component = observer(({ state }: { state: State | undefined }) => {
             <div
                 style={{
                     padding: "14px 20px 6px",
-                    fontSize: "16px",
+                    fontSize: "17px",
                     fontWeight: 700,
                     color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
                 }}
             >
+                <span style={{ fontSize: "22px" }}>🪙</span>
                 Coin Flip Simulation
             </div>
 
@@ -77,13 +77,38 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                     style={{ width: "100%", height: "100%" }}
                     preserveAspectRatio="xMidYMid meet"
                 >
+                    <defs>
+                        <linearGradient
+                            id="lineGrad"
+                            x1="0%"
+                            y1="0%"
+                            x2="100%"
+                            y2="0%"
+                        >
+                            <stop offset="0%" stopColor="#00f5d4" />
+                            <stop offset="50%" stopColor="#00bbf9" />
+                            <stop offset="100%" stopColor="#9b5de5" />
+                        </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur
+                                stdDeviation="3"
+                                result="blur"
+                            />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+
                     <rect
                         x={pad.left}
                         y={pad.top}
                         width={plotW}
                         height={plotH}
-                        fill="#1a2332"
-                        rx="4"
+                        fill="rgba(255,255,255,0.03)"
+                        stroke="rgba(255,255,255,0.08)"
+                        rx="6"
                     />
 
                     {yTicks.map((v) => (
@@ -93,42 +118,42 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                             y1={sy(v)}
                             x2={pad.left + plotW}
                             y2={sy(v)}
-                            stroke="rgba(255,255,255,0.06)"
+                            stroke="rgba(255,255,255,0.07)"
                         />
                     ))}
 
                     {n > 0 && (
-                        <line
-                            x1={pad.left}
-                            y1={sy(target)}
-                            x2={pad.left + plotW}
-                            y2={sy(target)}
-                            stroke="#fb8c00"
-                            strokeWidth="2"
-                            strokeDasharray="8 4"
-                            opacity={0.8}
-                        />
-                    )}
-
-                    {n > 0 && (
-                        <text
-                            x={pad.left + plotW + 4}
-                            y={sy(target) + 4}
-                            fill="#fb8c00"
-                            fontSize="11"
-                            fontWeight="600"
-                        >
-                            {target}
-                        </text>
+                        <>
+                            <line
+                                x1={pad.left}
+                                y1={sy(target)}
+                                x2={pad.left + plotW}
+                                y2={sy(target)}
+                                stroke="#fee440"
+                                strokeWidth="2.5"
+                                strokeDasharray="10 5"
+                                filter="url(#glow)"
+                            />
+                            <text
+                                x={pad.left + plotW + 5}
+                                y={sy(target) + 4}
+                                fill="#fee440"
+                                fontSize="12"
+                                fontWeight="700"
+                            >
+                                {target}
+                            </text>
+                        </>
                     )}
 
                     {n > 0 && (
                         <polyline
                             points={linePoints}
                             fill="none"
-                            stroke="#4fc3f7"
-                            strokeWidth="2"
+                            stroke="url(#lineGrad)"
+                            strokeWidth="2.5"
                             strokeLinejoin="round"
+                            filter="url(#glow)"
                         />
                     )}
 
@@ -137,7 +162,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                         y1={sy(0)}
                         x2={pad.left + plotW}
                         y2={sy(0)}
-                        stroke="#8899aa"
+                        stroke="rgba(255,255,255,0.25)"
                         strokeWidth="1.5"
                     />
                     <line
@@ -145,7 +170,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                         y1={pad.top}
                         x2={pad.left}
                         y2={sy(0)}
-                        stroke="#8899aa"
+                        stroke="rgba(255,255,255,0.25)"
                         strokeWidth="1.5"
                     />
 
@@ -156,12 +181,12 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                                 y1={sy(0)}
                                 x2={sx(v)}
                                 y2={sy(0) + 6}
-                                stroke="#8899aa"
+                                stroke="rgba(255,255,255,0.25)"
                             />
                             <text
                                 x={sx(v)}
                                 y={sy(0) + 22}
-                                fill="#99aabb"
+                                fill="rgba(255,255,255,0.5)"
                                 fontSize="12"
                                 textAnchor="middle"
                             >
@@ -176,12 +201,12 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                                 y1={sy(v)}
                                 x2={pad.left}
                                 y2={sy(v)}
-                                stroke="#8899aa"
+                                stroke="rgba(255,255,255,0.25)"
                             />
                             <text
                                 x={pad.left - 10}
                                 y={sy(v) + 4}
-                                fill="#99aabb"
+                                fill="rgba(255,255,255,0.5)"
                                 fontSize="12"
                                 textAnchor="end"
                             >
@@ -193,7 +218,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                     <text
                         x={pad.left + plotW / 2}
                         y={sy(0) + 42}
-                        fill="#99aabb"
+                        fill="rgba(255,255,255,0.45)"
                         fontSize="13"
                         fontWeight="600"
                         textAnchor="middle"
@@ -203,7 +228,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                     <text
                         x={14}
                         y={pad.top + plotH / 2}
-                        fill="#99aabb"
+                        fill="rgba(255,255,255,0.45)"
                         fontSize="13"
                         fontWeight="600"
                         textAnchor="middle"
@@ -218,7 +243,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                 style={{
                     display: "flex",
                     justifyContent: "center",
-                    gap: "32px",
+                    gap: "28px",
                     padding: "10px 20px 16px",
                     borderTop: "1px solid rgba(255,255,255,0.08)",
                     flexWrap: "wrap",
@@ -228,12 +253,12 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                 <StatBlock
                     label="Final Proportion"
                     value={n > 0 ? finalProportion.toFixed(4) : "—"}
-                    highlight
+                    color="#00f5d4"
                 />
                 <StatBlock
                     label="Target"
                     value={target.toFixed(2)}
-                    muted
+                    color="#fee440"
                 />
                 <StatBlock
                     label="Error"
@@ -242,7 +267,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                             ? Math.abs(finalProportion - target).toFixed(4)
                             : "—"
                     }
-                    muted
+                    color="#f72585"
                 />
             </div>
         </div>
@@ -252,13 +277,11 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 function StatBlock({
     label,
     value,
-    muted,
-    highlight,
+    color,
 }: {
     label: string;
     value: string;
-    muted?: boolean;
-    highlight?: boolean;
+    color?: string;
 }) {
     return (
         <div style={{ textAlign: "center", minWidth: "90px" }}>
@@ -267,7 +290,7 @@ function StatBlock({
                     fontSize: "10px",
                     textTransform: "uppercase",
                     letterSpacing: "0.8px",
-                    color: muted ? "#556" : "#899",
+                    color: "rgba(255,255,255,0.4)",
                     marginBottom: "3px",
                 }}
             >
@@ -277,7 +300,7 @@ function StatBlock({
                 style={{
                     fontSize: "22px",
                     fontWeight: 700,
-                    color: highlight ? "#4fc3f7" : muted ? "#667" : "#e0e0e0",
+                    color: color ?? "#e0e0e0",
                     fontVariantNumeric: "tabular-nums",
                 }}
             >

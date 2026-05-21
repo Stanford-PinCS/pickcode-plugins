@@ -1,15 +1,34 @@
 import { observer } from "mobx-react-lite";
 import State from "./state";
 
+const BAR_COLORS = [
+    "#f72585",
+    "#b5179e",
+    "#7b2ff7",
+    "#4361ee",
+    "#4cc9f0",
+    "#00f5d4",
+    "#fee440",
+    "#fb5607",
+    "#ff006e",
+    "#a855f7",
+    "#3a86ff",
+    "#06d6a0",
+    "#38bdf8",
+    "#ef476f",
+    "#ffd166",
+    "#34d399",
+    "#e63946",
+    "#60a5fa",
+    "#2dd4bf",
+    "#fbbf24",
+];
+
 const Component = observer(({ state }: { state: State | undefined }) => {
     const percentages = state?.percentages ?? [];
     const target = state?.target ?? 0;
     const numFaces = percentages.length;
-    const maxPct = Math.max(
-        ...percentages.map((p) => p),
-        target + 5,
-        30
-    );
+    const maxPct = Math.max(...percentages.map((p) => p), target + 5, 30);
     const yMax = Math.ceil(maxPct / 5) * 5;
 
     const vw = 540;
@@ -20,7 +39,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
     const sy = (y: number) => pad.top + plotH - (y / yMax) * plotH;
 
-    const barGap = 6;
+    const barGap = numFaces > 12 ? 3 : 6;
     const totalGaps = numFaces > 0 ? (numFaces + 1) * barGap : 0;
     const barW = numFaces > 0 ? (plotW - totalGaps) / numFaces : 0;
     const barX = (i: number) => pad.left + barGap + i * (barW + barGap);
@@ -36,7 +55,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                 flexDirection: "column",
                 height: "100%",
                 width: "100%",
-                background: "#101828",
+                background: "linear-gradient(135deg, #0a0a1a, #111827, #0f172a)",
                 color: "#e0e0e0",
                 fontFamily: "'Segoe UI', system-ui, sans-serif",
                 overflow: "hidden",
@@ -45,11 +64,15 @@ const Component = observer(({ state }: { state: State | undefined }) => {
             <div
                 style={{
                     padding: "14px 20px 6px",
-                    fontSize: "16px",
+                    fontSize: "17px",
                     fontWeight: 700,
                     color: "#fff",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
                 }}
             >
+                <span style={{ fontSize: "22px" }}>🎲</span>
                 Dice Roll Simulation
             </div>
 
@@ -68,13 +91,37 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                     style={{ width: "100%", height: "100%" }}
                     preserveAspectRatio="xMidYMid meet"
                 >
+                    <defs>
+                        <filter id="barGlow">
+                            <feGaussianBlur
+                                stdDeviation="2"
+                                result="blur"
+                            />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                        <filter id="targetGlow">
+                            <feGaussianBlur
+                                stdDeviation="3"
+                                result="blur"
+                            />
+                            <feMerge>
+                                <feMergeNode in="blur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+                    </defs>
+
                     <rect
                         x={pad.left}
                         y={pad.top}
                         width={plotW}
                         height={plotH}
-                        fill="#1a2332"
-                        rx="4"
+                        fill="rgba(255,255,255,0.03)"
+                        stroke="rgba(255,255,255,0.08)"
+                        rx="6"
                     />
 
                     {yTicks.map((v) => (
@@ -84,7 +131,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                             y1={sy(v)}
                             x2={pad.left + plotW}
                             y2={sy(v)}
-                            stroke="rgba(255,255,255,0.06)"
+                            stroke="rgba(255,255,255,0.07)"
                         />
                     ))}
 
@@ -95,17 +142,17 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                                 y1={sy(target)}
                                 x2={pad.left + plotW}
                                 y2={sy(target)}
-                                stroke="#fb8c00"
-                                strokeWidth="2"
-                                strokeDasharray="8 4"
-                                opacity={0.8}
+                                stroke="#fee440"
+                                strokeWidth="2.5"
+                                strokeDasharray="10 5"
+                                filter="url(#targetGlow)"
                             />
                             <text
                                 x={pad.left + plotW + 4}
                                 y={sy(target) + 4}
-                                fill="#fb8c00"
+                                fill="#fee440"
                                 fontSize="11"
-                                fontWeight="600"
+                                fontWeight="700"
                             >
                                 {target.toFixed(1)}%
                             </text>
@@ -114,6 +161,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
                     {percentages.map((pct, i) => {
                         const h = sy(0) - sy(pct);
+                        const color = BAR_COLORS[i % BAR_COLORS.length];
                         return (
                             <g key={i}>
                                 <rect
@@ -121,20 +169,25 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                                     y={sy(pct)}
                                     width={barW}
                                     height={Math.max(h, 0)}
-                                    fill="#4fc3f7"
-                                    fillOpacity={0.6}
-                                    stroke="#4fc3f7"
-                                    rx="2"
+                                    fill={color}
+                                    fillOpacity={0.75}
+                                    stroke={color}
+                                    strokeWidth="1"
+                                    rx="3"
+                                    filter="url(#barGlow)"
                                 />
-                                <text
-                                    x={barX(i) + barW / 2}
-                                    y={sy(pct) - 6}
-                                    fill="#99aabb"
-                                    fontSize="11"
-                                    textAnchor="middle"
-                                >
-                                    {pct.toFixed(1)}%
-                                </text>
+                                {barW > 20 && (
+                                    <text
+                                        x={barX(i) + barW / 2}
+                                        y={sy(pct) - 6}
+                                        fill={color}
+                                        fontSize="11"
+                                        fontWeight="600"
+                                        textAnchor="middle"
+                                    >
+                                        {pct.toFixed(1)}%
+                                    </text>
+                                )}
                             </g>
                         );
                     })}
@@ -144,7 +197,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                         y1={sy(0)}
                         x2={pad.left + plotW}
                         y2={sy(0)}
-                        stroke="#8899aa"
+                        stroke="rgba(255,255,255,0.25)"
                         strokeWidth="1.5"
                     />
                     <line
@@ -152,7 +205,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                         y1={pad.top}
                         x2={pad.left}
                         y2={sy(0)}
-                        stroke="#8899aa"
+                        stroke="rgba(255,255,255,0.25)"
                         strokeWidth="1.5"
                     />
 
@@ -161,9 +214,9 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                             key={`xl-${i}`}
                             x={barX(i) + barW / 2}
                             y={sy(0) + 20}
-                            fill="#99aabb"
+                            fill={BAR_COLORS[i % BAR_COLORS.length]}
                             fontSize="13"
-                            fontWeight="600"
+                            fontWeight="700"
                             textAnchor="middle"
                         >
                             {i + 1}
@@ -177,12 +230,12 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                                 y1={sy(v)}
                                 x2={pad.left}
                                 y2={sy(v)}
-                                stroke="#8899aa"
+                                stroke="rgba(255,255,255,0.25)"
                             />
                             <text
                                 x={pad.left - 10}
                                 y={sy(v) + 4}
-                                fill="#99aabb"
+                                fill="rgba(255,255,255,0.5)"
                                 fontSize="12"
                                 textAnchor="end"
                             >
@@ -194,7 +247,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                     <text
                         x={pad.left + plotW / 2}
                         y={sy(0) + 42}
-                        fill="#99aabb"
+                        fill="rgba(255,255,255,0.45)"
                         fontSize="13"
                         fontWeight="600"
                         textAnchor="middle"
@@ -204,7 +257,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                     <text
                         x={14}
                         y={pad.top + plotH / 2}
-                        fill="#99aabb"
+                        fill="rgba(255,255,255,0.45)"
                         fontSize="13"
                         fontWeight="600"
                         textAnchor="middle"
@@ -219,7 +272,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                 style={{
                     display: "flex",
                     justifyContent: "center",
-                    gap: "32px",
+                    gap: "28px",
                     padding: "10px 20px 16px",
                     borderTop: "1px solid rgba(255,255,255,0.08)",
                     flexWrap: "wrap",
@@ -229,7 +282,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                 <StatBlock
                     label="Expected"
                     value={target > 0 ? target.toFixed(1) + "%" : "—"}
-                    muted
+                    color="#fee440"
                 />
                 <StatBlock
                     label="Max Deviation"
@@ -242,7 +295,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
                               ).toFixed(1) + "%"
                             : "—"
                     }
-                    highlight
+                    color="#f72585"
                 />
             </div>
         </div>
@@ -252,13 +305,11 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 function StatBlock({
     label,
     value,
-    muted,
-    highlight,
+    color,
 }: {
     label: string;
     value: string;
-    muted?: boolean;
-    highlight?: boolean;
+    color?: string;
 }) {
     return (
         <div style={{ textAlign: "center", minWidth: "90px" }}>
@@ -267,7 +318,7 @@ function StatBlock({
                     fontSize: "10px",
                     textTransform: "uppercase",
                     letterSpacing: "0.8px",
-                    color: muted ? "#556" : "#899",
+                    color: "rgba(255,255,255,0.4)",
                     marginBottom: "3px",
                 }}
             >
@@ -277,7 +328,7 @@ function StatBlock({
                 style={{
                     fontSize: "22px",
                     fontWeight: 700,
-                    color: highlight ? "#4fc3f7" : muted ? "#667" : "#e0e0e0",
+                    color: color ?? "#e0e0e0",
                     fontVariantNumeric: "tabular-nums",
                 }}
             >
