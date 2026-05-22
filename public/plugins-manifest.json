@@ -9,6 +9,14 @@
       "implUrl": "/plugins-code/chat-demo/languages/BasicJS/implementation.js"
     }
   },
+  "coin-flip": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/coin-flip/languages/BasicJS/implementation.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/coin-flip/languages/Python/implementation.js"
+    }
+  },
   "console": {
     "BasicJS": {
       "implUrl": "/plugins-code/console/languages/BasicJS/implementation.js"
@@ -17,6 +25,14 @@
   "dialogue-maker": {
     "BasicJS": {
       "implUrl": "/plugins-code/dialogue-maker/languages/BasicJS/implementation.js"
+    }
+  },
+  "dice-roll": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/dice-roll/languages/BasicJS/implementation.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/dice-roll/languages/Python/implementation.js"
     }
   },
   "drag": {
