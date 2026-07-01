@@ -1,0 +1,7 @@
+Quick Start
+
+```
+cd pickcode-plugins
+npm start
+http://localhost:5173/sandbox/momentum-2d
+```
