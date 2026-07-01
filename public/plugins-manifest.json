@@ -9,14 +9,6 @@
       "implUrl": "/plugins-code/chat-demo/languages/BasicJS/implementation.js"
     }
   },
-  "coin-flip": {
-    "BasicJS": {
-      "implUrl": "/plugins-code/coin-flip/languages/BasicJS/implementation.js"
-    },
-    "Python": {
-      "implUrl": "/plugins-code/coin-flip/languages/Python/implementation.js"
-    }
-  },
   "console": {
     "BasicJS": {
       "implUrl": "/plugins-code/console/languages/BasicJS/implementation.js"
@@ -25,14 +17,6 @@
   "dialogue-maker": {
     "BasicJS": {
       "implUrl": "/plugins-code/dialogue-maker/languages/BasicJS/implementation.js"
-    }
-  },
-  "dice-roll": {
-    "BasicJS": {
-      "implUrl": "/plugins-code/dice-roll/languages/BasicJS/implementation.js"
-    },
-    "Python": {
-      "implUrl": "/plugins-code/dice-roll/languages/Python/implementation.js"
     }
   },
   "drag": {
@@ -46,11 +30,6 @@
       "implUrl": "/plugins-code/electric-field/languages/BasicJS/implementation.js"
     }
   },
-  "escape-velocity": {
-    "BasicJS": {
-      "implUrl": "/plugins-code/escape-velocity/languages/BasicJS/implementation.js"
-    }
-  },
   "force-addition": {
     "BasicJS": {
       "implUrl": "/plugins-code/force-addition/languages/BasicJS/implementation.js"
@@ -59,19 +38,6 @@
   "force-components": {
     "BasicJS": {
       "implUrl": "/plugins-code/force-components/languages/BasicJS/implementation.js"
-    }
-  },
-  "haber-reaction": {
-    "BasicJS": {
-      "implUrl": "/plugins-code/haber-reaction/languages/BasicJS/implementation.js"
-    }
-  },
-  "haber-reaction-python": {
-    "BasicJS": {
-      "implUrl": "/plugins-code/haber-reaction-python/languages/BasicJS/implementation.js"
-    },
-    "Python": {
-      "implUrl": "/plugins-code/haber-reaction-python/languages/Python/implementation.js"
     }
   },
   "marginal-utility": {
@@ -97,11 +63,6 @@
   "population-ecology": {
     "BasicJS": {
       "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js"
-    }
-  },
-  "riemann-sum": {
-    "BasicJS": {
-      "implUrl": "/plugins-code/riemann-sum/languages/BasicJS/implementation.js"
     }
   },
   "supply-demand": {

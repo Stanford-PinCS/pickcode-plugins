@@ -18,8 +18,6 @@ Any time you make changes to the plugin code and save the file, this page will r
 
 A running program has two pieces: the _code_ (also called the _runtime_), and the _output_. When looking at the sandbox, you can see this division, with the code on the left, and the output on the right. To define a plugin, we need to write code that will run in each of these two places. And we need to let them affect one another.
 
-If you are adding support for both JavaScript and Python in the same plugin, see `docs/multi-language-plugins.md`.
-
 Each plugin has its own folder within `src/plugins`. Each plugin consists of the following basic files:
 
 -   `Component.tsx`: has the react component that displays the visual output of the code.
