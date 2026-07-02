@@ -24,6 +24,12 @@
       "implUrl": "/plugins-code/drag/languages/BasicJS/implementation.js"
     }
   },
+  "electric-field": {
+    "instructionsUrl": "/plugins-code/electric-field/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/electric-field/languages/BasicJS/implementation.js"
+    }
+  },
   "force-addition": {
     "BasicJS": {
       "implUrl": "/plugins-code/force-addition/languages/BasicJS/implementation.js"
