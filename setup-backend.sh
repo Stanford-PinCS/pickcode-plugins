@@ -1,0 +1,6 @@
+export PM2_HOME="/var/data/.pm2"
+export PATH="/var/data/pickcode-plugins/bin/node-v22.9.0-linux-x64/bin:$PATH"
+export npm_config_cache="/var/data/pickcode-plugins/tmp/npm_cache"
+echo "PATH=$PATH"
+echo "PM2_HOME=$PM2_HOME"
+echo "npm_config_cache=$npm_config_cache"
