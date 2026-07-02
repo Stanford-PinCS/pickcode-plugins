@@ -9,10 +9,11 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 
 type Manifest = {
   [pluginName: string]: {
+    instructionsUrl?: string;
     [language: string]: {
       implUrl: string;
       // TODO: compile starter code?
-    };
+    } | string | undefined;
   };
 };
 
@@ -27,8 +28,19 @@ function manifestPlugin() {
       const stat = await fs.stat(pluginPath);
       if (!stat.isDirectory()) continue;
 
-      const languagesDir = path.join(pluginPath, "languages");
       manifest[pluginName] = {};
+
+      // Check for an instructions.md directly in the plugin folder
+      // (sibling to `languages`, not inside it).
+      const instructionsPath = path.join(pluginPath, "instructions.md");
+      try {
+        await fs.access(instructionsPath);
+        manifest[pluginName].instructionsUrl = `/plugins-code/${pluginName}/instructions.md`;
+      } catch {
+        // no instructions.md for this plugin, that's fine
+      }
+
+      const languagesDir = path.join(pluginPath, "languages");
       for (const lang of await fs.readdir(languagesDir)) {
         const langPath = path.join(languagesDir, lang);
         if (!(await fs.stat(langPath)).isDirectory()) continue;
@@ -136,6 +148,18 @@ export default defineConfig(({mode}) => {
               "!src/plugins/*/languages/*/implementation.ts",
             ],
             dest: "plugins-code",
+          },
+          {
+            // Copy each plugin's instructions.md (lives at src/plugins/<name>/instructions.md,
+            // not under languages/) to dist/plugins-code/<name>/instructions.md
+            src: "src/plugins/*/instructions.md",
+            dest: "plugins-code",
+            rename: (fileName: string, extension: string, fullPath: string) => {
+              const root = path.resolve(process.cwd(), "src", "plugins");
+              let rel = path.relative(root, fullPath);
+              rel = rel.split(path.sep).join(path.posix.sep);
+              return rel; // e.g. "somePlugin/instructions.md"
+            },
           },
         ],
       }),
