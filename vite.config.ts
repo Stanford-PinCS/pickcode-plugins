@@ -12,9 +12,20 @@ type Manifest = {
     instructionsUrl?: string;
     [language: string]: {
       implUrl: string;
+      // Reference solution for this language, used to verify a student's
+      // code produces the same message sequence. Not every plugin has one.
+      solutionUrl?: string;
       // TODO: compile starter code?
     } | string | undefined;
   };
+};
+
+// Solution files live in their own top-level `solutions/` folder (sibling to
+// `languages/`), named after the language they're written in and mapped to
+// that language's manifest entry - not nested inside `languages/<lang>/`.
+const SOLUTION_FILE_TO_LANGUAGE: Record<string, string> = {
+  "solutionCode.js": "BasicJS",
+  "solutionCode.py": "Python",
 };
 
 function manifestPlugin() {
@@ -48,6 +59,23 @@ function manifestPlugin() {
         manifest[pluginName][lang] = {
           implUrl: `/plugins-code/${pluginName}/languages/${lang}/implementation.js`,
         };
+      }
+
+      // Check for a solutions/ folder directly in the plugin folder
+      // (sibling to `languages`, not inside it).
+      const solutionsDir = path.join(pluginPath, "solutions");
+      for (const [solutionFile, lang] of Object.entries(
+        SOLUTION_FILE_TO_LANGUAGE
+      )) {
+        const langEntry = manifest[pluginName][lang];
+        if (!langEntry || typeof langEntry === "string") continue;
+
+        try {
+          await fs.access(path.join(solutionsDir, solutionFile));
+          langEntry.solutionUrl = `/plugins-code/${pluginName}/solutions/${solutionFile}`;
+        } catch {
+          // no solution file of this kind for this plugin, that's fine
+        }
       }
     }
     return manifest;
@@ -159,6 +187,19 @@ export default defineConfig(({mode}) => {
               let rel = path.relative(root, fullPath);
               rel = rel.split(path.sep).join(path.posix.sep);
               return rel; // e.g. "somePlugin/instructions.md"
+            },
+          },
+          {
+            // Copy each plugin's solution files (live at
+            // src/plugins/<name>/solutions/, not under languages/) to
+            // dist/plugins-code/<name>/solutions/
+            src: "src/plugins/*/solutions/*",
+            dest: "plugins-code",
+            rename: (fileName: string, extension: string, fullPath: string) => {
+              const root = path.resolve(process.cwd(), "src", "plugins");
+              let rel = path.relative(root, fullPath);
+              rel = rel.split(path.sep).join(path.posix.sep);
+              return rel; // e.g. "somePlugin/solutions/solutionCode.js"
             },
           },
         ],

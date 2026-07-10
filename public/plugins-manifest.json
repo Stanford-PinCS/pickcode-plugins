@@ -40,15 +40,15 @@
       "implUrl": "/plugins-code/drag/languages/BasicJS/implementation.js"
     }
   },
-  "escape-velocity": {
-    "BasicJS": {
-      "implUrl": "/plugins-code/escape-velocity/languages/BasicJS/implementation.js"
-    }
-  },
   "electric-field": {
     "instructionsUrl": "/plugins-code/electric-field/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/electric-field/languages/BasicJS/implementation.js"
+    }
+  },
+  "escape-velocity": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/escape-velocity/languages/BasicJS/implementation.js"
     }
   },
   "force-addition": {
@@ -79,6 +79,11 @@
       "implUrl": "/plugins-code/marginal-utility/languages/BasicJS/implementation.js"
     }
   },
+  "momentum-2d": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/momentum-2d/languages/BasicJS/implementation.js"
+    }
+  },
   "music": {
     "BasicJS": {
       "implUrl": "/plugins-code/music/languages/BasicJS/implementation.js"
@@ -96,12 +101,22 @@
   },
   "population-ecology": {
     "BasicJS": {
-      "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js",
+      "solutionUrl": "/plugins-code/population-ecology/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/population-ecology/languages/Python/implementation.js",
+      "solutionUrl": "/plugins-code/population-ecology/solutions/solutionCode.py"
     }
   },
   "riemann-sum": {
     "BasicJS": {
       "implUrl": "/plugins-code/riemann-sum/languages/BasicJS/implementation.js"
+    }
+  },
+  "simple-harmonic-motion": {
+    "BasicJS": {
+      "implUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/implementation.js"
     }
   },
   "supply-demand": {
