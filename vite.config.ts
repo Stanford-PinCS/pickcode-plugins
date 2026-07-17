@@ -15,9 +15,20 @@ type Manifest = {
       // Reference solution for this language, used to verify a student's
       // code produces the same message sequence. Not every plugin has one.
       solutionUrl?: string;
-      // TODO: compile starter code?
+      // Starter/prefix/suffix code for this language, read from that
+      // language's starter-code/ folder. Not every plugin has all three.
+      starterUrl?: string;
+      prefixUrl?: string;
+      suffixUrl?: string;
     } | string | undefined;
   };
+};
+
+// File extension used for each language's starter-code/{main,prefix,suffix}
+// files (main.js/main.py alongside implementation.ts/.py's languages).
+const LANGUAGE_EXTENSION: Record<string, string> = {
+  BasicJS: "js",
+  Python: "py",
 };
 
 // Solution files live in their own top-level `solutions/` folder (sibling to
@@ -59,6 +70,27 @@ function manifestPlugin() {
         manifest[pluginName][lang] = {
           implUrl: `/plugins-code/${pluginName}/languages/${lang}/implementation.js`,
         };
+
+        // Starter/prefix/suffix code live together in this language's
+        // starter-code/ folder, named main/prefix/suffix by its extension.
+        const ext = LANGUAGE_EXTENSION[lang];
+        const langEntry = manifest[pluginName][lang];
+        if (!ext || !langEntry || typeof langEntry === "string") continue;
+
+        const starterCodeDir = path.join(langPath, "starter-code");
+        for (const [file, key] of [
+          ["main", "starterUrl"],
+          ["prefix", "prefixUrl"],
+          ["suffix", "suffixUrl"],
+        ] as const) {
+          const filePath = path.join(starterCodeDir, `${file}.${ext}`);
+          try {
+            await fs.access(filePath);
+            langEntry[key] = `/plugins-code/${pluginName}/languages/${lang}/starter-code/${file}.${ext}`;
+          } catch {
+            // no such file for this plugin/language, that's fine
+          }
+        }
       }
 
       // Check for a solutions/ folder directly in the plugin folder
