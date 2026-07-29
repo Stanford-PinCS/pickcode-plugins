@@ -1,315 +1,205 @@
 import { observer } from "mobx-react-lite";
-import React, { useMemo } from "react";
-import State, { Particle } from "./state";
+import { useRef, useEffect, useState } from "react";
+import { color, font } from "../../common/tokens";
+import {
+  EMPTY,
+  EmptyState,
+  PluginStage,
+  PluginSurface,
+  StatRow,
+} from "../../common/PluginSurface";
+import State from "./state";
+import instructions from "./instructions.md?raw";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const CANVAS_W = 480;
-const CANVAS_H = 360;
-const GRID_COLS = 20;
-const GRID_ROWS = 15;
-const ARROW_BASE_LENGTH = 20;
-const PARTICLE_RADIUS = 18;
+// Field-line sampling grid resolution.
+const GRID = 22;
+// A positive test charge for computing field direction/strength.
 const K = 1;
 
-// ─── Electric field helpers ───────────────────────────────────────────────────
+const Component = observer(({ state }: { state: State }) => {
+  const particles = state.particles ?? [];
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [size, setSize] = useState({ w: 600, h: 460 });
 
-interface Vec2 { x: number; y: number }
+  // Size the canvas to its container, DPR-aware for sharpness.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const container = canvas.parentElement;
+    if (!container) return;
 
-function computeField(px: number, py: number, particles: Particle[]): Vec2 {
-    let ex = 0;
-    let ey = 0;
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      setSize({ w, h });
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, [particles.length]);
+
+  // Draw the field and charges.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const { w, h } = size;
+    ctx.clearRect(0, 0, w, h);
+
+    // Background
+    ctx.fillStyle = color.surfaceRaised;
+    ctx.fillRect(0, 0, w, h);
+
+    // Field vectors on a grid.
+    if (particles.length > 0) {
+      for (let gx = 0; gx < GRID; gx++) {
+        for (let gy = 0; gy < GRID; gy++) {
+          const px = ((gx + 0.5) / GRID) * w;
+          const py = ((gy + 0.5) / GRID) * h;
+
+          let ex = 0;
+          let ey = 0;
+          for (const p of particles) {
+            const cx = p.x * w;
+            const cy = p.y * h;
+            const dx = px - cx;
+            const dy = py - cy;
+            const r2 = dx * dx + dy * dy;
+            if (r2 < 30) continue; // skip singularities near charges
+            const r = Math.sqrt(r2);
+            const e = (K * p.q) / r2;
+            ex += (e * dx) / r;
+            ey += (e * dy) / r;
+          }
+
+          const mag = Math.sqrt(ex * ex + ey * ey);
+          if (mag < 1e-6) continue;
+
+          // Arrow length scaled by (clamped) magnitude.
+          const len = Math.min(14, 4 + mag * 400);
+          const ux = ex / mag;
+          const uy = ey / mag;
+
+          const x1 = px - (ux * len) / 2;
+          const y1 = py - (uy * len) / 2;
+          const x2 = px + (ux * len) / 2;
+          const y2 = py + (uy * len) / 2;
+
+          ctx.strokeStyle = color.border;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+
+          // Arrowhead
+          const ah = 3;
+          ctx.beginPath();
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(x2 - ux * ah - uy * ah, y2 - uy * ah + ux * ah);
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(x2 - ux * ah + uy * ah, y2 - uy * ah - ux * ah);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Charges.
     for (const p of particles) {
-        const dx = px - p.x * CANVAS_W;
-        const dy = py - p.y * CANVAS_H;
-        const r2 = dx * dx + dy * dy;
-        if (r2 < 1) continue;
-        const r = Math.sqrt(r2);
-        const mag = (K * p.q) / r2;
-        ex += mag * (dx / r);
-        ey += mag * (dy / r);
+      const cx = p.x * w;
+      const cy = p.y * h;
+      const positive = p.q >= 0;
+      const fill = positive ? color.accent : "#2f7d8c";
+
+      // Glow
+      ctx.beginPath();
+      ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+      ctx.fillStyle = positive
+        ? "rgba(214,68,107,0.15)"
+        : "rgba(47,125,140,0.15)";
+      ctx.fill();
+
+      // Body
+      ctx.beginPath();
+      ctx.arc(cx, cy, 11, 0, Math.PI * 2);
+      ctx.fillStyle = fill;
+      ctx.fill();
+
+      // + / − sign
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx - 5, cy);
+      ctx.lineTo(cx + 5, cy);
+      if (positive) {
+        ctx.moveTo(cx, cy - 5);
+        ctx.lineTo(cx, cy + 5);
+      }
+      ctx.stroke();
     }
-    return { x: ex, y: ey };
-}
+  }, [particles, size]);
 
-// ─── Field arrows ─────────────────────────────────────────────────────────────
-
-function fieldArrows(particles: Particle[]): React.ReactElement[] {
-    const arrows: React.ReactElement[] = [];
-    const cellW = CANVAS_W / GRID_COLS;
-    const cellH = CANVAS_H / GRID_ROWS;
-
-    type Sample = { cx: number; cy: number; ex: number; ey: number; mag: number };
-    const samples: Sample[] = [];
-
-    for (let col = 0; col < GRID_COLS; col++) {
-        for (let row = 0; row < GRID_ROWS; row++) {
-            const cx = (col + 0.5) * cellW;
-            const cy = (row + 0.5) * cellH;
-            const e = computeField(cx, cy, particles);
-            const mag = Math.sqrt(e.x * e.x + e.y * e.y);
-            samples.push({ cx, cy, ex: e.x, ey: e.y, mag });
-        }
-    }
-
-    const maxMag = Math.max(...samples.map((s) => s.mag), 1e-6);
-
-    for (const { cx, cy, ex, ey, mag } of samples) {
-        if (mag < 1e-8) continue;
-
-        const tooClose = particles.some((p) => {
-            const dx = cx - p.x * CANVAS_W;
-            const dy = cy - p.y * CANVAS_H;
-            return Math.sqrt(dx * dx + dy * dy) < PARTICLE_RADIUS + 6;
-        });
-        if (tooClose) continue;
-
-        const norm = mag / maxMag;
-        const len = ARROW_BASE_LENGTH * (0.4 + 0.6 * Math.pow(norm, 0.3));
-        const nx = ex / mag;
-        const ny = ey / mag;
-
-        // Center the arrow on the grid point
-        const x1 = cx - nx * len * 0.4;
-        const y1 = cy - ny * len * 0.4;
-        const x2 = cx + nx * len * 0.6;
-        const y2 = cy + ny * len * 0.6;
-
-        const t = Math.pow(norm, 0.4);
-        const r = Math.round(50  + (220 - 50)  * t);
-        const g = Math.round(100 + (50  - 100) * t);
-        const b = Math.round(220 + (50  - 220) * t);
-        const color = `rgb(${r},${g},${b})`;
-        const opacity = 0.4 + 0.55 * norm;
-
-        arrows.push(
-            <line
-                key={`${cx}-${cy}`}
-                x1={x1} y1={y1} x2={x2} y2={y2}
-                stroke={color}
-                strokeWidth={1.8}
-                strokeOpacity={opacity}
-                markerEnd="url(#fieldArrow)"
-            />
-        );
-    }
-
-    return arrows;
-}
-
-// ─── Field line tracing ───────────────────────────────────────────────────────
-
-function traceFieldLine(startX: number, startY: number, particles: Particle[]): string {
-    const step = 3;
-    const maxSteps = 400;
-    let x = startX;
-    let y = startY;
-    const pts: [number, number][] = [[x, y]];
-
-    for (let i = 0; i < maxSteps; i++) {
-        const e = computeField(x, y, particles);
-        const mag = Math.sqrt(e.x * e.x + e.y * e.y);
-        if (mag < 1e-8) break;
-
-        x += (e.x / mag) * step;
-        y += (e.y / mag) * step;
-
-        if (x < 0 || x > CANVAS_W || y < 0 || y > CANVAS_H) break;
-
-        const hitSink = particles.some((p) => {
-            if (p.q >= 0) return false;
-            const dx = x - p.x * CANVAS_W;
-            const dy = y - p.y * CANVAS_H;
-            return Math.sqrt(dx * dx + dy * dy) < PARTICLE_RADIUS;
-        });
-        if (hitSink) break;
-
-        pts.push([x, y]);
-    }
-
-    if (pts.length < 2) return "";
-    return pts.map(([px, py], i) => `${i === 0 ? "M" : "L"}${px.toFixed(1)},${py.toFixed(1)}`).join(" ");
-}
-
-function buildFieldLines(particles: Particle[]): React.ReactElement[] {
-    const lines: React.ReactElement[] = [];
-    const positives = particles.filter((p) => p.q > 0);
-    const LINES_PER_CHARGE = 16;
-
-    for (const p of positives) {
-        const cx = p.x * CANVAS_W;
-        const cy = p.y * CANVAS_H;
-        for (let i = 0; i < LINES_PER_CHARGE; i++) {
-            const angle = (2 * Math.PI * i) / LINES_PER_CHARGE;
-            const sx = cx + Math.cos(angle) * (PARTICLE_RADIUS + 2);
-            const sy = cy + Math.sin(angle) * (PARTICLE_RADIUS + 2);
-            const d = traceFieldLine(sx, sy, particles);
-            if (d) {
-                lines.push(
-                    <path
-                        key={`fl-${p.id}-${i}`}
-                        d={d}
-                        fill="none"
-                        stroke="rgba(120,140,255,0.22)"
-                        strokeWidth={1}
-                    />
-                );
-            }
-        }
-    }
-    return lines;
-}
-
-// ─── Charge label ─────────────────────────────────────────────────────────────
-
-function chargeLabel(q: number): string {
-    const sign = q > 0 ? "+" : "−";
-    const mag = Math.abs(q);
-    return mag === 1 ? sign : `${sign}${mag}`;
-}
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-const Component = observer(({ state }: { state: State | undefined }) => {
-    const particles = state?.particles ?? [];
-    const isEmpty = particles.length === 0;
-
-    const arrows = useMemo(() => (isEmpty ? [] : fieldArrows(particles)), [particles]);
-    const fieldLines = useMemo(() => (isEmpty ? [] : buildFieldLines(particles)), [particles]);
-
+  if (particles.length === 0) {
     return (
-        <div
-            style={{
-                width: "100%",
-                minHeight: "100%",
-                display: "flex",
-                flexDirection: "column",
-                background: "linear-gradient(135deg, #f0f4ff 0%, #e8eeff 100%)",
-                fontFamily: "'Georgia', serif",
-                padding: "16px",
-                boxSizing: "border-box",
-                gap: "12px",
-            }}
-        >
-            <div style={{ textAlign: "center" }}>
-                <h2 style={{ margin: 0, fontSize: "18px", color: "#1e3a8a", fontWeight: "bold", letterSpacing: "0.02em" }}>
-                    Electric Field Simulation
-                </h2>
-                <div style={{ margin: "4px 0 0", fontSize: "12px", color: "#475569", lineHeight: 1.8 }}>
-                    {isEmpty ? (
-                        <span>Use <code>createParticle(x, y, q)</code> to place charges</span>
-                    ) : (
-                        <span>
-                            {particles.length} particle{particles.length !== 1 ? "s" : ""} ·{" "}
-                            {particles.filter((p) => p.q > 0).length} positive · {particles.filter((p) => p.q < 0).length} negative
-                        </span>
-                    )}
-                </div>
-            </div>
-
-            <div
-                style={{
-                    background: "white",
-                    borderRadius: "12px",
-                    padding: "12px",
-                    boxShadow: "0 1px 6px rgba(0,0,0,0.08)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: "8px",
-                }}
-            >
-                {isEmpty ? (
-                    <div
-                        style={{
-                            width: CANVAS_W,
-                            height: CANVAS_H,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            color: "#94a3b8",
-                            fontSize: "14px",
-                            textAlign: "center",
-                            borderRadius: "8px",
-                            background: "#f8fafc",
-                            border: "1px solid #e2e8f0",
-                        }}
-                    >
-                        Add charged particles to see the electric field
-                    </div>
-                ) : (
-                    <svg
-                        width={CANVAS_W}
-                        height={CANVAS_H}
-                        style={{
-                            borderRadius: "8px",
-                            border: "1px solid #e2e8f0",
-                            display: "block",
-                            background: "#f8fafc",
-                        }}
-                    >
-                        <defs>
-                            <marker
-                                id="fieldArrow"
-                                viewBox="0 0 10 10"
-                                refX="8"
-                                refY="5"
-                                markerWidth="5"
-                                markerHeight="5"
-                                orient="auto-start-reverse"
-                            >
-                                <path d="M2 2L8 5L2 8" fill="none" stroke="context-stroke" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </marker>
-                        </defs>
-
-                        {fieldLines}
-                        {arrows}
-
-                        {particles.map((p) => {
-                            const cx = p.x * CANVAS_W;
-                            const cy = p.y * CANVAS_H;
-                            const isPos = p.q > 0;
-                            const fill = isPos ? "#ef4444" : "#3b82f6";
-                            const stroke = isPos ? "#991b1b" : "#1e3a8a";
-                            const label = chargeLabel(p.q);
-                            const fontSize = label.length > 2 ? 10 : 12;
-                            return (
-                                <g key={p.id}>
-                                    <circle cx={cx} cy={cy} r={PARTICLE_RADIUS} fill={fill} stroke={stroke} strokeWidth={2} opacity={0.92} />
-                                    <text
-                                        x={cx} y={cy}
-                                        textAnchor="middle"
-                                        dominantBaseline="central"
-                                        fontSize={fontSize}
-                                        fontWeight="bold"
-                                        fill="white"
-                                        style={{ userSelect: "none", pointerEvents: "none" }}
-                                    >
-                                        {label}
-                                    </text>
-                                </g>
-                            );
-                        })}
-                    </svg>
-                )}
-
-                <div style={{ display: "flex", gap: "20px", fontSize: "11px", color: "#64748b", flexWrap: "wrap", justifyContent: "center" }}>
-                    <span>
-                        <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#ef4444", marginRight: 4, verticalAlign: "middle" }} />
-                        Positive charge
-                    </span>
-                    <span>
-                        <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: "#3b82f6", marginRight: 4, verticalAlign: "middle" }} />
-                        Negative charge
-                    </span>
-                    <span>
-                        <span style={{ display: "inline-block", width: 24, height: 2, background: "linear-gradient(to right, #6464dc, #dc5050)", marginRight: 4, verticalAlign: "middle" }} />
-                        Field direction
-                    </span>
-                </div>
-            </div>
-        </div>
+      <PluginSurface instructions={instructions}>
+        <PluginStage>
+          <EmptyState message="Use createParticle(x, y, q) to place charges and see the electric field they create." />
+        </PluginStage>
+      </PluginSurface>
     );
+  }
+
+  const positives = particles.filter((p) => p.q >= 0).length;
+  const negatives = particles.length - positives;
+  const netCharge = particles.reduce((sum, p) => sum + p.q, 0);
+
+  return (
+    <PluginSurface instructions={instructions}>
+      <PluginStage>
+        <canvas
+          ref={canvasRef}
+          style={{
+            width: "100%",
+            height: "100%",
+            background: color.surfaceRaised,
+            border: `1px solid ${color.border}`,
+            borderRadius: 8,
+            display: "block",
+          }}
+        />
+      </PluginStage>
+
+      <StatRow
+        stats={[
+          { label: "Charges", value: String(particles.length) },
+          {
+            label: "Positive",
+            value: positives > 0 ? String(positives) : EMPTY,
+            color: color.accent,
+          },
+          {
+            label: "Negative",
+            value: negatives > 0 ? String(negatives) : EMPTY,
+            color: "#2f7d8c",
+          },
+          {
+            label: "Net Charge",
+            value: netCharge.toFixed(1),
+          },
+        ]}
+      />
+    </PluginSurface>
+  );
 });
 
 export default Component;

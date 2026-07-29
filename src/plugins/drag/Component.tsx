@@ -1,129 +1,183 @@
 import { observer } from "mobx-react-lite";
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
+import { color } from "../../common/tokens";
+import {
+  EmptyState,
+  PluginStage,
+  PluginSurface,
+  StatRow,
+  EMPTY,
+} from "../../common/PluginSurface";
 import State from "./state";
+import instructions from "./instructions.md?raw";
 
-const Component = observer(({ state }: { state: State | undefined }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [scale, setScale] = useState(10); // Pixels per meter
-    const [offsetX, setOffsetX] = useState(75); // Offset for x-axis to center the ball
-    const [offsetY, setOffsetY] = useState(400); // Offset for y-axis to invert and position
+const Component = observer(({ state }: { state: State }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [scale, setScale] = useState(10); // pixels per meter
+  const [offsetX, setOffsetX] = useState(75);
+  const [offsetY, setOffsetY] = useState(400);
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas || !state) return;
+  const hasData = state.actualPath.length > 0 || state.predictedPath.length > 0;
 
-        const container = canvas.parentElement;
-        if (!container) return;
+  // Size the canvas to its container.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const container = canvas.parentElement;
+    if (!container) return;
 
-        const setCanvasDimensions = () => {
-            canvas.width = container.clientWidth - 50;
-            canvas.height = container.clientHeight - 50;
-            setOffsetX(canvas.width / 4);
-            setOffsetY((canvas.height * 3) / 4);
-            setScale(Math.min(canvas.width / 50, canvas.height / 50));
-        };
+    const setCanvasDimensions = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const cssWidth = container.clientWidth;
+      const cssHeight = container.clientHeight;
 
-        setCanvasDimensions();
-        window.addEventListener("resize", setCanvasDimensions);
+      // Backing store at device resolution...
+      canvas.width = cssWidth * dpr;
+      canvas.height = cssHeight * dpr;
+      // ...displayed at CSS size.
+      canvas.style.width = `${cssWidth}px`;
+      canvas.style.height = `${cssHeight}px`;
 
-        return () => {
-            window.removeEventListener("resize", setCanvasDimensions);
-        };
-    }, []);
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.scale(dpr, dpr);
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas || !state) return;
+      setOffsetX(cssWidth / 4);
+      setOffsetY((cssHeight * 3) / 4);
+      setScale(Math.min(cssWidth / 50, cssHeight / 50));
+    };
 
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
+    setCanvasDimensions();
+    window.addEventListener("resize", setCanvasDimensions);
+    return () => window.removeEventListener("resize", setCanvasDimensions);
+  }, [hasData]);
 
-        const draw = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Draw whenever the paths or ball move.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-            // Draw ground
-            ctx.beginPath();
-            ctx.moveTo(0, offsetY);
-            ctx.lineTo(canvas.width, offsetY);
-            ctx.strokeStyle = "#555";
-            ctx.lineWidth = 2;
-            ctx.stroke();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw predicted path
-            ctx.fillStyle = "blue";
-            state.predictedPath.forEach((pos) => {
-                const x = pos.x * scale + offsetX;
-                const y = offsetY - pos.y * scale;
-                ctx.beginPath();
-                ctx.arc(x, y, 2, 0, Math.PI * 2);
-                ctx.fill();
-            });
+    // Ground line
+    ctx.beginPath();
+    ctx.moveTo(0, offsetY);
+    ctx.lineTo(canvas.width, offsetY);
+    ctx.strokeStyle = color.border;
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-            // Draw actual path
-            ctx.beginPath();
-            ctx.strokeStyle = "green";
-            ctx.lineWidth = 2;
-            state.actualPath.forEach((pos, index) => {
-                const x = pos.x * scale + offsetX;
-                const y = offsetY - pos.y * scale;
-                if (index === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            });
-            ctx.stroke();
+    // Predicted path (dots) — reference tone
+    ctx.fillStyle = color.reference;
+    state.predictedPath.forEach((pos) => {
+      const x = pos.x * scale + offsetX;
+      const y = offsetY - pos.y * scale;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
 
-            // Draw tennis ball
-            ctx.beginPath();
-            ctx.arc(
-                state.ballPosition.x * scale + offsetX,
-                offsetY - state.ballPosition.y * scale,
-                10,
-                0,
-                Math.PI * 2
-            );
-            ctx.fillStyle = "yellow";
-            ctx.fill();
-            ctx.strokeStyle = "orange";
-            ctx.lineWidth = 1;
-            ctx.stroke();
+    // Actual path (line) — series color
+    ctx.beginPath();
+    ctx.strokeStyle = color.series[0];
+    ctx.lineWidth = 2.5;
+    state.actualPath.forEach((pos, index) => {
+      const x = pos.x * scale + offsetX;
+      const y = offsetY - pos.y * scale;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
 
-            // Draw legend
-            ctx.font = "16px Arial";
-            ctx.fillStyle = "blue";
-            ctx.fillText("Blue: Predicted Path", 10, 30);
-            ctx.fillStyle = "green";
-            ctx.fillText("Green: Actual Path", 10, 50);
-
-            if (state.error) {
-                ctx.fillStyle = "red";
-                ctx.font = "16px Arial";
-                ctx.fillText(`Error: ${state.error}`, 10, 70);
-            }
-        };
-
-        draw();
-    }, [
-        state?.predictedPath,
-        state?.actualPath,
-        state?.ballPosition,
-        state?.isComplete,
-        state?.error,
-        state?.currentAnimation,
-        scale,
-        offsetX,
-        offsetY,
-    ]);
-
-    return (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 p-4">
-            <canvas
-                ref={canvasRef}
-                className="bg-white border border-gray-300 shadow-lg"
-            ></canvas>
-        </div>
+    // Ball — accent
+    ctx.beginPath();
+    ctx.arc(
+      state.ballPosition.x * scale + offsetX,
+      offsetY - state.ballPosition.y * scale,
+      9,
+      0,
+      Math.PI * 2
     );
+    ctx.fillStyle = color.accent;
+    ctx.fill();
+
+    // Legend
+    ctx.font = "13px Avenir, Helvetica, sans-serif";
+    ctx.fillStyle = color.reference;
+    ctx.fillText("Predicted path", 12, 24);
+    ctx.fillStyle = color.series[0];
+    ctx.fillText("Actual path", 12, 44);
+
+    if (state.error) {
+      ctx.fillStyle = color.accent;
+      ctx.fillText(`Error: ${state.error}`, 12, 64);
+    }
+  }, [
+    state.predictedPath,
+    state.actualPath,
+    state.ballPosition,
+    state.isComplete,
+    state.error,
+    state.currentAnimation,
+    scale,
+    offsetX,
+    offsetY,
+  ]);
+
+  if (!hasData) {
+    return (
+      <PluginSurface instructions={instructions}>
+        <PluginStage>
+          <EmptyState message="Run your code to launch the ball and compare your predicted path to its actual trajectory." />
+        </PluginStage>
+      </PluginSurface>
+    );
+  }
+
+  const predictedPoints = state.predictedPath.length;
+
+  return (
+    <PluginSurface instructions={instructions}>
+      <PluginStage>
+        <canvas
+          ref={canvasRef}
+          style={{
+            width: "100%",
+            height: "100%",
+            background: color.surfaceRaised,
+            border: `1px solid ${color.border}`,
+            borderRadius: 8,
+            display: "block",
+          }}
+        />
+      </PluginStage>
+
+      <StatRow
+        stats={[
+          {
+            label: "Predicted Points",
+            value: predictedPoints > 0 ? String(predictedPoints) : EMPTY,
+            color: color.reference,
+          },
+          {
+            label: "Actual Points",
+            value: String(state.actualPath.length),
+            color: color.series[0],
+          },
+          {
+            label: "Status",
+            value: state.error
+              ? "Error"
+              : state.isComplete
+              ? "Complete"
+              : "Running",
+            color: state.error ? color.accent : color.ink,
+          },
+        ]}
+      />
+    </PluginSurface>
+  );
 });
 
 export default Component;
