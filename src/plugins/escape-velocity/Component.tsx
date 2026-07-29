@@ -1,247 +1,277 @@
 import { useMemo, useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
+import { color, font } from "../../common/tokens";
+import {
+  EMPTY,
+  EmptyState,
+  PluginStage,
+  PluginSurface,
+  StatRow,
+} from "../../common/PluginSurface";
 import State from "./state";
+import instructions from "./instructions.md?raw";
 
-const SVG_SIZE = 500;
+const SVG_SIZE = 460;
 const CENTER = SVG_SIZE / 2;
 const ANIM_STEPS_PER_FRAME = 8;
 
-const Component = observer(({ state }: { state: State | undefined }) => {
-    const result = state?.result ?? null;
+const Component = observer(({ state }: { state: State }) => {
+  const result = state.result ?? null;
 
-    // Animation state
-    const [animStep, setAnimStep] = useState(0);
-    const animStepRef = useRef(0);
-    const animFrameRef = useRef(0);
+  // Animation state
+  const [animStep, setAnimStep] = useState(0);
+  const animStepRef = useRef(0);
+  const animFrameRef = useRef(0);
 
-    // Restart animation whenever a new result arrives
-    useEffect(() => {
-        cancelAnimationFrame(animFrameRef.current);
-        animStepRef.current = 0;
-        setAnimStep(0);
+  // Restart animation whenever a new result arrives
+  useEffect(() => {
+    cancelAnimationFrame(animFrameRef.current);
+    animStepRef.current = 0;
+    setAnimStep(0);
 
-        if (!result || result.trajectory.length === 0) return;
+    if (!result || result.trajectory.length === 0) return;
 
-        const total = result.trajectory.length;
-        const animate = () => {
-            animStepRef.current = Math.min(
-                animStepRef.current + ANIM_STEPS_PER_FRAME,
-                total - 1
-            );
-            setAnimStep(animStepRef.current);
-            if (animStepRef.current < total - 1) {
-                animFrameRef.current = requestAnimationFrame(animate);
-            }
-        };
-
+    const total = result.trajectory.length;
+    const animate = () => {
+      animStepRef.current = Math.min(
+        animStepRef.current + ANIM_STEPS_PER_FRAME,
+        total - 1
+      );
+      setAnimStep(animStepRef.current);
+      if (animStepRef.current < total - 1) {
         animFrameRef.current = requestAnimationFrame(animate);
-        return () => cancelAnimationFrame(animFrameRef.current);
-    }, [result]);
+      }
+    };
 
-    const animDone = result ? animStep >= result.trajectory.length - 1 : false;
+    animFrameRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [result]);
 
-    // Trail polyline up to current animation step
-    const trailPoints = useMemo(() => {
-        if (!result) return "";
-        return result.trajectory
-            .slice(0, animStep + 1)
-            .map((p) => `${(p.x + CENTER).toFixed(1)},${(p.y + CENTER).toFixed(1)}`)
-            .join(" ");
-    }, [result, animStep]);
+  const animDone = result ? animStep >= result.trajectory.length - 1 : false;
 
-    const planetPos = result?.trajectory[animStep];
-    const pathColor = result?.escapes ? "#f97316" : "#3b82f6";
-    const statusLabel = result?.escapes ? "ESCAPING" : "BOUND";
-    const statusColor = result?.escapes ? "#f97316" : "#3b82f6";
+  // Trail polyline up to current animation step
+  const trailPoints = useMemo(() => {
+    if (!result) return "";
+    return result.trajectory
+      .slice(0, animStep + 1)
+      .map((p) => `${(p.x + CENTER).toFixed(1)},${(p.y + CENTER).toFixed(1)}`)
+      .join(" ");
+  }, [result, animStep]);
 
-    // Prediction banner: what did the student's function say about this v0?
-    let predictionText = "";
-    let predictionColor = "#94a3b8";
-    let outcomeText = "";
-    let outcomeColor = "#94a3b8";
-
-    if (result) {
-        if (result.studentFormulaError) {
-            predictionText = "Your formula: ERROR";
-            predictionColor = "#ef4444";
-        } else if (result.studentPrediction === true) {
-            predictionText = "Your formula predicts: ESCAPING";
-            predictionColor = "#f97316";
-        } else if (result.studentPrediction === false) {
-            predictionText = "Your formula predicts: BOUND";
-            predictionColor = "#3b82f6";
-        } else {
-            predictionText = "Your formula returned an unexpected value";
-            predictionColor = "#ef4444";
-        }
-
-        if (animDone && !result.studentFormulaError && result.studentPrediction !== null) {
-            const correct = result.studentPrediction === result.escapes;
-            outcomeText = correct ? "✓ Prediction confirmed!" : "✗ Prediction was wrong";
-            outcomeColor = correct ? "#16a34a" : "#ef4444";
-        }
-    }
-
+  if (!result) {
     return (
-        <div
-            style={{
-                width: "100%",
-                minHeight: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)",
-                fontFamily: "sans-serif",
-                padding: "16px",
-                boxSizing: "border-box",
-                gap: "12px",
-            }}
-        >
-            {/* Prediction banner — shown as soon as result arrives, before animation */}
-            {result && (
-                <div
-                    style={{
-                        width: "100%",
-                        maxWidth: `${SVG_SIZE}px`,
-                        boxSizing: "border-box",
-                        background: "#0f172a",
-                        border: `1px solid ${predictionColor}`,
-                        borderRadius: "10px",
-                        padding: "10px 16px",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                    }}
-                >
-                    <span style={{ fontSize: "13px", fontWeight: "bold", color: predictionColor }}>
-                        {predictionText}
-                    </span>
-                    {outcomeText && (
-                        <span style={{ fontSize: "13px", fontWeight: "bold", color: outcomeColor }}>
-                            {outcomeText}
-                        </span>
-                    )}
-                </div>
-            )}
-
-            {/* Canvas */}
-            <div style={{ position: "relative" }}>
-                <svg
-                    width={SVG_SIZE}
-                    height={SVG_SIZE}
-                    style={{
-                        borderRadius: "12px",
-                        background: "#020617",
-                        border: "1px solid #1e293b",
-                        display: "block",
-                        maxWidth: "100%",
-                    }}
-                >
-                    {/* Central body glow */}
-                    <circle cx={CENTER} cy={CENTER} r={22} fill="#fde68a" opacity={0.08} />
-                    <circle cx={CENTER} cy={CENTER} r={16} fill="#fde68a" opacity={0.2} />
-                    <circle cx={CENTER} cy={CENTER} r={10} fill="#fde68a" />
-
-                    {/* Trail */}
-                    {result && trailPoints && (
-                        <polyline
-                            points={trailPoints}
-                            fill="none"
-                            stroke={pathColor}
-                            strokeWidth={2}
-                            strokeLinejoin="round"
-                            strokeLinecap="round"
-                            opacity={0.5}
-                        />
-                    )}
-
-                    {/* Planet */}
-                    {result && planetPos && (
-                        <>
-                            <circle
-                                cx={planetPos.x + CENTER}
-                                cy={planetPos.y + CENTER}
-                                r={9}
-                                fill={pathColor}
-                                opacity={0.25}
-                            />
-                            <circle
-                                cx={planetPos.x + CENTER}
-                                cy={planetPos.y + CENTER}
-                                r={6}
-                                fill={pathColor}
-                            />
-                        </>
-                    )}
-
-                    {/* Actual outcome label — only after animation completes */}
-                    {result && animDone && (
-                        <text
-                            x={SVG_SIZE - 12}
-                            y={24}
-                            textAnchor="end"
-                            fontSize={14}
-                            fontWeight="bold"
-                            fill={statusColor}
-                            style={{ letterSpacing: "0.08em" }}
-                        >
-                            {statusLabel}
-                        </text>
-                    )}
-
-                    {/* Placeholder */}
-                    {!result && (
-                        <text
-                            x={CENTER}
-                            y={CENTER}
-                            textAnchor="middle"
-                            fontSize={14}
-                            fill="#475569"
-                        >
-                            Click run to launch the simulation.
-                        </text>
-                    )}
-                </svg>
-            </div>
-
-            {/* Data panel */}
-            <div
-                style={{
-                    background: "#0f172a",
-                    border: "1px solid #1e293b",
-                    borderRadius: "10px",
-                    padding: "12px 20px",
-                    width: "100%",
-                    maxWidth: `${SVG_SIZE}px`,
-                    boxSizing: "border-box",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "6px",
-                }}
-            >
-                <DataRow label="Starting speed" value={result ? `v₀ = ${result.v0}` : "—"} />
-                <DataRow
-                    label="True escape velocity"
-                    value={result ? `v_escape ≈ ${result.trueEscapeVelocity.toFixed(2)}` : "—"}
-                />
-            </div>
-        </div>
+      <PluginSurface instructions={instructions}>
+        <PluginStage>
+          <EmptyState message="Set a launch speed and run your code to launch the object and watch whether it escapes." />
+        </PluginStage>
+      </PluginSurface>
     );
-});
+  }
 
-const DataRow = ({
-    label,
-    value,
-    valueColor = "#e2e8f0",
-}: {
-    label: string;
-    value: string;
-    valueColor?: string;
-}) => (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-        <span style={{ color: "#64748b" }}>{label}</span>
-        <span style={{ color: valueColor, fontVariantNumeric: "tabular-nums" }}>{value}</span>
-    </div>
-);
+  const planetPos = result.trajectory[animStep];
+  // escaping = accent (pink), bound = the muted reference tone
+  const pathColor = result.escapes ? color.accent : color.reference;
+  const statusLabel = result.escapes ? "ESCAPING" : "BOUND";
+
+  // Prediction banner: what did the student's function say about this v0?
+  let predictionText = "";
+  let predictionColor: string = color.inkMuted;
+  let outcomeText = "";
+  let outcomeColor: string = color.inkMuted;
+
+  if (result.studentFormulaError) {
+    predictionText = "Your formula: ERROR";
+    predictionColor = color.accent;
+  } else if (result.studentPrediction === true) {
+    predictionText = "Your formula predicts: ESCAPING";
+    predictionColor = color.accent;
+  } else if (result.studentPrediction === false) {
+    predictionText = "Your formula predicts: BOUND";
+    predictionColor = color.reference;
+  } else {
+    predictionText = "Your formula returned an unexpected value";
+    predictionColor = color.accent;
+  }
+
+  if (
+    animDone &&
+    !result.studentFormulaError &&
+    result.studentPrediction !== null
+  ) {
+    const correct = result.studentPrediction === result.escapes;
+    outcomeText = correct ? "Prediction confirmed" : "Prediction was wrong";
+    outcomeColor = correct ? color.series[0] : color.accent;
+  }
+
+  return (
+    <PluginSurface instructions={instructions}>
+      <PluginStage>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "stretch",
+            gap: 12,
+            width: "100%",
+            height: "100%",
+            minHeight: 0,
+            boxSizing: "border-box",
+            padding: "0 8px", // equal breathing room on both sides
+          }}
+        >
+          {/* Orbit canvas — fills the left, stays square */}
+          <div
+            style={{
+              flex: 1,
+              minWidth: 0,
+              minHeight: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+            }}
+          >
+            <svg
+              viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
+              preserveAspectRatio="xMidYMid meet"
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                borderRadius: 12,
+                background: color.surfaceRaised,
+                border: `1px solid ${color.border}`,
+                display: "block",
+              }}
+              role="img"
+              aria-label={`Orbit simulation, object is ${statusLabel.toLowerCase()}`}
+            >
+              {/* Central body */}
+              <circle
+                cx={CENTER}
+                cy={CENTER}
+                r={22}
+                fill={color.accent}
+                opacity={0.1}
+              />
+              <circle
+                cx={CENTER}
+                cy={CENTER}
+                r={16}
+                fill={color.accent}
+                opacity={0.22}
+              />
+              <circle cx={CENTER} cy={CENTER} r={10} fill={color.accent} />
+
+              {/* Trail */}
+              {trailPoints && (
+                <polyline
+                  points={trailPoints}
+                  fill="none"
+                  stroke={pathColor}
+                  strokeWidth={2.5}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  opacity={0.6}
+                />
+              )}
+
+              {/* Moving object */}
+              {planetPos && (
+                <>
+                  <circle
+                    cx={planetPos.x + CENTER}
+                    cy={planetPos.y + CENTER}
+                    r={9}
+                    fill={pathColor}
+                    opacity={0.3}
+                  />
+                  <circle
+                    cx={planetPos.x + CENTER}
+                    cy={planetPos.y + CENTER}
+                    r={6}
+                    fill={pathColor}
+                  />
+                </>
+              )}
+
+              {/* Outcome label after animation */}
+              {animDone && (
+                <text
+                  x={SVG_SIZE - 12}
+                  y={24}
+                  textAnchor="end"
+                  fontSize={14}
+                  fontWeight="bold"
+                  fill={pathColor}
+                  style={{ letterSpacing: "0.08em" }}
+                >
+                  {statusLabel}
+                </text>
+              )}
+            </svg>
+          </div>
+
+          {/* Prediction panel — on the right, text centered */}
+          <div
+            style={{
+              width: 200,
+              flexShrink: 0,
+              boxSizing: "border-box",
+              background: color.surfaceRaised,
+              border: `1px solid ${predictionColor}`,
+              borderRadius: 12,
+              padding: "16px 18px",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              textAlign: "center",
+              gap: 12,
+              fontFamily: font.ui,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                color: predictionColor,
+                lineHeight: 1.3,
+              }}
+            >
+              {predictionText}
+            </span>
+            {outcomeText && (
+              <span
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: outcomeColor,
+                  lineHeight: 1.3,
+                }}
+              >
+                {outcomeText}
+              </span>
+            )}
+          </div>
+        </div>
+      </PluginStage>
+
+      <StatRow
+        stats={[
+          { label: "Starting Speed", value: `v₀ = ${result.v0}` },
+          {
+            label: "True Escape Velocity",
+            value: `≈ ${result.trueEscapeVelocity.toFixed(2)}`,
+            color: color.accent,
+          },
+          {
+            label: "Outcome",
+            value: animDone ? statusLabel : EMPTY,
+            color: pathColor,
+          },
+        ]}
+      />
+    </PluginSurface>
+  );
+});
 
 export default Component;

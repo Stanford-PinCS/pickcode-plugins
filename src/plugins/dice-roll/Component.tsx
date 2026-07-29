@@ -1,341 +1,183 @@
 import { observer } from "mobx-react-lite";
+import { color } from "../../common/tokens";
+import { PAD, VIEW, makeScales, niceStep, ticks } from "../../common/chart";
+import {
+  EmptyState,
+  PluginStage,
+  PluginSurface,
+  StatRow,
+} from "../../common/PluginSurface";
 import State from "./state";
+import instructions from "./instructions.md?raw";
 
-const BAR_COLORS = [
-    "#f72585",
-    "#b5179e",
-    "#7b2ff7",
-    "#4361ee",
-    "#4cc9f0",
-    "#00f5d4",
-    "#fee440",
-    "#fb5607",
-    "#ff006e",
-    "#a855f7",
-    "#3a86ff",
-    "#06d6a0",
-    "#38bdf8",
-    "#ef476f",
-    "#ffd166",
-    "#34d399",
-    "#e63946",
-    "#60a5fa",
-    "#2dd4bf",
-    "#fbbf24",
-];
+const Component = observer(({ state }: { state: State }) => {
+  const percentages = state.percentages ?? [];
+  const numSides = percentages.length;
 
-const Component = observer(({ state }: { state: State | undefined }) => {
-    const percentages = state?.percentages ?? [];
-    const target = state?.target ?? 0;
-    const numFaces = percentages.length;
-    const maxPct = Math.max(...percentages.map((p) => p), target + 5, 30);
-    const yMax = Math.ceil(maxPct / 5) * 5;
-
-    const vw = 540;
-    const vh = 380;
-    const pad = { top: 24, right: 24, bottom: 48, left: 56 };
-    const plotW = vw - pad.left - pad.right;
-    const plotH = vh - pad.top - pad.bottom;
-
-    const sy = (y: number) => pad.top + plotH - (y / yMax) * plotH;
-
-    const barGap = numFaces > 12 ? 3 : 6;
-    const totalGaps = numFaces > 0 ? (numFaces + 1) * barGap : 0;
-    const barW = numFaces > 0 ? (plotW - totalGaps) / numFaces : 0;
-    const barX = (i: number) => pad.left + barGap + i * (barW + barGap);
-
-    const yStep = yMax <= 30 ? 5 : yMax <= 60 ? 10 : 20;
-    const yTicks: number[] = [];
-    for (let v = 0; v <= yMax; v += yStep) yTicks.push(v);
-
+  if (numSides === 0) {
     return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                width: "100%",
-                background: "linear-gradient(135deg, #0a0a1a, #111827, #0f172a)",
-                color: "#e0e0e0",
-                fontFamily: "'Segoe UI', system-ui, sans-serif",
-                overflow: "hidden",
-            }}
+      <PluginSurface instructions={instructions}>
+        <PluginStage>
+          <EmptyState message="Roll the dice to see the distribution." />
+        </PluginStage>
+      </PluginSurface>
+    );
+  }
+
+  const maxPercent = Math.max(...percentages);
+  const step = niceStep(maxPercent, 4);
+  const yMax = Math.ceil(maxPercent / step) * step; // round the max UP to a whole number of steps
+  const scales = makeScales(numSides + 1, yMax, VIEW, PAD);
+
+  const mostCommonFace = percentages.indexOf(Math.max(...percentages)) + 1;
+
+  const expectedPercent = 100 / numSides;
+  const maxDeviation = Math.max(
+    ...percentages.map((percentage) => Math.abs(percentage - expectedPercent))
+  );
+
+  return (
+    <PluginSurface instructions={instructions}>
+      <PluginStage>
+        <svg
+          viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ width: "100%", height: "100%" }}
+          role="img"
+          aria-label={`Bar chart showing the distribution of a ${numSides}-sided die`}
         >
-            <div
-                style={{
-                    padding: "14px 20px 6px",
-                    fontSize: "17px",
-                    fontWeight: 700,
-                    color: "#fff",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                }}
+          <rect
+            x={PAD.left}
+            y={PAD.top}
+            width={scales.plotWidth}
+            height={scales.plotHeight}
+            fill={color.surfaceRaised}
+            stroke={color.border}
+            rx={4}
+          />
+
+          {ticks(yMax, 4).map((value) => (
+            <line
+              key={`grid-${value}`}
+              x1={PAD.left}
+              y1={scales.sy(value)}
+              x2={PAD.left + scales.plotWidth}
+              y2={scales.sy(value)}
+              stroke={color.grid}
+            />
+          ))}
+
+          {percentages.map((percentage, index) => {
+            const x1 = scales.sx(index + 0.7);
+            const x2 = scales.sx(index + 1.3);
+            const y = scales.sy(percentage);
+
+            return (
+              <rect
+                key={`bar-${index}`}
+                x={x1}
+                y={y}
+                width={x2 - x1}
+                height={scales.sy(0) - y}
+                fill={color.series[index % color.series.length]}
+              />
+            );
+          })}
+
+          {/* X axis */}
+          <line
+            x1={PAD.left}
+            y1={scales.sy(0)}
+            x2={PAD.left + scales.plotWidth}
+            y2={scales.sy(0)}
+            stroke={color.axis}
+          />
+
+          {/* Y axis */}
+          <line
+            x1={PAD.left}
+            y1={PAD.top}
+            x2={PAD.left}
+            y2={scales.sy(0)}
+            stroke={color.axis}
+          />
+
+          {Array.from({ length: numSides }, (_, index) => {
+            const face = index + 1;
+
+            return (
+              <text
+                key={`xt-${face}`}
+                x={scales.sx(face)}
+                y={scales.sy(0) + 20}
+                textAnchor="middle"
+                style={{ fontSize: 11, fill: color.inkMuted }}
+              >
+                {face}
+              </text>
+            );
+          })}
+
+          {ticks(yMax, 4).map((value) => (
+            <text
+              key={`yt-${value}`}
+              x={PAD.left - 8}
+              y={scales.sy(value) + 4}
+              textAnchor="end"
+              style={{ fontSize: 11, fill: color.inkMuted }}
             >
-                <span style={{ fontSize: "22px" }}>🎲</span>
-                Dice Roll Simulation
-            </div>
+              {value.toFixed(1)}%
+            </text>
+          ))}
 
-            <div
-                style={{
-                    flex: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "4px 12px",
-                    minHeight: 0,
-                }}
-            >
-                <svg
-                    viewBox={`0 0 ${vw} ${vh}`}
-                    style={{ width: "100%", height: "100%" }}
-                    preserveAspectRatio="xMidYMid meet"
-                >
-                    <defs>
-                        <filter id="barGlow">
-                            <feGaussianBlur
-                                stdDeviation="2"
-                                result="blur"
-                            />
-                            <feMerge>
-                                <feMergeNode in="blur" />
-                                <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                        </filter>
-                        <filter id="targetGlow">
-                            <feGaussianBlur
-                                stdDeviation="3"
-                                result="blur"
-                            />
-                            <feMerge>
-                                <feMergeNode in="blur" />
-                                <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                        </filter>
-                    </defs>
+          <text
+            x={PAD.left + scales.plotWidth / 2}
+            y={VIEW.height - 8}
+            textAnchor="middle"
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              fill: color.inkMuted,
+            }}
+          >
+            Die Face
+          </text>
 
-                    <rect
-                        x={pad.left}
-                        y={pad.top}
-                        width={plotW}
-                        height={plotH}
-                        fill="rgba(255,255,255,0.03)"
-                        stroke="rgba(255,255,255,0.08)"
-                        rx="6"
-                    />
+          <text
+            x={14}
+            y={PAD.top + scales.plotHeight / 2}
+            textAnchor="middle"
+            transform={`rotate(-90, 14, ${PAD.top + scales.plotHeight / 2})`}
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              fill: color.inkMuted,
+            }}
+          >
+            Frequency (%)
+          </text>
+        </svg>
+      </PluginStage>
 
-                    {yTicks.map((v) => (
-                        <line
-                            key={`gy-${v}`}
-                            x1={pad.left}
-                            y1={sy(v)}
-                            x2={pad.left + plotW}
-                            y2={sy(v)}
-                            stroke="rgba(255,255,255,0.07)"
-                        />
-                    ))}
-
-                    {target > 0 && (
-                        <>
-                            <line
-                                x1={pad.left}
-                                y1={sy(target)}
-                                x2={pad.left + plotW}
-                                y2={sy(target)}
-                                stroke="#fee440"
-                                strokeWidth="2.5"
-                                strokeDasharray="10 5"
-                                filter="url(#targetGlow)"
-                            />
-                            <text
-                                x={pad.left + plotW + 4}
-                                y={sy(target) + 4}
-                                fill="#fee440"
-                                fontSize="11"
-                                fontWeight="700"
-                            >
-                                {target.toFixed(1)}%
-                            </text>
-                        </>
-                    )}
-
-                    {percentages.map((pct, i) => {
-                        const h = sy(0) - sy(pct);
-                        const color = BAR_COLORS[i % BAR_COLORS.length];
-                        return (
-                            <g key={i}>
-                                <rect
-                                    x={barX(i)}
-                                    y={sy(pct)}
-                                    width={barW}
-                                    height={Math.max(h, 0)}
-                                    fill={color}
-                                    fillOpacity={0.75}
-                                    stroke={color}
-                                    strokeWidth="1"
-                                    rx="3"
-                                    filter="url(#barGlow)"
-                                />
-                                {barW > 20 && (
-                                    <text
-                                        x={barX(i) + barW / 2}
-                                        y={sy(pct) - 6}
-                                        fill={color}
-                                        fontSize="11"
-                                        fontWeight="600"
-                                        textAnchor="middle"
-                                    >
-                                        {pct.toFixed(1)}%
-                                    </text>
-                                )}
-                            </g>
-                        );
-                    })}
-
-                    <line
-                        x1={pad.left}
-                        y1={sy(0)}
-                        x2={pad.left + plotW}
-                        y2={sy(0)}
-                        stroke="rgba(255,255,255,0.25)"
-                        strokeWidth="1.5"
-                    />
-                    <line
-                        x1={pad.left}
-                        y1={pad.top}
-                        x2={pad.left}
-                        y2={sy(0)}
-                        stroke="rgba(255,255,255,0.25)"
-                        strokeWidth="1.5"
-                    />
-
-                    {percentages.map((_, i) => (
-                        <text
-                            key={`xl-${i}`}
-                            x={barX(i) + barW / 2}
-                            y={sy(0) + 20}
-                            fill={BAR_COLORS[i % BAR_COLORS.length]}
-                            fontSize="13"
-                            fontWeight="700"
-                            textAnchor="middle"
-                        >
-                            {i + 1}
-                        </text>
-                    ))}
-
-                    {yTicks.map((v) => (
-                        <g key={`yt-${v}`}>
-                            <line
-                                x1={pad.left - 5}
-                                y1={sy(v)}
-                                x2={pad.left}
-                                y2={sy(v)}
-                                stroke="rgba(255,255,255,0.25)"
-                            />
-                            <text
-                                x={pad.left - 10}
-                                y={sy(v) + 4}
-                                fill="rgba(255,255,255,0.5)"
-                                fontSize="12"
-                                textAnchor="end"
-                            >
-                                {v}%
-                            </text>
-                        </g>
-                    ))}
-
-                    <text
-                        x={pad.left + plotW / 2}
-                        y={sy(0) + 42}
-                        fill="rgba(255,255,255,0.45)"
-                        fontSize="13"
-                        fontWeight="600"
-                        textAnchor="middle"
-                    >
-                        Die Face
-                    </text>
-                    <text
-                        x={14}
-                        y={pad.top + plotH / 2}
-                        fill="rgba(255,255,255,0.45)"
-                        fontSize="13"
-                        fontWeight="600"
-                        textAnchor="middle"
-                        transform={`rotate(-90, 14, ${pad.top + plotH / 2})`}
-                    >
-                        Frequency (%)
-                    </text>
-                </svg>
-            </div>
-
-            <div
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: "28px",
-                    padding: "10px 20px 16px",
-                    borderTop: "1px solid rgba(255,255,255,0.08)",
-                    flexWrap: "wrap",
-                }}
-            >
-                <StatBlock label="Faces" value={String(numFaces)} />
-                <StatBlock
-                    label="Expected"
-                    value={target > 0 ? target.toFixed(1) + "%" : "—"}
-                    color="#fee440"
-                />
-                <StatBlock
-                    label="Max Deviation"
-                    value={
-                        numFaces > 0
-                            ? Math.max(
-                                  ...percentages.map((p) =>
-                                      Math.abs(p - target)
-                                  )
-                              ).toFixed(1) + "%"
-                            : "—"
-                    }
-                    color="#f72585"
-                />
-            </div>
-        </div>
-    );
+      <StatRow
+        stats={[
+          {
+            label: "Number of Sides",
+            value: String(numSides),
+          },
+          {
+            label: "Most Common",
+            value: `Face ${mostCommonFace}`,
+            color: color.series[0],
+          },
+          {
+            label: "Max Deviation",
+            value: `${maxDeviation.toFixed(1)}%`,
+          },
+        ]}
+      />
+    </PluginSurface>
+  );
 });
-
-function StatBlock({
-    label,
-    value,
-    color,
-}: {
-    label: string;
-    value: string;
-    color?: string;
-}) {
-    return (
-        <div style={{ textAlign: "center", minWidth: "90px" }}>
-            <div
-                style={{
-                    fontSize: "10px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.8px",
-                    color: "rgba(255,255,255,0.4)",
-                    marginBottom: "3px",
-                }}
-            >
-                {label}
-            </div>
-            <div
-                style={{
-                    fontSize: "22px",
-                    fontWeight: 700,
-                    color: color ?? "#e0e0e0",
-                    fontVariantNumeric: "tabular-nums",
-                }}
-            >
-                {value}
-            </div>
-        </div>
-    );
-}
 
 export default Component;

@@ -10,10 +10,13 @@ import { viteStaticCopy } from "vite-plugin-static-copy";
 type Manifest = {
   [pluginName: string]: {
     instructionsUrl?: string;
-    [language: string]: {
-      implUrl: string;
-      // TODO: compile starter code?
-    } | string | undefined;
+    [language: string]:
+      | {
+          implUrl: string;
+          starterUrl?: string;
+        }
+      | string
+      | undefined;
   };
 };
 
@@ -35,7 +38,9 @@ function manifestPlugin() {
       const instructionsPath = path.join(pluginPath, "instructions.md");
       try {
         await fs.access(instructionsPath);
-        manifest[pluginName].instructionsUrl = `/plugins-code/${pluginName}/instructions.md`;
+        manifest[
+          pluginName
+        ].instructionsUrl = `/plugins-code/${pluginName}/instructions.md`;
       } catch {
         // no instructions.md for this plugin, that's fine
       }
@@ -45,9 +50,19 @@ function manifestPlugin() {
         const langPath = path.join(languagesDir, lang);
         if (!(await fs.stat(langPath)).isDirectory()) continue;
 
-        manifest[pluginName][lang] = {
+        const entry: { implUrl: string; starterUrl?: string } = {
           implUrl: `/plugins-code/${pluginName}/languages/${lang}/implementation.js`,
         };
+
+        const starterPath = path.join(langPath, "starter-code", "main.js");
+        try {
+          await fs.access(starterPath);
+          entry.starterUrl = `/plugins-code/${pluginName}/languages/${lang}/starter-code/main.js`;
+        } catch {
+          // no starter-code/main.js for this language, that's fine
+        }
+
+        manifest[pluginName][lang] = entry;
       }
     }
     return manifest;
@@ -74,19 +89,25 @@ function manifestPlugin() {
         await fs.writeFile(out, JSON.stringify(manifest, null, 2));
       };
       regenerate();
-      chokidar.watch(path.resolve(__dirname, "src/plugins"), { ignoreInitial: true })
+      chokidar
+        .watch(path.resolve(__dirname, "src/plugins"), { ignoreInitial: true })
         .on("all", regenerate);
     },
   };
 }
 
 // https://vite.dev/config/
-export default defineConfig(({mode}) => {
+export default defineConfig(({ mode }) => {
   const base = mode === "plugins" ? "/pickcode-plugins/" : "/";
 
   return {
     base,
-    preview: { host: "127.0.0.1", port: 5173, strictPort: true, allowedHosts: ["pincs.stanford.edu"] },
+    preview: {
+      host: "127.0.0.1",
+      port: 5173,
+      strictPort: true,
+      allowedHosts: ["pincs.stanford.edu"],
+    },
     build: {
       outDir: "dist/site",
     },
@@ -128,7 +149,9 @@ export default defineConfig(({mode}) => {
                   .split(path.sep)
                   .join(path.posix.sep);
                 if (
-                  normalizedPath.endsWith("/languages/BasicJS/implementation.ts")
+                  normalizedPath.endsWith(
+                    "/languages/BasicJS/implementation.ts"
+                  )
                 ) {
                   return ts.transpileModule(content.toString(), {
                     compilerOptions: {
