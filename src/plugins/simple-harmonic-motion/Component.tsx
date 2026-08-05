@@ -1,581 +1,443 @@
-// Spring Lab — canvas renderer. MobX observer + RAF loop.
-// Visual style strictly mirrors momentum-2d:
-//   - black bg #000
-//   - top-left monospace HUD
-//   - faint gray grid rgba(148,163,184,0.18)
-//   - object glow shadowBlur:18, warm #fbbf24bb
-//   - red dashed reference line rgba(239,68,68,0.55)
-//   - all canvas 2D, no SVG/DOM physics
-//   - dt clamped via Math.min(dt, 0.05)
-// Per the user's directive in Checkpoint 3 follow-up: NO right-corner DATA panel.
-
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
+import {
+  EmptyState,
+  PluginStage,
+  PluginSurface,
+  StatRow,
+} from "../../common/PluginSurface";
+import { color } from "../../common/tokens";
+import instructions from "./instructions.md?raw";
 import { getSnapshotAtTime } from "./springLabCore";
 import { SpringLabState } from "./state";
 
-// --- Visual constants ---
-const CANVAS_W = 700;
-const CANVAS_H = 400;
-const DEFAULT_CANVAS_DISPLAY_SIZE = { width: CANVAS_W, height: CANVAS_H };
-const PX_PER_METER = 600; // 1 m → 600 px
-const SPRING_X = CANVAS_W / 2; // = 350
-const COLOR_BG = "#000";
-const COLOR_REF = "rgba(239,68,68,0.55)";
-const COLOR_GLOW = "#fbbf24bb";
-const COLOR_MASS_FILL = "#fbbf24";
-const COLOR_SPRING = "#fde68a";
-const COLOR_HUD = "#fbbf24";
-const COLOR_HUD_DIM = "#94a3b8";
+const CANVAS_WIDTH = 700;
+const CANVAS_HEIGHT = 400;
+const SIMULATION_DURATION = 10;
 
-// Mini-chart (below HUD stats, same left margin)
-// Y-axis: spring extension from the natural-length endpoint, in canvas px.
-// Zero line = spring natural end = (0.05 + 0.30) m × PX_PER_METER = 210 px.
-// Different masses have different equilibrium depths → visually distinct wave centers.
-// X-axis: normalised to 2T per wave (each wave fills chart width in 2 periods).
-const CHART_X = 40;               // left gutter reserved for y-axis labels
-const CHART_W = CANVAS_W - CHART_X;
-// Fixed time-to-pixel scale: 10 seconds fills the chart width.
-const CHART_PX_PER_SEC = CHART_W / 10;
-// Fixed vertical span, anchored at the natural-length y position.
-const CHART_ZERO_Y = Math.round((0.05 + 0.30) * PX_PER_METER); // 210 px — spring natural end
-const CHART_TOP = CHART_ZERO_Y - 10;    // 200 px  — a sliver above zero for the border
-const CHART_BOTTOM = 376;               // fixed bottom; leaves room for period tick labels below
+const CHART = {
+  left: 54,
+  top: 28,
+  width: 388,
+  height: 314,
+};
 
-// Color palette — one per successive mass run
-const WAVE_COLORS = [
-  "#60a5fa", // blue
-  "#34d399", // green
-  "#f472b6", // pink
-  "#a78bfa", // purple
-  "#fb923c", // orange
-  "#22d3ee", // cyan
-  "#facc15", // yellow
-];
+const APPARATUS = {
+  left: 472,
+  right: 680,
+  top: 34,
+  bottom: 340,
+};
 
 type WaveRecord = {
   mass: number;
   period: number;
   amplitude: number;
-  equilibriumYPx: number; // canvas y of this mass's equilibrium = CHART_ZERO_Y + x_eq*PX_PER_METER
-  color: string;
+  equilibriumExtension: number;
+  stroke: string;
 };
+
+type WaveStore = typeof globalThis & {
+  __shmWaveHistory?: WaveRecord[];
+};
+
+const waveStore = globalThis as WaveStore;
+const waveHistory = (waveStore.__shmWaveHistory ??= []);
+const waveColors = [color.series[0], color.series[1], color.reference];
 
 type Props = {
   state: SpringLabState;
 };
 
-// Survives module re-evaluations (student code re-runs) by living on window.
-declare global { interface Window { __shmWaveHistory?: WaveRecord[] } }
-if (!window.__shmWaveHistory) window.__shmWaveHistory = [];
-const _waveHistory: WaveRecord[] = window.__shmWaveHistory;
+function formatMass(mass: number) {
+  return mass < 1 ? `${(mass * 1000).toFixed(0)} g` : `${mass.toFixed(2)} kg`;
+}
 
-const Component = observer(function Component({ state }: Props) {
+const Component = observer(({ state }: Props) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const rafRef = useRef<number | null>(null);
-  const lastTsRef = useRef<number | null>(null);
+  const animationFrame = useRef(0);
+  const previousTimestamp = useRef<number | null>(null);
   const stateRef = useRef(state);
-  const [canvasDisplaySize, setCanvasDisplaySize] = useState(
-    DEFAULT_CANVAS_DISPLAY_SIZE
-  );
+  const [displaySize, setDisplaySize] = useState({
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT,
+  });
 
   stateRef.current = state;
 
   useEffect(() => {
-    const style = document.createElement("style");
-    style.textContent = `
-      html,
-      body,
-      #root {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background: ${COLOR_BG};
-      }
-
-      * {
-        box-sizing: border-box;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      style.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    const updateCanvasSize = () => {
+    const updateSize = () => {
       const container = containerRef.current;
       if (!container) return;
 
-      const { width, height } = container.getBoundingClientRect();
-      const scale = Math.min(width / CANVAS_W, height / CANVAS_H);
+      const bounds = container.getBoundingClientRect();
+      const scale = Math.min(
+        bounds.width / CANVAS_WIDTH,
+        bounds.height / CANVAS_HEIGHT
+      );
       if (!Number.isFinite(scale) || scale <= 0) return;
 
-      const nextSize = {
-        width: Math.max(1, Math.floor(CANVAS_W * scale)),
-        height: Math.max(1, Math.floor(CANVAS_H * scale)),
+      const next = {
+        width: Math.max(1, Math.floor(CANVAS_WIDTH * scale)),
+        height: Math.max(1, Math.floor(CANVAS_HEIGHT * scale)),
       };
 
-      setCanvasDisplaySize((currentSize) =>
-        currentSize.width === nextSize.width &&
-        currentSize.height === nextSize.height
-          ? currentSize
-          : nextSize
+      setDisplaySize((current) =>
+        current.width === next.width && current.height === next.height
+          ? current
+          : next
       );
     };
 
-    updateCanvasSize();
-
-    const observer =
-      "ResizeObserver" in window
-        ? new ResizeObserver(updateCanvasSize)
-        : null;
-    if (observer && containerRef.current) {
-      observer.observe(containerRef.current);
+    updateSize();
+    const resizeObserver =
+      "ResizeObserver" in window ? new ResizeObserver(updateSize) : null;
+    if (resizeObserver && containerRef.current) {
+      resizeObserver.observe(containerRef.current);
     }
-    window.addEventListener("resize", updateCanvasSize);
+    window.addEventListener("resize", updateSize);
 
     return () => {
-      observer?.disconnect();
-      window.removeEventListener("resize", updateCanvasSize);
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateSize);
     };
-  }, []);
+  }, [state.model]);
 
-  // When animation begins, register a wave record for this mass.
-  // If this exact mass has been run before, reuse its slot (same color, no duplicate).
   useEffect(() => {
-    if (state.phase === "playing" && state.model && state.derived) {
-      const activeMass = state.model.inputs.activeMass;
-      const existing   = _waveHistory.findIndex(
-        (w) => Math.abs(w.mass - activeMass) < 1e-9
-      );
-      if (existing !== -1) return; // already tracked — replay without adding
-      const snap       = getSnapshotAtTime(state.model.inputs, state.derived, 0);
-      const colorIndex = _waveHistory.length;
-      _waveHistory.push({
-        mass: activeMass,
-        period: snap.hudPeriod,
-        amplitude: state.derived.amplitude,
-        equilibriumYPx: snap.equilibriumY * PX_PER_METER,
-        color: WAVE_COLORS[colorIndex % WAVE_COLORS.length],
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.phase]);
+    if (state.phase !== "playing" || !state.model || !state.derived) return;
 
-  // RAF loop: advance simTime, render.
-  useEffect(() => {
-    function tick(ts: number) {
-      const last = lastTsRef.current;
-      lastTsRef.current = ts;
-      if (last != null) {
-        const dt = Math.min((ts - last) / 1000, 0.05);
-        stateRef.current.advanceTime(dt);
-      }
-      render();
-      rafRef.current = requestAnimationFrame(tick);
-    }
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      lastTsRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function render() {
-    const currentState = stateRef.current;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    // Background
-    ctx.fillStyle = COLOR_BG;
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-
-
-    if (!currentState.model || !currentState.derived) {
-      drawWaveChart(ctx, currentState);
-      drawIdleHud(ctx);
-      drawLegend(ctx);
+    const mass = state.model.inputs.activeMass;
+    if (waveHistory.some((wave) => Math.abs(wave.mass - mass) < 1e-9)) {
       return;
     }
 
-    const snap = getSnapshotAtTime(
+    const snapshot = getSnapshotAtTime(state.model.inputs, state.derived, 0);
+    waveHistory.push({
+      mass,
+      period: snapshot.hudPeriod,
+      amplitude: state.derived.amplitude,
+      equilibriumExtension: snapshot.equilibriumY - snapshot.naturalEndY,
+      stroke: waveColors[waveHistory.length % waveColors.length],
+    });
+  }, [state.phase, state.model, state.derived]);
+
+  useEffect(() => {
+    const tick = (timestamp: number) => {
+      const currentState = stateRef.current;
+      const previous = previousTimestamp.current;
+      previousTimestamp.current = timestamp;
+
+      if (previous !== null) {
+        currentState.advanceTime(Math.min((timestamp - previous) / 1000, 0.05));
+      }
+
+      if (
+        currentState.phase === "playing" &&
+        currentState.simTime >= SIMULATION_DURATION
+      ) {
+        currentState.finish();
+      }
+
+      drawScene();
+      animationFrame.current = requestAnimationFrame(tick);
+    };
+
+    animationFrame.current = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(animationFrame.current);
+      previousTimestamp.current = null;
+    };
+  }, []);
+
+  function drawScene() {
+    const canvas = canvasRef.current;
+    const currentState = stateRef.current;
+    if (!canvas || !currentState.model || !currentState.derived) return;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    const snapshot = getSnapshotAtTime(
       currentState.model.inputs,
       currentState.derived,
       currentState.simTime
     );
 
-    const supportY      = snap.springTopY    * PX_PER_METER;
-    const massYPx       = snap.massY         * PX_PER_METER;
-    const equilibriumYPx = snap.equilibriumY * PX_PER_METER;
+    context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    context.fillStyle = color.surfaceRaised;
+    context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Wave chart (left column, below HUD stats)
-    drawWaveChart(ctx, currentState);
-
-    const waves = _waveHistory;
-
-    // Full-width equilibrium lines for every historical mass.
-    // Latest wave → red; earlier waves → their wave colour (semi-transparent).
-    // Drawn before the spring apparatus so the spring renders on top.
-    if ((currentState.model.display.showEquilibriumLine ?? true) && waves.length > 0) {
-      ctx.save();
-      ctx.lineWidth = 1;
-      ctx.setLineDash([6, 6]);
-      ctx.font = "10px ui-monospace,Menlo,monospace";
-      for (let i = 0; i < waves.length; i++) {
-        const wave     = waves[i];
-        const isLatest = i === waves.length - 1;
-        ctx.strokeStyle = wave.color;
-        ctx.globalAlpha = isLatest ? 0.85 : 0.38;
-        ctx.beginPath();
-        ctx.moveTo(CHART_X, wave.equilibriumYPx);
-        ctx.lineTo(CANVAS_W, wave.equilibriumYPx);
-        ctx.stroke();
-        // Mass label at right edge
-        ctx.setLineDash([]);
-        ctx.fillStyle   = wave.color;
-        ctx.globalAlpha = 1.0;
-        ctx.font        = "bold 13px ui-monospace,Menlo,monospace";
-        ctx.textAlign   = "right";
-        ctx.fillText(`${(wave.mass * 1000).toFixed(0)}g`, CANVAS_W - 20, wave.equilibriumYPx - 3);
-        ctx.setLineDash([6, 6]);
-      }
-      ctx.restore();
-    }
-
-    // Support beam
-    ctx.fillStyle = "#475569";
-    ctx.fillRect(SPRING_X - 80, supportY - 8, 160, 8);
-    ctx.strokeStyle = "#64748b";
-    ctx.lineWidth = 1;
-    for (let i = -70; i <= 70; i += 10) {
-      ctx.beginPath();
-      ctx.moveTo(SPRING_X + i, supportY - 8);
-      ctx.lineTo(SPRING_X + i - 4, supportY - 14);
-      ctx.stroke();
-    }
-
-    // Spring
-    drawSpring(ctx, SPRING_X, supportY, massYPx - 24);
-
-    // Mass block
-    ctx.save();
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = COLOR_GLOW;
-    ctx.fillStyle = COLOR_MASS_FILL;
-    ctx.fillRect(SPRING_X - 28, massYPx - 24, 56, 48);
-    ctx.restore();
-    ctx.strokeStyle = "rgba(0,0,0,0.4)";
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(SPRING_X - 28, massYPx - 24, 56, 48);
-
-    // Horizontal dashed connector: wave tip → block center (drawn on top of block).
-    // waveTipY = equilibriumYPx + displacement × PX_PER_METER = massYPx  (same scale)
-    // so the line is always perfectly horizontal.
-    if (waves.length > 0 && currentState.phase === "playing") {
-      const wave = waves[waves.length - 1];
-      const waveTipX = CHART_X + Math.min(currentState.simTime * CHART_PX_PER_SEC, CHART_W);
-      ctx.save();
-      ctx.strokeStyle = wave.color;
-      ctx.setLineDash([6, 4]);
-      ctx.lineWidth = 2.5;
-      ctx.globalAlpha = 0.9;
-      ctx.shadowBlur = 6;
-      ctx.shadowColor = wave.color;
-      ctx.beginPath();
-      ctx.moveTo(waveTipX, massYPx);
-      ctx.lineTo(SPRING_X, massYPx);
-      ctx.stroke();
-
-      // Dot at block center
-      ctx.setLineDash([]);
-      ctx.beginPath();
-      ctx.arc(SPRING_X, massYPx, 5, 0, Math.PI * 2);
-      ctx.fillStyle = wave.color;
-      ctx.fill();
-      ctx.restore();
-    }
-
-    drawHud(ctx, currentState, snap);
-    drawLegend(ctx);
+    drawChart(context, currentState);
+    drawApparatus(context, snapshot);
   }
 
-  // ---------------------------------------------------------------------------
-  // Mini waveform chart
-  //
-  // Each wave is drawn centred at its own equilibriumYPx (= CHART_ZERO_Y + x_eq·px).
-  // Heavier masses → larger x_eq → lower centre in chart.
-  // The y-scale equals PX_PER_METER, so wave tip y == massYPx (enables horizontal
-  // dashed connector to the block).
-  // ---------------------------------------------------------------------------
-  function drawWaveChart(ctx: CanvasRenderingContext2D, s: SpringLabState) {
-    const waves = _waveHistory;
-    const cx = CHART_X;
-    const cw = CHART_W;
-    const cy = CHART_TOP;
-    const ch = CHART_BOTTOM - CHART_TOP;
-
-
-
-    // Chart background + border
-    ctx.fillStyle = "rgba(15,23,42,0.55)";
-    ctx.fillRect(cx, cy, cw, ch);
-    ctx.strokeStyle = "rgba(148,163,184,0.35)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(cx, cy, cw, ch);
-
-    // Natural-length reference line — full canvas width, same style as equilibrium lines
-    ctx.strokeStyle = "rgba(148,163,184,0.5)";
-    ctx.setLineDash([3, 4]);
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(CHART_X, CHART_ZERO_Y);
-    ctx.lineTo(CANVAS_W, CHART_ZERO_Y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = "#cbd5e1";
-    ctx.font = "bold 11px ui-monospace,Menlo,monospace";
-    ctx.textAlign = "right";
-    ctx.fillText("natural length", CANVAS_W - 20, CHART_ZERO_Y - 4);
-
-    // Y-axis: spring extension x measured from the natural-length endpoint, in metres.
-    // Matches x_eq / x_now shown in the HUD (positive = spring stretched downward).
-    {
-      ctx.save();
-      ctx.font = "bold 10px ui-monospace,Menlo,monospace";
-      ctx.fillStyle = "#94a3b8";
-      ctx.strokeStyle = "rgba(148,163,184,0.45)";
-      ctx.lineWidth = 1;
-      // Tick marks every 0.05 m — line extends right from chart left border
-      for (let i = 0; i <= 5; i++) {
-        const xM = i * 0.05;
-        const ty = CHART_ZERO_Y + xM * PX_PER_METER;
-        if (ty < CHART_TOP || ty > CHART_BOTTOM) continue;
-        ctx.globalAlpha = 0.55;
-        ctx.beginPath();
-        ctx.moveTo(cx, ty);
-        ctx.lineTo(cx + 6, ty);
-        ctx.stroke();
-        ctx.globalAlpha = 1;
-        ctx.textAlign = "right";
-        ctx.fillText(xM.toFixed(2) + "m", cx - 2, ty + 3);
-      }
-      ctx.restore();
-    }
-
-    // Time axis — always visible, tick mark + second label every 1 s.
-    ctx.save();
-    ctx.font = "bold 10px ui-monospace,Menlo,monospace";
-    ctx.strokeStyle = "rgba(148,163,184,0.45)";
-    ctx.lineWidth = 1;
-    for (let s = 0; s <= 10; s++) {
-      const tx = cx + s * CHART_PX_PER_SEC;
-      ctx.globalAlpha = 0.55;
-      ctx.beginPath();
-      ctx.moveTo(tx, CHART_BOTTOM);
-      ctx.lineTo(tx, CHART_BOTTOM + 5);
-      ctx.stroke();
-      if (s < 10) {
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "#94a3b8";
-        ctx.textAlign = s === 0 ? "left" : "center";
-        ctx.fillText(s === 0 ? "0" : `${s}s`, tx, CHART_BOTTOM + 14);
-      }
-    }
-
-    ctx.restore();
-
-    if (waves.length === 0) {
-      ctx.fillStyle = "#94a3b8";
-      ctx.font = "11px ui-monospace,Menlo,monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("awaiting run()", cx + cw / 2, CHART_ZERO_Y + 40);
-      return;
-    }
-
-    const isPlaying = s.phase === "playing";
-    const simTime   = s.simTime;
-
-    // Clip all wave drawing to the chart box
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(cx, cy, cw, ch);
-    ctx.clip();
-
-    for (let i = 0; i < waves.length; i++) {
-      const wave          = waves[i];
-      const isCurrentWave = i === waves.length - 1 && isPlaying;
-      const drawUpTo      = isCurrentWave ? simTime : cw / CHART_PX_PER_SEC;
-
-      const omega    = (2 * Math.PI) / wave.period;
-      const pixelEnd = Math.floor(Math.min(drawUpTo * CHART_PX_PER_SEC, cw));
-
-      ctx.save();
-      if (isCurrentWave) { ctx.shadowBlur = 5; ctx.shadowColor = wave.color; }
-      ctx.strokeStyle  = wave.color;
-      ctx.lineWidth    = isCurrentWave ? 2 : 1.5;
-      ctx.globalAlpha  = isCurrentWave ? 1.0 : 0.75;
-
-      ctx.beginPath();
-      for (let px = 0; px <= pixelEnd; px++) {
-        const t            = px / CHART_PX_PER_SEC;
-        const displacement = wave.amplitude * Math.cos(omega * t);
-        // Positive displacement = block below equilibrium = higher canvas y.
-        // Y-scale identical to spring animation → wave tip y == massYPx.
-        const screenY = wave.equilibriumYPx + displacement * PX_PER_METER;
-        if (px === 0) ctx.moveTo(cx + px, screenY);
-        else          ctx.lineTo(cx + px, screenY);
-      }
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    ctx.restore(); // end chart clip
-  }
-
-  function drawLegend(ctx: CanvasRenderingContext2D) {
-    const waves = _waveHistory;
-    if (waves.length === 0) return;
-    ctx.font = "bold 11px ui-monospace,Menlo,monospace";
-    ctx.textAlign = "left";
-    let ly = 116;
-    for (const wave of waves) {
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = wave.color;
-      ctx.fillRect(16, ly - 8, 8, 8);
-      ctx.fillStyle = "#e2e8f0";
-      ctx.fillText(`${(wave.mass * 1000).toFixed(0)}g`, 28, ly);
-      ly += 17;
-    }
-  }
-
-  function drawSpring(ctx: CanvasRenderingContext2D, x: number, yTop: number, yBottom: number) {
-    const segments = 18;
-    const segLen   = (yBottom - yTop) / segments;
-    const amp      = 14;
-    ctx.save();
-    ctx.shadowBlur  = 12;
-    ctx.shadowColor = "rgba(253,230,138,0.5)";
-    ctx.strokeStyle = COLOR_SPRING;
-    ctx.lineWidth   = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, yTop);
-    for (let i = 1; i <= segments; i++) {
-      const y    = yTop + i * segLen;
-      const sign = i % 2 === 0 ? 1 : -1;
-      ctx.lineTo(x + sign * amp, y - segLen / 2);
-      ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  function drawIdleHud(ctx: CanvasRenderingContext2D) {
-    const supportY   = 0.05 * PX_PER_METER;
-    const naturalEndY = (0.05 + 0.30) * PX_PER_METER;
-
-    ctx.fillStyle = "#475569";
-    ctx.fillRect(SPRING_X - 80, supportY - 8, 160, 8);
-    ctx.strokeStyle = "#64748b";
-    ctx.lineWidth = 1;
-    for (let i = -70; i <= 70; i += 10) {
-      ctx.beginPath();
-      ctx.moveTo(SPRING_X + i, supportY - 8);
-      ctx.lineTo(SPRING_X + i - 4, supportY - 14);
-      ctx.stroke();
-    }
-    drawSpring(ctx, SPRING_X, supportY, naturalEndY);
-    ctx.strokeStyle = "rgba(253,230,138,0.45)";
-    ctx.lineWidth   = 2;
-    ctx.beginPath();
-    ctx.moveTo(SPRING_X - 18, naturalEndY);
-    ctx.lineTo(SPRING_X + 18, naturalEndY);
-    ctx.stroke();
-
-    ctx.fillStyle = COLOR_HUD_DIM;
-    ctx.font      = "12px ui-monospace,Menlo,monospace";
-    ctx.textAlign = "left";
-    ctx.fillText("SPRING LAB · waiting for run()", 16, 24);
-  }
-
-  function drawHud(
-    ctx: CanvasRenderingContext2D,
-    s: SpringLabState,
-    snap: ReturnType<typeof getSnapshotAtTime>
+  function drawChart(
+    context: CanvasRenderingContext2D,
+    currentState: SpringLabState
   ) {
-    const lines: Array<[string, string, string]> = [];
-    const method = s.model!.inputs.method;
-    const m      = s.model!.inputs.activeMass;
+    const { left, top, width, height } = CHART;
+    const bottom = top + height;
+    const right = left + width;
+    const activeSnapshot =
+      currentState.model && currentState.derived
+        ? getSnapshotAtTime(
+            currentState.model.inputs,
+            currentState.derived,
+            currentState.simTime
+          )
+        : null;
 
-    lines.push(["SPRING LAB", method.toUpperCase(), COLOR_HUD]);
-    lines.push(["m         ", `${m.toFixed(3)} kg`,  COLOR_HUD_DIM]);
+    const maximumExtension = Math.max(
+      0.1,
+      ...waveHistory.map((wave) => wave.equilibriumExtension + wave.amplitude),
+      activeSnapshot
+        ? activeSnapshot.equilibriumY -
+            activeSnapshot.naturalEndY +
+            currentState.derived!.amplitude
+        : 0
+    );
+    const yMaximum = maximumExtension * 1.12;
+    const toX = (time: number) => left + (time / SIMULATION_DURATION) * width;
+    const toY = (extension: number) => bottom - (extension / yMaximum) * height;
 
-    if (method === "static") {
-      const xEq = snap.equilibriumY - snap.naturalEndY;
-      lines.push(["x_eq      ", `${xEq.toFixed(4)} m`,                          COLOR_HUD_DIM]);
-      lines.push(["x_now     ", `${(snap.massY - snap.naturalEndY).toFixed(4)} m`, COLOR_HUD_DIM]);
-    } else {
-      lines.push(["T (sim)   ", `${snap.hudPeriod.toFixed(3)} s`, COLOR_HUD_DIM]);
+    context.save();
+    context.strokeStyle = color.grid;
+    context.lineWidth = 1;
+    context.globalAlpha = 0.8;
+    for (let index = 0; index <= 5; index += 1) {
+      const x = left + (index / 5) * width;
+      const y = top + (index / 5) * height;
+      context.beginPath();
+      context.moveTo(x, top);
+      context.lineTo(x, bottom);
+      context.stroke();
+      context.beginPath();
+      context.moveTo(left, y);
+      context.lineTo(right, y);
+      context.stroke();
+    }
+    context.restore();
+
+    context.strokeStyle = color.axis;
+    context.lineWidth = 1;
+    context.strokeRect(left, top, width, height);
+
+    context.fillStyle = color.axis;
+    context.font = "11px ui-sans-serif, system-ui, sans-serif";
+    context.textAlign = "center";
+    for (let index = 0; index <= 5; index += 1) {
+      const seconds = (index / 5) * SIMULATION_DURATION;
+      context.fillText(`${seconds.toFixed(0)}s`, toX(seconds), bottom + 17);
     }
 
-
-    lines.push(["rows      ", `${s.derived!.rowCount}`,      COLOR_HUD_DIM]);
-
-    ctx.font      = "12px ui-monospace,Menlo,monospace";
-    ctx.textAlign = "left";
-    let y = 22;
-    for (const [label, value, color] of lines) {
-      ctx.fillStyle = color;
-      ctx.fillText(`${label} ${value}`, 16, y);
-      y += 18;
+    context.textAlign = "right";
+    for (let index = 0; index <= 4; index += 1) {
+      const extension = (index / 4) * yMaximum;
+      context.fillText(extension.toFixed(2), left - 7, toY(extension) + 4);
     }
+
+    context.textAlign = "center";
+    context.font = "600 12px ui-sans-serif, system-ui, sans-serif";
+    context.fillText("Time", left + width / 2, CANVAS_HEIGHT - 12);
+    context.save();
+    context.translate(14, top + height / 2);
+    context.rotate(-Math.PI / 2);
+    context.fillText("Spring extension (m)", 0, 0);
+    context.restore();
+
+    context.save();
+    context.beginPath();
+    context.rect(left, top, width, height);
+    context.clip();
+
+    waveHistory.forEach((wave, index) => {
+      const isActive =
+        index === waveHistory.length - 1 && currentState.phase === "playing";
+      const timeLimit = isActive
+        ? Math.min(currentState.simTime, SIMULATION_DURATION)
+        : SIMULATION_DURATION;
+      const pixelLimit = Math.floor((timeLimit / SIMULATION_DURATION) * width);
+      const angularFrequency = (2 * Math.PI) / wave.period;
+
+      context.beginPath();
+      for (let pixel = 0; pixel <= pixelLimit; pixel += 1) {
+        const time = (pixel / width) * SIMULATION_DURATION;
+        const extension =
+          wave.equilibriumExtension +
+          wave.amplitude * Math.cos(angularFrequency * time);
+        const x = left + pixel;
+        const y = toY(extension);
+        if (pixel === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+
+      context.strokeStyle = wave.stroke;
+      context.lineWidth = isActive ? 2.5 : 1.75;
+      context.globalAlpha = isActive ? 1 : 0.65;
+      context.stroke();
+    });
+    context.restore();
+
+    context.font = "600 11px ui-sans-serif, system-ui, sans-serif";
+    context.textAlign = "left";
+    waveHistory.forEach((wave, index) => {
+      context.fillStyle = wave.stroke;
+      context.fillRect(left + 10, top + 10 + index * 17, 8, 8);
+      context.fillText(formatMass(wave.mass), left + 24, top + 18 + index * 17);
+    });
   }
 
-  // Stop when the waveform reaches the right edge of the canvas (10 s).
-  useEffect(() => {
-    if (state.phase !== "playing") return;
-    if (state.simTime >= CANVAS_W / CHART_PX_PER_SEC) state.finish();
-  }, [state.simTime, state.phase]);
+  function drawApparatus(
+    context: CanvasRenderingContext2D,
+    snapshot: ReturnType<typeof getSnapshotAtTime>
+  ) {
+    const centerX = (APPARATUS.left + APPARATUS.right) / 2;
+    const worldBottom = Math.max(
+      snapshot.equilibriumY + Math.abs(snapshot.oscDisplacement) + 0.08,
+      0.62
+    );
+    const scale =
+      (APPARATUS.bottom - APPARATUS.top) / (worldBottom - snapshot.springTopY);
+    const toY = (position: number) =>
+      APPARATUS.top + (position - snapshot.springTopY) * scale;
+    const supportY = toY(snapshot.springTopY);
+    const massY = Math.min(toY(snapshot.massY), APPARATUS.bottom - 20);
+    const equilibriumY = Math.min(toY(snapshot.equilibriumY), APPARATUS.bottom);
+    const naturalEndY = toY(snapshot.naturalEndY);
+
+    context.strokeStyle = color.reference;
+    context.globalAlpha = 0.7;
+    context.setLineDash([6, 5]);
+    context.beginPath();
+    context.moveTo(APPARATUS.left + 10, equilibriumY);
+    context.lineTo(APPARATUS.right - 10, equilibriumY);
+    context.stroke();
+    context.setLineDash([]);
+    context.globalAlpha = 1;
+
+    context.fillStyle = color.axis;
+    context.fillRect(centerX - 70, supportY, 140, 7);
+    for (let x = centerX - 64; x <= centerX + 64; x += 12) {
+      context.beginPath();
+      context.moveTo(x, supportY);
+      context.lineTo(x - 5, supportY - 7);
+      context.strokeStyle = color.axis;
+      context.stroke();
+    }
+
+    drawSpring(context, centerX, supportY + 7, massY - 20);
+
+    context.fillStyle = color.series[0];
+    context.fillRect(centerX - 25, massY - 20, 50, 40);
+    context.strokeStyle = color.axis;
+    context.strokeRect(centerX - 25, massY - 20, 50, 40);
+
+    context.fillStyle = color.axis;
+    context.font = "11px ui-sans-serif, system-ui, sans-serif";
+    context.textAlign = "center";
+    context.fillText("equilibrium", centerX, equilibriumY - 6);
+    context.fillText("natural length", centerX, naturalEndY - 6);
+  }
+
+  function drawSpring(
+    context: CanvasRenderingContext2D,
+    x: number,
+    top: number,
+    bottom: number
+  ) {
+    const segments = 18;
+    const segmentHeight = (bottom - top) / segments;
+    context.beginPath();
+    context.moveTo(x, top);
+    for (let index = 1; index <= segments; index += 1) {
+      const y = top + index * segmentHeight;
+      const offset = index % 2 === 0 ? 13 : -13;
+      context.lineTo(x + offset, y - segmentHeight / 2);
+      context.lineTo(x, y);
+    }
+    context.strokeStyle = color.series[1];
+    context.lineWidth = 2.25;
+    context.stroke();
+  }
+
+  if (!state.model || !state.derived) {
+    return (
+      <PluginSurface instructions={instructions}>
+        <PluginStage>
+          <EmptyState message="Run your code to configure a spring and compare static and dynamic measurements." />
+        </PluginStage>
+      </PluginSurface>
+    );
+  }
+
+  const snapshot = getSnapshotAtTime(
+    state.model.inputs,
+    state.derived,
+    state.simTime
+  );
+  const method = state.model.inputs.method;
+  const extension = snapshot.equilibriumY - snapshot.naturalEndY;
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        position: "fixed",
-        inset: 0,
-        width: "100vw",
-        height: "100vh",
-        overflow: "hidden",
-        background: COLOR_BG,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        lineHeight: 0,
-      }}
-    >
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_W}
-        height={CANVAS_H}
-        style={{
-          display: "block",
-          width: canvasDisplaySize.width,
-          height: canvasDisplaySize.height,
-          maxWidth: "100%",
-          maxHeight: "100%",
-          flex: "0 0 auto",
-          borderRadius: 8,
-        }}
+    <PluginSurface instructions={instructions}>
+      <PluginStage>
+        <div
+          ref={containerRef}
+          style={{
+            width: "100%",
+            height: "100%",
+            minHeight: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            style={{
+              display: "block",
+              width: displaySize.width,
+              height: displaySize.height,
+              maxWidth: "100%",
+              maxHeight: "100%",
+              border: `1px solid ${color.border}`,
+              borderRadius: 4,
+            }}
+            role="img"
+            aria-label={`Spring-mass system using the ${method} method with ${formatMass(
+              state.model.inputs.activeMass
+            )}`}
+          />
+        </div>
+      </PluginStage>
+
+      <StatRow
+        stats={[
+          {
+            label: "Method",
+            value: method === "static" ? "Static" : "Dynamic",
+          },
+          {
+            label: "Mass",
+            value: formatMass(state.model.inputs.activeMass),
+            color: color.series[0],
+          },
+          {
+            label: method === "static" ? "Extension" : "Period",
+            value:
+              method === "static"
+                ? `${extension.toFixed(4)} m`
+                : `${snapshot.hudPeriod.toFixed(3)} s`,
+            color: color.reference,
+          },
+          { label: "Measurements", value: String(state.derived.rowCount) },
+        ]}
       />
-    </div>
+    </PluginSurface>
   );
 });
 

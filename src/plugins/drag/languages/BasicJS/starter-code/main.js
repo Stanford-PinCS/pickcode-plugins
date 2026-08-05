@@ -1,16 +1,24 @@
-function getNextPosition(currentPosition, currentVelocity, timestep, getDrag) { 
-  const nextPosY = currentPosition.y + (timestep * currentVelocity.y);
-	
-	const accelerationY = 0;
-	
-	const nextVelY = currentVelocity.y;
+function getNextPosition(currentPosition, currentVelocity, timestep, getDrag) {
+  // getDrag returns acceleration caused by air resistance.
+  const dragAcceleration = getDrag(currentVelocity);
+
+  const accelerationX = dragAcceleration.x;
+  const accelerationY = dragAcceleration.y - 9.81;
+
+  // Update position using the current velocity.
+  const nextPosX = currentPosition.x + timestep * currentVelocity.x;
+  const nextPosY = currentPosition.y + timestep * currentVelocity.y;
+
+  // Update velocity using acceleration.
+  const nextVelX = currentVelocity.x + timestep * accelerationX;
+  const nextVelY = currentVelocity.y + timestep * accelerationY;
 
   return {
-      x: currentPosition.x,
-      y: nextPosY,
-      xVel: currentVelocity.x,
-      yVel: nextVelY,
+    x: nextPosX,
+    y: nextPosY,
+    xVel: nextVelX,
+    yVel: nextVelY,
   };
 }
 
-runSimulation(getNextPosition, 0.2);
+runSimulation(getNextPosition, 0.05);

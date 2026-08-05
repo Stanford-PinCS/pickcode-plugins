@@ -22,6 +22,7 @@ import instructions from "./instructions.md?raw";
 import State from "./state";
 
 const Component = observer(({ state }: { state: State }) => {
+  console.log("Coin Flip component rendered");
   const points = state.points ?? [];
   const target = state.target ?? 0.5;
   const n = points.length;

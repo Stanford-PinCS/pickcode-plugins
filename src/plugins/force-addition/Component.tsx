@@ -1,203 +1,192 @@
 import { observer } from "mobx-react-lite";
-import React, { useRef, useEffect, useState } from "react";
+import { color, type } from "../../common/tokens";
+import {
+  EmptyState,
+  PluginStage,
+  PluginSurface,
+} from "../../common/PluginSurface";
+import instructions from "./instructions.md?raw";
 import State, { ForceArrow } from "./state";
 
-const Component = observer(({ state }: { state: State | undefined }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [scale, setScale] = useState(1);
-    const [offsetX, setOffsetX] = useState(0);
-    const [offsetY, setOffsetY] = useState(0);
-    const forceArrows = state?.forceArrows || [];
-    const minSize = 100; // The canvas will be no smaller than minSize x minSize units.
+const VIEW = { width: 520, height: 400 };
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+// Nearest "nice" grid step (1, 2, 5, x10^n) at or below the raw value.
+const niceStep = (raw: number) => {
+  const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+  const n = raw / pow;
+  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+  return step * pow;
+};
 
-        const container = canvas.parentElement;
-        if (!container) return;
+const Component = observer(({ state }: { state: State }) => {
+  const forceArrows: ForceArrow[] = state?.forceArrows ?? [];
 
-        const setCanvasDimensions = () => {
-            canvas.width = container.clientWidth - 50;
-            canvas.height = container.clientHeight - 50;
-            setOffsetX(canvas.width / 2);
-            setOffsetY(canvas.height / 2);
-
-            const newScaleX = canvas.width / minSize;
-            const newScaleY = canvas.height / minSize;
-            setScale(Math.max(1, Math.min(newScaleX, newScaleY)));
-        };
-
-        setCanvasDimensions();
-        window.addEventListener("resize", setCanvasDimensions);
-
-        return () => {
-            window.removeEventListener("resize", setCanvasDimensions);
-        };
-    }, []);
-
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas || !state) return;
-
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        const drawGrid = () => {
-            ctx.strokeStyle = "#e0e0e0";
-            ctx.lineWidth = 1;
-            const gridSize = 10 * scale;
-
-            // Draw vertical lines
-            for (let x = offsetX; x < canvas.width; x += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-            for (let x = offsetX - gridSize; x >= 0; x -= gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
-                ctx.stroke();
-            }
-
-            // Draw horizontal lines
-            for (let y = offsetY; y < canvas.height; y += gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-            for (let y = offsetY - gridSize; y >= 0; y -= gridSize) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
-                ctx.stroke();
-            }
-        };
-
-        const drawAxes = () => {
-            ctx.strokeStyle = "#a0a0a0";
-            ctx.lineWidth = 2;
-
-            // X-axis
-            ctx.beginPath();
-            ctx.moveTo(0, offsetY);
-            ctx.lineTo(canvas.width, offsetY);
-            ctx.stroke();
-
-            // Y-axis
-            ctx.beginPath();
-            ctx.moveTo(offsetX, 0);
-            ctx.lineTo(offsetX, canvas.height);
-            ctx.stroke();
-
-            // Draw axis labels
-            ctx.fillStyle = "black";
-            ctx.font = "12px Arial";
-            ctx.fillText("X", canvas.width - 20, offsetY - 10);
-            ctx.fillText("Y", offsetX + 10, 20);
-
-            // Draw grid labels
-            const gridSize = 10 * scale;
-
-            // X-axis labels
-            ctx.textAlign = "left";
-            ctx.textBaseline = "middle";
-            for (
-                let x = offsetX + gridSize, i = 10;
-                x < canvas.width;
-                x += gridSize, i += 10
-            ) {
-                ctx.save();
-                ctx.translate(x, offsetY + 10);
-                ctx.rotate(Math.PI / 4);
-                ctx.fillText(i.toString(), 0, 0);
-                ctx.restore();
-            }
-            for (
-                let x = offsetX - gridSize, i = -10;
-                x >= 0;
-                x -= gridSize, i -= 10
-            ) {
-                ctx.save();
-                ctx.translate(x, offsetY + 10);
-                ctx.rotate(Math.PI / 4);
-                ctx.fillText(i.toString(), 0, 0);
-                ctx.restore();
-            }
-
-            // Y-axis labels
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            for (
-                let y = offsetY + gridSize, i = -10;
-                y < canvas.height;
-                y += gridSize, i -= 10
-            ) {
-                ctx.fillText(i.toString(), offsetX - 20, y);
-            }
-            for (
-                let y = offsetY - gridSize, i = 10;
-                y >= 0;
-                y -= gridSize, i += 10
-            ) {
-                ctx.fillText(i.toString(), offsetX - 20, y);
-            }
-        };
-
-        const draw = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGrid();
-            drawAxes();
-
-            // Draw origin
-            ctx.beginPath();
-            ctx.arc(offsetX, offsetY, 5, 0, Math.PI * 2);
-            ctx.fillStyle = "black";
-            ctx.fill();
-
-            // Draw forces from student's code
-            forceArrows.forEach((force) => {
-                drawForce(ctx, force);
-            });
-        };
-
-        const drawForce = (
-            ctx: CanvasRenderingContext2D,
-            force: ForceArrow
-        ) => {
-            ctx.beginPath();
-            ctx.moveTo(offsetX, offsetY);
-            ctx.lineTo(offsetX + force.x * scale, offsetY - force.y * scale);
-            ctx.strokeStyle = force.color;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Draw arrowhead
-            const angle = Math.atan2(-force.y, force.x);
-            ctx.save();
-            ctx.translate(offsetX + force.x * scale, offsetY - force.y * scale);
-            ctx.rotate(angle);
-            ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(-10, 5);
-            ctx.lineTo(-10, -5);
-            ctx.closePath();
-            ctx.fillStyle = force.color;
-            ctx.fill();
-            ctx.restore();
-        };
-
-        draw();
-    }, [forceArrows.length, scale, offsetX, offsetY]);
-
+  if (forceArrows.length === 0) {
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center">
-            <canvas ref={canvasRef}></canvas>
-        </div>
+      <PluginSurface instructions={instructions}>
+        <PluginStage>
+          <EmptyState message="Run your code to add up the forces and draw them." />
+        </PluginStage>
+      </PluginSurface>
     );
+  }
+
+  const cx = VIEW.width / 2;
+  const cy = VIEW.height / 2;
+
+  // Equal scale on both axes so vector angles stay true. Frame the view so the
+  // longest arrow reaches ~85% toward the nearer edge, with a floor so a set of
+  // tiny forces doesn't zoom in absurdly.
+  const maxExtent = Math.max(
+    10,
+    ...forceArrows.map((f) => Math.max(Math.abs(f.x), Math.abs(f.y)))
+  );
+  const halfMin = Math.min(VIEW.width, VIEW.height) / 2;
+  const scale = (halfMin * 0.85) / maxExtent;
+
+  const px = (u: number) => cx + u * scale;
+  const py = (u: number) => cy - u * scale;
+
+  const gridUnit = niceStep(maxExtent / 4);
+  const maxUnitsX = Math.floor(VIEW.width / 2 / scale / gridUnit) * gridUnit;
+  const maxUnitsY = Math.floor(VIEW.height / 2 / scale / gridUnit) * gridUnit;
+
+  const xLines: number[] = [];
+  for (let u = -maxUnitsX; u <= maxUnitsX + 1e-9; u += gridUnit) xLines.push(u);
+  const yLines: number[] = [];
+  for (let u = -maxUnitsY; u <= maxUnitsY + 1e-9; u += gridUnit) yLines.push(u);
+
+  // Three points of a filled arrowhead sitting at the tip of a force vector.
+  const arrowPoints = (f: ForceArrow) => {
+    const tipX = px(f.x);
+    const tipY = py(f.y);
+    const dx = tipX - cx;
+    const dy = tipY - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len;
+    const uy = dy / len;
+    const perpX = -uy;
+    const perpY = ux;
+    const ah = 12; // arrowhead length
+    const aw = 6; // arrowhead half-width
+    const bx = tipX - ah * ux;
+    const by = tipY - ah * uy;
+    return `${tipX},${tipY} ${bx + aw * perpX},${by + aw * perpY} ${
+      bx - aw * perpX
+    },${by - aw * perpY}`;
+  };
+
+  return (
+    <PluginSurface instructions={instructions}>
+      <PluginStage>
+        <svg
+          viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ width: "100%", height: "100%" }}
+          role="img"
+          aria-label={`Force diagram with ${forceArrows.length} vectors`}
+        >
+          <rect
+            x={0}
+            y={0}
+            width={VIEW.width}
+            height={VIEW.height}
+            fill={color.surfaceRaised}
+            stroke={color.border}
+            rx={4}
+          />
+
+          {/* Grid */}
+          {xLines.map((u) => (
+            <line
+              key={`gx-${u}`}
+              x1={px(u)}
+              y1={0}
+              x2={px(u)}
+              y2={VIEW.height}
+              stroke={color.grid}
+            />
+          ))}
+          {yLines.map((u) => (
+            <line
+              key={`gy-${u}`}
+              x1={0}
+              y1={py(u)}
+              x2={VIEW.width}
+              y2={py(u)}
+              stroke={color.grid}
+            />
+          ))}
+
+          {/* Axes */}
+          <line
+            x1={0}
+            y1={cy}
+            x2={VIEW.width}
+            y2={cy}
+            stroke={color.axis}
+            strokeWidth={1.5}
+          />
+          <line
+            x1={cx}
+            y1={0}
+            x2={cx}
+            y2={VIEW.height}
+            stroke={color.axis}
+            strokeWidth={1.5}
+          />
+
+          {/* Tick labels (skip 0 to keep the origin clean) */}
+          {xLines
+            .filter((u) => Math.abs(u) > 1e-9)
+            .map((u) => (
+              <text
+                key={`lx-${u}`}
+                x={px(u)}
+                y={cy + 16}
+                textAnchor="middle"
+                style={type.tick}
+              >
+                {u}
+              </text>
+            ))}
+          {yLines
+            .filter((u) => Math.abs(u) > 1e-9)
+            .map((u) => (
+              <text
+                key={`ly-${u}`}
+                x={cx - 8}
+                y={py(u) + 4}
+                textAnchor="end"
+                style={type.tick}
+              >
+                {u}
+              </text>
+            ))}
+
+          {/* Origin */}
+          <circle cx={cx} cy={cy} r={3} fill={color.axis} />
+
+          {/* Force vectors — the student's code decides colors, including the
+              green net force from drawForce(sumForces(forces), "green"). */}
+          {forceArrows.map((f, i) => (
+            <g key={i}>
+              <line
+                x1={cx}
+                y1={cy}
+                x2={px(f.x)}
+                y2={py(f.y)}
+                stroke={f.color}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+              />
+              <polygon points={arrowPoints(f)} fill={f.color} />
+            </g>
+          ))}
+        </svg>
+      </PluginStage>
+    </PluginSurface>
+  );
 });
 
 export default Component;

@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
 import { color, font, radius, space, type } from "./tokens";
 import { PluginInstructions } from "./PluginInstructions";
 
@@ -15,8 +15,40 @@ export function PluginSurface({
   instructions?: string;
   children: ReactNode;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // The embed iframe often paints its first frame before the parent has
+    // given it a stable size and before Avenir / IBM Plex Mono finish loading.
+    // That first frame is a partial paint, and nothing corrects it until a
+    // reflow — which is why switching tabs or hitting Run makes it appear.
+    // Force a genuine relayout + repaint of this subtree instead.
+    const repaint = () => {
+      const el = rootRef.current;
+      if (!el) return;
+      el.style.transform = "translateZ(0)"; // invisible, forces a paint layer
+      void el.offsetHeight; // flush layout with it applied
+      el.style.transform = ""; // and back — triggers a real repaint
+    };
+
+    // After the first layout pass has run...
+    const raf = requestAnimationFrame(() => requestAnimationFrame(repaint));
+
+    // ...and again once the custom fonts are ready, since they change metrics.
+    let cancelled = false;
+    document.fonts?.ready.then(() => {
+      if (!cancelled) repaint();
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
   return (
     <div
+      ref={rootRef}
       style={{
         display: "flex",
         flexDirection: "column",
