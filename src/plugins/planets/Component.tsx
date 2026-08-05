@@ -32,17 +32,33 @@ const Component = observer(({ state }: { state: State }) => {
       const w = container.clientWidth;
       const h = container.clientHeight;
 
-      // Keep the backing store matched to the display size (1:1, no DPR).
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-        // Regenerate stars to fill the new size.
+      if (w === 0 || h === 0) {
+        animationRef.current = requestAnimationFrame(draw);
+        return;
+      }
+
+      const dpr = window.devicePixelRatio || 1;
+      const canvasWidth = Math.round(w * dpr);
+      const canvasHeight = Math.round(h * dpr);
+
+      if (
+        canvas.width !== canvasWidth ||
+        canvas.height !== canvasHeight ||
+        starsRef.current.length === 0
+      ) {
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
         starsRef.current = Array.from({ length: 220 }, () => ({
           x: Math.random() * w,
           y: Math.random() * h,
           b: 120 + Math.random() * 135,
         }));
       }
+
+      // Draw using normal CSS-pixel coordinates while the backing canvas
+      // uses the sharper Retina resolution.
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const cx = w / 2;
       const cy = h / 2;
@@ -58,10 +74,9 @@ const Component = observer(({ state }: { state: State }) => {
       }
 
       // Scale orbits to fit.
-      const maxOrbit = Math.max(...planets.map((p) => p.radius), 1);
-      const usableRadius = Math.max(20, Math.min(w, h) / 2 - 40);
-      const orbitScale = usableRadius / maxOrbit;
-
+      const MAX_RADIUS = 2000;
+      const MIN_ORBIT = 35;
+      const usableRadius = Math.max(MIN_ORBIT, Math.min(w, h) / 2 - 20);
       // Sun
       ctx.beginPath();
       ctx.arc(cx, cy, 20, 0, Math.PI * 2);
@@ -73,7 +88,11 @@ const Component = observer(({ state }: { state: State }) => {
 
       const angle = angleRef.current;
       for (const planet of planets) {
-        const orbit = planet.radius * orbitScale;
+        const normalizedRadius = Math.min(
+          Math.max(planet.radius / MAX_RADIUS, 0),
+          1
+        );
+        const orbit = MIN_ORBIT + normalizedRadius * (usableRadius - MIN_ORBIT);
         const dotR = Math.max(4, Math.min(16, (planet.size / 100) * 10));
 
         ctx.beginPath();
@@ -123,7 +142,7 @@ const Component = observer(({ state }: { state: State }) => {
         <div
           style={{
             flex: 1,
-            minHeight: 0,
+            minHeight: 280,
             width: "100%",
             height: "100%",
             borderRadius: 8,

@@ -65,18 +65,21 @@
     }
   },
   "force-addition": {
+    "instructionsUrl": "/plugins-code/force-addition/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/force-addition/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/force-addition/languages/BasicJS/starter-code/main.js"
     }
   },
   "force-components": {
+    "instructionsUrl": "/plugins-code/force-components/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/force-components/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/force-components/languages/BasicJS/starter-code/main.js"
     }
   },
   "haber-reaction": {
+    "instructionsUrl": "/plugins-code/haber-reaction/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/haber-reaction/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/haber-reaction/languages/BasicJS/starter-code/main.js"
@@ -92,12 +95,14 @@
     }
   },
   "marginal-utility": {
+    "instructionsUrl": "/plugins-code/marginal-utility/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/marginal-utility/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/marginal-utility/languages/BasicJS/starter-code/main.js"
     }
   },
   "momentum-2d": {
+    "instructionsUrl": "/plugins-code/momentum-2d/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/momentum-2d/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/momentum-2d/languages/BasicJS/starter-code/main.js"
@@ -110,6 +115,7 @@
     }
   },
   "particle-simulation": {
+    "instructionsUrl": "/plugins-code/particle-simulation/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/particle-simulation/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/particle-simulation/languages/BasicJS/starter-code/main.js"
@@ -123,6 +129,7 @@
     }
   },
   "population-ecology": {
+    "instructionsUrl": "/plugins-code/population-ecology/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/population-ecology/languages/BasicJS/starter-code/main.js"
@@ -136,12 +143,14 @@
     }
   },
   "simple-harmonic-motion": {
+    "instructionsUrl": "/plugins-code/simple-harmonic-motion/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/starter-code/main.js"
     }
   },
   "supply-demand": {
+    "instructionsUrl": "/plugins-code/supply-demand/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/supply-demand/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/supply-demand/languages/BasicJS/starter-code/main.js"

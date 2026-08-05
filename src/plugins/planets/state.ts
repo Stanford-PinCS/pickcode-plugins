@@ -1,16 +1,16 @@
 import { action, observable } from "mobx";
-import { Planet } from "./messages";
+import type { Planet } from "./messages";
 
 export class State {
-    @observable
-    accessor planets: Planet[] = [];
+  @observable
+  accessor planets: Planet[] = [];
 
-    public init = () => {};
+  public init = () => {};
 
-    @action
-    public onMessage = (p: Planet) => {
-        this.planets.push(p);
-    };
+  @action
+  public onMessage = (planet: Planet) => {
+    this.planets = [...this.planets, planet];
+  };
 }
 
 export default State;

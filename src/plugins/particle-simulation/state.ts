@@ -1,26 +1,26 @@
 import { action, observable } from "mobx";
-import { AddParticlesMessage } from "./messages";
+import type { AddParticlesMessage } from "./messages";
 
 export interface Particle {
-    color: string;
-    temperature: number;
+  color: string;
+  temperature: number;
 }
 
 export class State {
-    @observable
-    accessor particles: Particle[] = [];
+  @observable
+  accessor particles: Particle[] = [];
 
-    public init = () => {};
+  public init = () => {};
 
-    @action
-    public onMessage = (m: AddParticlesMessage) => {
-        for (let i = 0; i < m.numParticles; i++) {
-            this.particles.push({
-                color: m.color,
-                temperature: m.temperature,
-            });
-        }
-    };
+  @action
+  public onMessage = (message: AddParticlesMessage) => {
+    const newParticles = Array.from({ length: message.numParticles }, () => ({
+      color: message.color,
+      temperature: message.temperature,
+    }));
+
+    this.particles = [...this.particles, ...newParticles];
+  };
 }
 
 export default State;
