@@ -133,6 +133,9 @@
     "BasicJS": {
       "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/population-ecology/languages/BasicJS/starter-code/main.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/population-ecology/languages/Python/implementation.js"
     }
   },
   "riemann-sum": {
@@ -147,6 +150,13 @@
     "BasicJS": {
       "implUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/starter-code/main.js"
+    }
+  },
+  "standing-wave-studio": {
+    "instructionsUrl": "/plugins-code/standing-wave-studio/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/standing-wave-studio/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/standing-wave-studio/languages/BasicJS/starter-code/main.js"
     }
   },
   "supply-demand": {
