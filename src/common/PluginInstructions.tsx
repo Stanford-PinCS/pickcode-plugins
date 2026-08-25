@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { color, font, radius, space } from "./tokens";
@@ -134,6 +134,35 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
     setIndex(i);
     sessionStorage.setItem("pincs-instructions-step", String(i));
   };
+
+  /**
+   * Reports the active step to the host page.
+   *
+   * Instruction progress used to be measured by the site's MarkdownRenderer,
+   * which counts <Slide> elements. Plugins moved to plain `##` steps rendered
+   * here, inside the plugin iframe, so that counter saw nothing and the
+   * `slide_time` analytics event stopped firing on 2026-08-07 — which is why
+   * the class-session report's Progress column reads as empty.
+   *
+   * The iframe is sandboxed without allow-same-origin, so it cannot call the
+   * analytics client itself. It posts the step instead and the host turns that
+   * into `slide_time`.
+   */
+  useEffect(() => {
+    if (steps.length === 0) return;
+    try {
+      window.parent.postMessage(
+        {
+          type: "instructions-step",
+          stepIndex: Math.min(index, steps.length - 1),
+          totalSteps: steps.length,
+        },
+        "*"
+      );
+    } catch {
+      // No parent, or it rejected the message: progress goes unreported.
+    }
+  }, [index, steps.length]);
 
   if (steps.length === 0) return null;
 
