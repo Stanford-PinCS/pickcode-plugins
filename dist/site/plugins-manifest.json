@@ -1,80 +1,162 @@
 {
   "canvas": {
     "BasicJS": {
-      "implUrl": "/plugins-code/canvas/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/canvas/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/canvas/languages/BasicJS/starter-code/main.js"
     }
   },
   "chat-demo": {
     "BasicJS": {
-      "implUrl": "/plugins-code/chat-demo/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/chat-demo/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/chat-demo/languages/BasicJS/starter-code/main.js"
+    }
+  },
+  "coin-flip": {
+    "instructionsUrl": "/plugins-code/coin-flip/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/coin-flip/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/coin-flip/languages/BasicJS/starter-code/main.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/coin-flip/languages/Python/implementation.js"
     }
   },
   "console": {
     "BasicJS": {
-      "implUrl": "/plugins-code/console/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/console/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/console/languages/BasicJS/starter-code/main.js"
     }
   },
   "dialogue-maker": {
     "BasicJS": {
-      "implUrl": "/plugins-code/dialogue-maker/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/dialogue-maker/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/dialogue-maker/languages/BasicJS/starter-code/main.js"
+    }
+  },
+  "dice-roll": {
+    "instructionsUrl": "/plugins-code/dice-roll/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/dice-roll/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/dice-roll/languages/BasicJS/starter-code/main.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/dice-roll/languages/Python/implementation.js"
     }
   },
   "drag": {
+    "instructionsUrl": "/plugins-code/drag/instructions.md",
     "BasicJS": {
-      "implUrl": "/plugins-code/drag/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/drag/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/drag/languages/BasicJS/starter-code/main.js"
+    }
+  },
+  "electric-field": {
+    "instructionsUrl": "/plugins-code/electric-field/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/electric-field/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/electric-field/languages/BasicJS/starter-code/main.js"
+    }
+  },
+  "escape-velocity": {
+    "instructionsUrl": "/plugins-code/escape-velocity/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/escape-velocity/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/escape-velocity/languages/BasicJS/starter-code/main.js"
     }
   },
   "force-addition": {
+    "instructionsUrl": "/plugins-code/force-addition/instructions.md",
     "BasicJS": {
-      "implUrl": "/plugins-code/force-addition/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/force-addition/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/force-addition/languages/BasicJS/starter-code/main.js"
     }
   },
   "force-components": {
+    "instructionsUrl": "/plugins-code/force-components/instructions.md",
     "BasicJS": {
-      "implUrl": "/plugins-code/force-components/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/force-components/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/force-components/languages/BasicJS/starter-code/main.js"
     }
   },
   "haber-reaction": {
+    "instructionsUrl": "/plugins-code/haber-reaction/instructions.md",
     "BasicJS": {
-      "implUrl": "/plugins-code/haber-reaction/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/haber-reaction/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/haber-reaction/languages/BasicJS/starter-code/main.js"
     }
   },
   "haber-reaction-python": {
     "BasicJS": {
-      "implUrl": "/plugins-code/haber-reaction-python/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/haber-reaction-python/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/haber-reaction-python/languages/BasicJS/starter-code/main.js"
     },
     "Python": {
       "implUrl": "/plugins-code/haber-reaction-python/languages/Python/implementation.js"
     }
   },
   "marginal-utility": {
+    "instructionsUrl": "/plugins-code/marginal-utility/instructions.md",
     "BasicJS": {
-      "implUrl": "/plugins-code/marginal-utility/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/marginal-utility/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/marginal-utility/languages/BasicJS/starter-code/main.js"
+    }
+  },
+  "momentum-2d": {
+    "instructionsUrl": "/plugins-code/momentum-2d/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/momentum-2d/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/momentum-2d/languages/BasicJS/starter-code/main.js"
     }
   },
   "music": {
     "BasicJS": {
-      "implUrl": "/plugins-code/music/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/music/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/music/languages/BasicJS/starter-code/main.js"
     }
   },
   "particle-simulation": {
+    "instructionsUrl": "/plugins-code/particle-simulation/instructions.md",
     "BasicJS": {
-      "implUrl": "/plugins-code/particle-simulation/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/particle-simulation/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/particle-simulation/languages/BasicJS/starter-code/main.js"
     }
   },
   "planets": {
+    "instructionsUrl": "/plugins-code/planets/instructions.md",
     "BasicJS": {
-      "implUrl": "/plugins-code/planets/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/planets/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/planets/languages/BasicJS/starter-code/main.js"
     }
   },
   "population-ecology": {
+    "instructionsUrl": "/plugins-code/population-ecology/instructions.md",
     "BasicJS": {
-      "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/population-ecology/languages/BasicJS/starter-code/main.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/population-ecology/languages/Python/implementation.js"
+    }
+  },
+  "riemann-sum": {
+    "instructionsUrl": "/plugins-code/riemann-sum/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/riemann-sum/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/riemann-sum/languages/BasicJS/starter-code/main.js"
+    }
+  },
+  "simple-harmonic-motion": {
+    "instructionsUrl": "/plugins-code/simple-harmonic-motion/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/starter-code/main.js"
     }
   },
   "supply-demand": {
+    "instructionsUrl": "/plugins-code/supply-demand/instructions.md",
     "BasicJS": {
-      "implUrl": "/plugins-code/supply-demand/languages/BasicJS/implementation.js"
+      "implUrl": "/plugins-code/supply-demand/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/supply-demand/languages/BasicJS/starter-code/main.js"
     }
   }
 }
