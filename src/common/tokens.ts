@@ -20,7 +20,7 @@ export const color = {
 
   /** Interactive + primary emphasis. */
   accent: "#d6446b",
-  accentSoft: "#ff80cc",
+  accentSoft: "#fbeaf0",
 
   /**
    * Categorical data series, in order. Index 0 is the primary series.
