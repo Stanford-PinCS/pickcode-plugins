@@ -53,44 +53,6 @@ function formatMass(mass: number) {
   return mass < 1 ? `${(mass * 1000).toFixed(0)} g` : `${mass.toFixed(2)} kg`;
 }
 
-// Draws text on an opaque backdrop chip so it stays legible no matter what's
-// behind it (the oscillating mass, the spring coils, a data curve, ...).
-function drawLabelChip(
-  context: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  align: CanvasTextAlign,
-  options?: { font?: string; textColor?: string }
-) {
-  const font = options?.font ?? "10px ui-sans-serif, system-ui, sans-serif";
-  const textColor = options?.textColor ?? color.axis;
-
-  context.font = font;
-  context.textAlign = align;
-  context.textBaseline = "middle";
-
-  const textWidth = context.measureText(text).width;
-  const paddingX = 5;
-  const boxHeight = 14;
-  const boxWidth = textWidth + paddingX * 2;
-  const boxX =
-    align === "right"
-      ? x - textWidth - paddingX
-      : align === "left"
-      ? x - paddingX
-      : x - boxWidth / 2;
-
-  context.fillStyle = "rgba(255, 255, 255, 0.9)";
-  context.fillRect(boxX, y - boxHeight / 2, boxWidth, boxHeight);
-
-  context.fillStyle = textColor;
-  context.fillText(text, x, y);
-
-  // Restore the baseline every other draw call in this file relies on.
-  context.textBaseline = "alphabetic";
-}
-
 const Component = observer(({ state }: Props) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -195,33 +157,6 @@ const Component = observer(({ state }: Props) => {
 
     const context = canvas.getContext("2d");
     if (!context) return;
-
-    // Render at native device-pixel density so lines, arcs, and text stay
-    // crisp — the canvas backing store was previously locked to a fixed
-    // 700x400 regardless of the (often larger, and DPR-scaled) rendered
-    // size, which is what made everything look soft/pixelated once the
-    // browser stretched it to fit the container.
-    const dpr = window.devicePixelRatio || 1;
-    const bounds = canvas.getBoundingClientRect();
-    const cssWidth = Math.max(1, bounds.width);
-    const cssHeight = Math.max(1, bounds.height);
-    const backingWidth = Math.max(1, Math.round(cssWidth * dpr));
-    const backingHeight = Math.max(1, Math.round(cssHeight * dpr));
-    if (canvas.width !== backingWidth || canvas.height !== backingHeight) {
-      canvas.width = backingWidth;
-      canvas.height = backingHeight;
-    }
-    // Everything below still draws in the original CANVAS_WIDTH x
-    // CANVAS_HEIGHT logical coordinate space; this transform maps that
-    // onto however many real device pixels the canvas now occupies.
-    context.setTransform(
-      backingWidth / CANVAS_WIDTH,
-      0,
-      0,
-      backingHeight / CANVAS_HEIGHT,
-      0,
-      0
-    );
 
     const snapshot = getSnapshotAtTime(
       currentState.model.inputs,
@@ -344,33 +279,13 @@ const Component = observer(({ state }: Props) => {
     });
     context.restore();
 
-    // Legend — opaque backdrop so a data curve passing behind it (every wave
-    // starts at the chart's top-left corner, right where this sits) never
-    // makes the swatches or labels hard to read.
-    if (waveHistory.length > 0) {
-      context.font = "600 11px ui-sans-serif, system-ui, sans-serif";
-      const legendWidth =
-        Math.max(
-          ...waveHistory.map(
-            (wave) => 24 + context.measureText(formatMass(wave.mass)).width
-          )
-        ) + 12;
-      const legendHeight = waveHistory.length * 17 + 8;
-      context.fillStyle = "rgba(255, 255, 255, 0.9)";
-      context.fillRect(left + 6, top + 6, legendWidth, legendHeight);
-
-      context.textAlign = "left";
-      waveHistory.forEach((wave, index) => {
-        context.fillStyle = wave.stroke;
-        context.fillRect(left + 10, top + 10 + index * 17, 8, 8);
-        context.fillStyle = color.axis;
-        context.fillText(
-          formatMass(wave.mass),
-          left + 24,
-          top + 18 + index * 17
-        );
-      });
-    }
+    context.font = "600 11px ui-sans-serif, system-ui, sans-serif";
+    context.textAlign = "left";
+    waveHistory.forEach((wave, index) => {
+      context.fillStyle = wave.stroke;
+      context.fillRect(left + 10, top + 10 + index * 17, 8, 8);
+      context.fillText(formatMass(wave.mass), left + 24, top + 18 + index * 17);
+    });
   }
 
   function drawApparatus(
@@ -418,24 +333,11 @@ const Component = observer(({ state }: Props) => {
     context.strokeStyle = color.axis;
     context.strokeRect(centerX - 25, massY - 20, 50, 40);
 
-    // Labels sit on their own backdrop chips, offset to the right edge of
-    // the apparatus — clear of the mass block and spring coil, which live
-    // in the centerX column these two lines pass directly through.
-    drawLabelChip(
-      context,
-      "natural length",
-      APPARATUS.right - 4,
-      naturalEndY - 8,
-      "right"
-    );
-    drawLabelChip(
-      context,
-      "equilibrium",
-      APPARATUS.right - 4,
-      equilibriumY + 12,
-      "right",
-      { textColor: color.reference }
-    );
+    context.fillStyle = color.axis;
+    context.font = "11px ui-sans-serif, system-ui, sans-serif";
+    context.textAlign = "center";
+    context.fillText("equilibrium", centerX, equilibriumY - 6);
+    context.fillText("natural length", centerX, naturalEndY - 6);
   }
 
   function drawSpring(

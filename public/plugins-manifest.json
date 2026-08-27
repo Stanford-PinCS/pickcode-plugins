@@ -133,6 +133,9 @@
     "BasicJS": {
       "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/population-ecology/languages/BasicJS/starter-code/main.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/population-ecology/languages/Python/implementation.js"
     }
   },
   "riemann-sum": {
