@@ -144,8 +144,6 @@ const momentum = (mass: number, velocity: Vec2): Vec2 => scale(velocity, mass);
 const kineticEnergy = (mass: number, velocity: Vec2) =>
   0.5 * mass * dot(velocity, velocity);
 
-// Palette-matched defaults — rose (primary accent family) and slate-teal
-// (secondary), instead of the old neon sky-blue / hot-pink pairing.
 const DEFAULT_BODIES: [BodyInputs, BodyInputs] = [
   {
     label: "A",
@@ -153,7 +151,7 @@ const DEFAULT_BODIES: [BodyInputs, BodyInputs] = [
     radius: 34,
     position: { x: 200, y: 280 },
     velocity: { x: 210, y: 0 },
-    color: "#c9587c",
+    color: "#38bdf8",
   },
   {
     label: "B",
@@ -161,7 +159,7 @@ const DEFAULT_BODIES: [BodyInputs, BodyInputs] = [
     radius: 34,
     position: { x: 560, y: 328 },
     velocity: { x: 0, y: 0 },
-    color: "#3f7d86",
+    color: "#fb7185",
   },
 ];
 
