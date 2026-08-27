@@ -14,11 +14,27 @@ import type { OverlayPoint, Vec2 } from "./messages";
 
 const BODY_RENDER_SCALE = 0.82;
 
-/* ───────── Theme (readout strip only — the sim viewport stays dark) ───────── */
+/* ───────── Theme — shared with the other pincs.stanford.edu plugins ─────────
+ * `ink`/`muted` and the cream/tan surface tones match the marginal-utility
+ * and area-approximation plugins byte-for-byte. `accent` comes straight
+ * from the shared token palette (color.series[0]) so it tracks the site's
+ * real brand pink automatically. `gold` and `secondary` are the same
+ * target/threshold gold and slate-teal seen across the other plugins'
+ * screenshots — if common/tokens.ts exposes those as named series entries
+ * instead, swap these two literals for the token reference.
+ */
 
 const ink = "#4a2a38";
 const muted = "#9c8378";
-const accent = color.series[0];
+const accent = color.series[0]; // primary pink/rose accent
+const gold = "#c98a1f"; // target / threshold accent
+
+const canvasBg = "#fdf8f2";
+const canvasBgLow = "#faf1ea";
+const canvasBorder = "#e7d9cd";
+const gridLine = "rgba(74, 42, 56, 0.07)";
+const axisLine = "rgba(74, 42, 56, 0.4)";
+const axisLabel = "rgba(156, 131, 120, 0.95)";
 
 /* ───────── Formatting ───────── */
 
@@ -30,9 +46,6 @@ const formatVector = (vector: Vec2, digits = 1) =>
 
 const formatPercent = (value: number, digits = 1) =>
   `${(Number.isFinite(value) ? value * 100 : 0).toFixed(digits)}%`;
-
-const kineticEnergyFromSpeed = (mass: number, speed: number) =>
-  0.5 * mass * speed * speed;
 
 /* ───────── Vector helpers ───────── */
 
@@ -48,12 +61,6 @@ const scaleVector = (vector: Vec2, factor: number): Vec2 => ({
 
 const divideVector = (vector: Vec2, divisor: number): Vec2 =>
   Math.abs(divisor) > 1e-6 ? scaleVector(vector, 1 / divisor) : { x: 0, y: 0 };
-
-const normalizeVector = (vector: Vec2, fallback: Vec2): Vec2 => {
-  const length = magnitude(vector);
-  if (length < 1e-6) return fallback;
-  return { x: vector.x / length, y: vector.y / length };
-};
 
 const centerOfMassPosition = (
   bodies: Array<{ mass: number; position: Vec2 }>
@@ -118,24 +125,28 @@ const drawBody = (
   ctx.save();
   ctx.translate(center.x, center.y);
 
-  ctx.shadowColor = body.color;
-  ctx.shadowBlur = 18;
+  // Soft drop shadow instead of a neon glow — reads correctly on a light card.
+  ctx.shadowColor = "rgba(74, 42, 56, 0.22)";
+  ctx.shadowBlur = 10;
+  ctx.shadowOffsetY = 2;
   ctx.beginPath();
   ctx.arc(0, 0, radius, 0, Math.PI * 2);
-  ctx.fillStyle = body.color + "bb";
+  ctx.fillStyle = body.color;
   ctx.fill();
 
+  ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
+  ctx.shadowOffsetY = 0;
   ctx.beginPath();
   ctx.arc(0, 0, radius, 0, Math.PI * 2);
   ctx.lineWidth = 1.5;
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
   ctx.stroke();
   ctx.restore();
 
   ctx.save();
-  ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
-  ctx.font = "500 13px 'Segoe UI', system-ui, sans-serif";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
+  ctx.font = "600 13px 'Segoe UI', system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(body.label, center.x, center.y);
@@ -175,8 +186,8 @@ const drawAxisTicks = (
   step = 160
 ) => {
   ctx.save();
-  ctx.strokeStyle = "rgba(226, 232, 240, 0.42)";
-  ctx.fillStyle = "rgba(148, 163, 184, 0.92)";
+  ctx.strokeStyle = "rgba(74, 42, 56, 0.22)";
+  ctx.fillStyle = axisLabel;
   ctx.lineWidth = 1;
   ctx.font = `${Math.max(
     8,
@@ -212,8 +223,8 @@ const drawGuideLine = (
   start: Vec2,
   end: Vec2,
   strokeColor: string,
-  dash: number[] = [12, 8],
-  alpha = 0.35
+  dash: number[] = [10, 7],
+  alpha = 0.45
 ) => {
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -236,11 +247,39 @@ const drawOverlayPoint = (
   ctx.save();
   ctx.beginPath();
   ctx.arc(canvasPoint.x, canvasPoint.y, point.radius ?? 4, 0, Math.PI * 2);
-  ctx.fillStyle = point.color ?? "#f8fafc";
-  ctx.globalAlpha = 0.95;
+  ctx.fillStyle = point.color ?? ink;
+  ctx.globalAlpha = 0.9;
   ctx.fill();
   ctx.restore();
 };
+
+/* ───────── Stat readout row ───────── */
+
+const StatCell = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) => (
+  <div style={{ textAlign: "center", minWidth: 92 }}>
+    <div
+      style={{
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.07em",
+        textTransform: "uppercase",
+        color: muted,
+        marginBottom: 4,
+      }}
+    >
+      {label}
+    </div>
+    <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "monospace" }}>
+      {children}
+    </div>
+  </div>
+);
 
 /* ───────── Main component ───────── */
 
@@ -325,50 +364,26 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Render at native device-pixel density so lines, arcs, and text stay
+    // crisp on Retina/high-DPI screens instead of looking soft or pixelated.
+    const dpr = window.devicePixelRatio || 1;
     const bounds = canvas.getBoundingClientRect();
     const width = Math.max(1, Math.floor(bounds.width));
     const height = Math.max(1, Math.floor(bounds.height));
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
+    const backingWidth = Math.max(1, Math.round(width * dpr));
+    const backingHeight = Math.max(1, Math.round(height * dpr));
+    if (canvas.width !== backingWidth || canvas.height !== backingHeight) {
+      canvas.width = backingWidth;
+      canvas.height = backingHeight;
     }
+    // All drawing below still happens in CSS-pixel coordinates (`width` /
+    // `height`) — this transform maps them onto the higher-resolution
+    // backing store. Reset every frame since canvas transforms persist.
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const sceneHorizontalPadding = 8;
-    const hudInsetX = Math.max(10, Math.min(16, Math.round(width * 0.018)));
-    const hudInsetY = Math.max(10, Math.min(16, Math.round(height * 0.02)));
-    const hudStatusFontSize = width < 520 ? 11 : 12;
-    const hudPositionFontSize = width < 520 ? 9 : 11;
-    const hudLineHeight = width < 520 ? 16 : 18;
-    const hudGap = width < 520 ? 10 : 12;
-    const statsReserveWidth = Math.max(108, Math.min(168, width * 0.22));
-    const statusText = `${phaseLabel} | t=${formatScalar(
-      state.elapsedTime,
-      2
-    )}s`;
-    const positionTexts = snapshot.bodies.map(
-      (body) =>
-        `${body.label}(${formatScalar(body.position.x, 0)},${formatScalar(
-          body.position.y,
-          0
-        )})`
-    );
-
-    ctx.font = `${hudStatusFontSize}px Consolas, Monaco, monospace`;
-    const statusWidth = ctx.measureText(statusText).width;
-
-    ctx.font = `${hudPositionFontSize}px Consolas, Monaco, monospace`;
-    const positionsWidth =
-      positionTexts.reduce(
-        (sum, text) => sum + ctx.measureText(text).width,
-        0
-      ) +
-      hudGap * Math.max(positionTexts.length - 1, 0);
-    const positionsInline =
-      hudInsetX + statusWidth + 20 + positionsWidth <=
-      width - hudInsetX - statsReserveWidth;
-    const sceneTopPadding =
-      hudInsetY + hudLineHeight * (positionsInline ? 1 : 2) + 12;
-    const sceneBottomPadding = 8;
+    const sceneHorizontalPadding = 10;
+    const sceneTopPadding = 22;
+    const sceneBottomPadding = 10;
     const sceneScale = Math.min(
       Math.max((width - sceneHorizontalPadding * 2) / state.inputs.width, 0.1),
       Math.max(
@@ -401,10 +416,10 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Dark-plum backdrop (warm, ties into the palette).
+    // Pale cream backdrop, matching the other plugins' plot surfaces.
     const background = ctx.createLinearGradient(0, 0, 0, height);
-    background.addColorStop(0, "#241019");
-    background.addColorStop(1, "#160a0f");
+    background.addColorStop(0, canvasBg);
+    background.addColorStop(1, canvasBgLow);
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, width, height);
 
@@ -413,7 +428,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       ctx.beginPath();
       ctx.moveTo(xPosition, offsetY);
       ctx.lineTo(xPosition, offsetY + scaledSceneHeight);
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.18)";
+      ctx.strokeStyle = gridLine;
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -422,7 +437,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       ctx.beginPath();
       ctx.moveTo(offsetX, yPosition);
       ctx.lineTo(offsetX + scaledSceneWidth, yPosition);
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.18)";
+      ctx.strokeStyle = gridLine;
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -431,14 +446,14 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       ctx,
       axisOrigin,
       { x: Math.max(scaledSceneWidth - 14, 0), y: 0 },
-      "rgba(226, 232, 240, 0.48)",
+      axisLine,
       2
     );
     drawArrow(
       ctx,
       axisOrigin,
       { x: 0, y: -Math.max(scaledSceneHeight - 14, 0) },
-      "rgba(226, 232, 240, 0.48)",
+      axisLine,
       2
     );
     drawAxisTicks(
@@ -450,7 +465,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       getAdaptiveAxisStep(sceneScale)
     );
 
-    ctx.fillStyle = "rgba(226, 232, 240, 0.92)";
+    ctx.fillStyle = axisLabel;
     ctx.font = "11px Consolas, Monaco, monospace";
     ctx.textAlign = "left";
     ctx.fillText("0", axisOrigin.x + 6, axisOrigin.y - 8);
@@ -486,9 +501,9 @@ const Component = observer(({ state }: { state: State | undefined }) => {
           ctx,
           toCanvas(initialCenterOfMassPosition),
           toCanvas(currentCenterOfMassPosition),
-          "#facc15",
-          [10, 8],
-          0.52
+          gold,
+          [10, 7],
+          0.6
         );
       }
     }
@@ -516,7 +531,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
           0,
           Math.PI * 2
         );
-        ctx.fillStyle = `rgba(255, 255, 255, ${0.18 + flashAmount * 0.42})`;
+        ctx.fillStyle = `rgba(201, 88, 124, ${0.14 + flashAmount * 0.34})`;
         ctx.fill();
       }
 
@@ -526,7 +541,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       if (afterCollision) {
         const s = 5;
         ctx.save();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+        ctx.strokeStyle = "rgba(74, 42, 56, 0.75)";
         ctx.lineWidth = 2;
         ctx.lineCap = "round";
         ctx.beginPath();
@@ -553,7 +568,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       ctx.save();
       ctx.setLineDash([4, 4]);
       ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.6;
+      ctx.globalAlpha = 0.4;
       ctx.strokeStyle = body.color;
       ctx.beginPath();
       ctx.moveTo(center.x, center.y);
@@ -578,31 +593,17 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       const currentCenter = toCanvas(currentCenterOfMassPosition);
       ctx.beginPath();
       ctx.arc(currentCenter.x, currentCenter.y, 4.5, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(250, 204, 21, 0.95)";
+      ctx.fillStyle = gold;
       ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#fff";
+      ctx.stroke();
 
-      ctx.fillStyle = "rgba(254, 249, 195, 0.98)";
+      ctx.fillStyle = ink;
       ctx.font = "700 11px 'Segoe UI', system-ui, sans-serif";
       ctx.textAlign = "left";
       ctx.fillText("CM", currentCenter.x + 12, currentCenter.y - 10);
     }
-
-    // Minimal HUD.
-    ctx.fillStyle = "rgba(148, 163, 184, 0.95)";
-    ctx.font = `${hudStatusFontSize}px Consolas, Monaco, monospace`;
-    const statusY = hudInsetY + hudStatusFontSize;
-    ctx.textAlign = "left";
-    ctx.fillText(statusText, hudInsetX, statusY);
-
-    ctx.font = `${hudPositionFontSize}px Consolas, Monaco, monospace`;
-    const positionsY = positionsInline ? statusY : statusY + hudLineHeight;
-    let currentX = positionsInline ? hudInsetX + statusWidth + 20 : hudInsetX;
-    snapshot.bodies.forEach((body, index) => {
-      const positionText = positionTexts[index];
-      ctx.fillStyle = body.color;
-      ctx.fillText(positionText, currentX, positionsY);
-      currentX += ctx.measureText(positionText).width + hudGap;
-    });
   }, [state, snapshot, phaseLabel]);
 
   if (!state || !snapshot || !currentTotalMomentum) {
@@ -618,6 +619,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
   const pBefore = state.derived.totalMomentumBefore;
   const pAfter = state.derived.totalMomentumAfter;
   const keLoss = state.derived.fractionalKineticEnergyLoss;
+  const collisionOccurs = state.derived.collisionOccurs;
 
   return (
     <PluginSurface instructions={instructions}>
@@ -628,21 +630,20 @@ const Component = observer(({ state }: { state: State | undefined }) => {
             height: "100%",
             display: "flex",
             flexDirection: "column",
-            gap: 8,
-            padding: 8,
-            boxSizing: "border-box",
+            borderRadius: 14,
+            border: `1px solid ${canvasBorder}`,
+            backgroundColor: color.surfaceRaised,
+            boxShadow: "0 2px 6px rgba(74, 42, 56, 0.08)",
+            overflow: "hidden",
           }}
         >
-          {/* Dark simulation viewport, framed on the cream stage */}
+          {/* Simulation viewport — light cream, same family as the other plugins' plots */}
           <div
             ref={containerRef}
             style={{
               flex: 1,
               minHeight: 0,
               position: "relative",
-              borderRadius: 12,
-              overflow: "hidden",
-              background: "#160a0f",
             }}
           >
             <canvas
@@ -651,56 +652,52 @@ const Component = observer(({ state }: { state: State | undefined }) => {
             />
           </div>
 
-          {/* Conservation readout */}
+          {/* Conservation readout — one card, divided by a rule, matching the site's stat-row style */}
           <div
             style={{
               display: "flex",
               flexWrap: "wrap",
-              alignItems: "center",
+              alignItems: "flex-start",
               justifyContent: "center",
-              gap: "8px 20px",
-              padding: "8px 12px",
-              borderRadius: 10,
-              backgroundColor: color.surfaceRaised,
-              border: `1px solid ${color.border}`,
-              fontSize: 13,
+              gap: "10px 28px",
+              padding: "12px 16px",
+              borderTop: `1px solid ${canvasBorder}`,
             }}
           >
-            <Readout
-              label="Momentum"
-              value={`${formatVector(pBefore)} → ${formatVector(pAfter)}`}
-            />
-            <Readout label="KE lost" value={formatPercent(keLoss)} />
-            <Readout
-              label="Collision"
-              value={state.derived.collisionOccurs ? "yes" : "no"}
-            />
+            <StatCell label="Status">
+              <span style={{ color: ink }}>{phaseLabel}</span>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 400,
+                  color: muted,
+                  marginTop: 2,
+                }}
+              >
+                t = {formatScalar(state.elapsedTime, 2)}s
+              </div>
+            </StatCell>
+
+            <StatCell label="Momentum (before → after)">
+              <span style={{ color: ink }}>{formatVector(pBefore)}</span>
+              <span style={{ color: muted }}> → </span>
+              <span style={{ color: accent }}>{formatVector(pAfter)}</span>
+            </StatCell>
+
+            <StatCell label="KE lost">
+              <span style={{ color: gold }}>{formatPercent(keLoss)}</span>
+            </StatCell>
+
+            <StatCell label="Collides?">
+              <span style={{ color: collisionOccurs ? accent : muted }}>
+                {collisionOccurs ? "Yes" : "No"}
+              </span>
+            </StatCell>
           </div>
         </div>
       </PluginStage>
     </PluginSurface>
   );
 });
-
-const Readout = ({ label, value }: { label: string; value: string }) => (
-  <span style={{ display: "inline-flex", alignItems: "baseline", gap: 6 }}>
-    <span
-      style={{
-        color: muted,
-        fontSize: 10,
-        textTransform: "uppercase",
-        letterSpacing: "0.08em",
-      }}
-    >
-      {label}
-    </span>
-    <span style={{ color: ink, fontWeight: 600, fontFamily: "monospace" }}>
-      {value}
-    </span>
-    <span style={{ color: accent }} aria-hidden>
-      ●
-    </span>
-  </span>
-);
 
 export default Component;
