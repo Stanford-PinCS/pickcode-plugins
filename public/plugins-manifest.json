@@ -5,6 +5,13 @@
       "starterUrl": "/plugins-code/canvas/languages/BasicJS/starter-code/main.js"
     }
   },
+  "cell-classification": {
+    "instructionsUrl": "/plugins-code/cell-classification/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/cell-classification/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/cell-classification/languages/BasicJS/starter-code/main.js"
+    }
+  },
   "chat-demo": {
     "BasicJS": {
       "implUrl": "/plugins-code/chat-demo/languages/BasicJS/implementation.js",
@@ -133,9 +140,6 @@
     "BasicJS": {
       "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/population-ecology/languages/BasicJS/starter-code/main.js"
-    },
-    "Python": {
-      "implUrl": "/plugins-code/population-ecology/languages/Python/implementation.js"
     }
   },
   "riemann-sum": {
