@@ -57,6 +57,9 @@ export const plugin =
     useEffect(() => {
       // Forward messages from the window to the plugin component.
       const onWindowMessage = ({ data }: MessageEvent<any>) => {
+        // Browser extensions post strings and nulls into every frame.
+        if (!data || typeof data !== "object") return;
+
         if (data.type === "start") {
           pendingState.current = makeState();
           return;

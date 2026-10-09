@@ -18,6 +18,33 @@ import { parseSteps } from "../common/instructionSteps";
 /** Fixed so the visualization below doesn't jump between steps. */
 const BAND_HEIGHT = 180;
 
+const STEP_KEY = "pincs-instructions-step";
+
+// sessionStorage throws (not just returns empty) whenever the browser denies
+// this document storage: cookies/site data blocked for the site, which
+// school-managed Chromebooks commonly enforce, or an opaque-origin sandboxed
+// iframe. Reading it unguarded during render unmounted the whole plugin, so
+// every plugin with instructions went completely blank while plugins without
+// instructions kept working. Both accessors fall back to unpersisted state.
+function readStored(key: string, fallback: number): number {
+  try {
+    const saved = sessionStorage.getItem(key);
+    if (!saved) return fallback;
+    const n = parseInt(saved, 10);
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStored(key: string, value: number): void {
+  try {
+    sessionStorage.setItem(key, String(value));
+  } catch {
+    // Unavailable in this context, so the value just won't persist.
+  }
+}
+
 const markdownComponents = {
   p: ({ children }: { children?: React.ReactNode }) => (
     <p style={{ margin: `0 0 ${space.sm}px` }}>{children}</p>
@@ -125,14 +152,11 @@ function NavButton({
 
 export function PluginInstructions({ markdown }: { markdown: string }) {
   const steps = parseSteps(markdown);
-  const [index, setIndex] = useState(() => {
-    const saved = sessionStorage.getItem("pincs-instructions-step");
-    return saved ? parseInt(saved, 10) : 0;
-  });
+  const [index, setIndex] = useState(() => readStored(STEP_KEY, 0));
 
   const goTo = (i: number) => {
     setIndex(i);
-    sessionStorage.setItem("pincs-instructions-step", String(i));
+    writeStored(STEP_KEY, i);
   };
 
   /**
