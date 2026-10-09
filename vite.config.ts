@@ -96,6 +96,45 @@ function manifestPlugin() {
   };
 }
 
+/**
+ * `vite preview` falls back to index.html (200, text/html) for any unknown
+ * path, which is right for /embed/<name> routes but wrong for files: a
+ * missing chunk then fails as a cryptic MIME error, and a missing
+ * implementation.js is handed to the site as HTML and run as student code.
+ * Answer a real 404 for build artifacts that don't exist.
+ */
+function missingFiles404() {
+  let outDir = "";
+  let base = "/";
+  return {
+    name: "missing-files-404",
+    configResolved(cfg) {
+      outDir = path.resolve(cfg.root, cfg.build.outDir);
+      base = cfg.base || "/";
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const pathname = decodeURIComponent((req.url ?? "").split("?")[0]);
+        if (!pathname.startsWith(base)) return next();
+        const rel = pathname.slice(base.length);
+        if (!rel.startsWith("assets/") && !rel.startsWith("plugins-code/")) {
+          return next();
+        }
+        const file = path.resolve(outDir, rel);
+        if (!file.startsWith(outDir + path.sep)) return next();
+        try {
+          await fs.access(file);
+          next();
+        } catch {
+          res.statusCode = 404;
+          res.setHeader("Content-Type", "text/plain");
+          res.end("Not found");
+        }
+      });
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const base = mode === "plugins" ? "/pickcode-plugins/" : "/";
@@ -126,6 +165,7 @@ export default defineConfig(({ mode }) => {
       }),
       tailwindcss(),
       manifestPlugin(),
+      missingFiles404(),
       viteStaticCopy({
         targets: [
           {
