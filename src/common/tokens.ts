@@ -23,6 +23,18 @@ export const color = {
   accentSoft: "#fbeaf0",
 
   /**
+   * Answer feedback in <Question> cards, and nothing else. Right/wrong needs
+   * to read as right/wrong at a glance, which `accent` (pink, and already the
+   * color of every button) cannot do. Green/red carry that meaning without
+   * being mistaken for a control. Never use these for data series — they'd
+   * imply good/bad about the data itself.
+   */
+  positive: "#2f7d5b",
+  positiveSoft: "#edf7f1",
+  negative: "#c0392b",
+  negativeSoft: "#fdeeec",
+
+  /**
    * Categorical data series, in order. Index 0 is the primary series.
    * Tested for contrast on `surface` and distinguishable in grayscale.
    */

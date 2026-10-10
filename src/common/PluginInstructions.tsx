@@ -1,37 +1,49 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { color, font, radius, space } from "./tokens";
-import { parseSteps } from "../common/instructionSteps";
+import { parseStepBody, parseSteps } from "../common/instructionSteps";
+import { QuestionCard } from "./QuestionCard";
 
 /**
  * The instruction band at the top of every plugin pane.
  *
  * Shows one step at a time so the height stays fixed and the visualization
  * below never has to be resized or scrolled past. Steps come from the `##`
- * headings in the plugin's instructions.md.
+ * headings in the plugin's instructions.md, and a step may embed a
+ * multiple-choice <Question> block, which renders as a QuestionCard.
  *
  * The only place instruction styling lives. Don't style instructions
  * inside a plugin.
  */
 
-/** Fixed so the visualization below doesn't jump between steps. */
-const BAND_HEIGHT = 180;
+// The band does not grow with its content: a step with three paragraphs must
+// not shove the visualization down the pane. It starts at this height and only
+// changes when the reader drags the divider under it.
+const DEFAULT_BAND_HEIGHT = 220;
+
+// Below this the step heading and the Next button start colliding.
+const MIN_BAND_HEIGHT = 128;
+
+// Always leave this much for whatever the plugin draws. Dragging the divider
+// to the floor of the pane would hide the thing the instructions are about.
+const MIN_STAGE_HEIGHT = 140;
+
+// How far one arrow-key press moves the divider.
+const KEYBOARD_STEP = 16;
 
 const STEP_KEY = "pincs-instructions-step";
+const HEIGHT_KEY = "pincs-instructions-height";
 
-// sessionStorage throws (not just returns empty) whenever the browser denies
-// this document storage: cookies/site data blocked for the site, which
-// school-managed Chromebooks commonly enforce, or an opaque-origin sandboxed
-// iframe. Reading it unguarded during render unmounted the whole plugin, so
-// every plugin with instructions went completely blank while plugins without
-// instructions kept working. Both accessors fall back to unpersisted state.
+// sessionStorage throws (not just returns empty) on the opaque origin of a
+// sandbox="allow-scripts"-only iframe, which is exactly how PinCS renders
+// plugin bundles. Both accessors below fall back to unpersisted state there.
 function readStored(key: string, fallback: number): number {
   try {
     const saved = sessionStorage.getItem(key);
     if (!saved) return fallback;
     const n = parseInt(saved, 10);
-    return Number.isFinite(n) && n >= 0 ? n : fallback;
+    return Number.isFinite(n) ? n : fallback;
   } catch {
     return fallback;
   }
@@ -159,6 +171,9 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
     writeStored(STEP_KEY, i);
   };
 
+  // --- Resizable band -----------------------------------------------------
+  const sectionRef = useRef<HTMLElement | null>(null);
+
   /**
    * Reports the active step to the host page.
    *
@@ -170,7 +185,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
    *
    * The iframe is sandboxed without allow-same-origin, so it cannot call the
    * analytics client itself. It posts the step instead and the host turns that
-   * into `slide_time`.
+   * into `slide_time` (see StandaloneCodeOutput / StudioCodeOutput).
    */
   useEffect(() => {
     if (steps.length === 0) return;
@@ -184,9 +199,87 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
         "*"
       );
     } catch {
-      // No parent, or it rejected the message: progress goes unreported.
+      // No parent, or it rejected the message: progress just goes unreported.
     }
   }, [index, steps.length]);
+
+  const [height, setHeight] = useState(() =>
+    readStored(HEIGHT_KEY, DEFAULT_BAND_HEIGHT)
+  );
+  const [dragging, setDragging] = useState(false);
+  const dragRef = useRef<{ startY: number; startHeight: number } | null>(null);
+
+  // The upper bound depends on how tall the pane is right now, which is not
+  // known until the section is in the document, so this reads layout rather
+  // than trusting a stored number. A height saved on a tall window would
+  // otherwise leave no stage at all on a short one.
+  const clampHeight = useCallback((next: number) => {
+    const parent = sectionRef.current?.parentElement;
+    const available = parent?.getBoundingClientRect().height ?? 0;
+    const max =
+      available > 0
+        ? Math.max(MIN_BAND_HEIGHT, available - MIN_STAGE_HEIGHT)
+        : Number.POSITIVE_INFINITY;
+    return Math.round(Math.min(Math.max(next, MIN_BAND_HEIGHT), max));
+  }, []);
+
+  // Re-clamp whenever the pane changes size: entering Focus Mode, dragging the
+  // studio's own vertical divider, or just resizing the window.
+  useEffect(() => {
+    const parent = sectionRef.current?.parentElement;
+    if (!parent) return;
+    const reclamp = () => setHeight((h) => clampHeight(h));
+    reclamp();
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(reclamp) : null;
+    ro?.observe(parent);
+    return () => ro?.disconnect();
+  }, [clampHeight]);
+
+  const commitHeight = (next: number) => {
+    const clamped = clampHeight(next);
+    setHeight(clamped);
+    writeStored(HEIGHT_KEY, clamped);
+    return clamped;
+  };
+
+  const onHandlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    // Only the primary button, and never a second drag on top of a live one.
+    if (e.button !== 0 || dragRef.current) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragRef.current = { startY: e.clientY, startHeight: height };
+    setDragging(true);
+  };
+
+  const onHandlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    setHeight(clampHeight(drag.startHeight + (e.clientY - drag.startY)));
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    dragRef.current = null;
+    setDragging(false);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+    writeStored(HEIGHT_KEY, height);
+  };
+
+  const onHandleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      commitHeight(height - KEYBOARD_STEP);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      commitHeight(height + KEYBOARD_STEP);
+    } else if (e.key === "Home" || e.key === "Enter") {
+      e.preventDefault();
+      commitHeight(DEFAULT_BAND_HEIGHT);
+    }
+  };
 
   if (steps.length === 0) return null;
 
@@ -197,16 +290,19 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
 
   return (
     <section
+      ref={sectionRef}
       aria-label="Instructions"
       style={{
         flex: "0 0 auto",
-        height: BAND_HEIGHT,
-        minHeight: BAND_HEIGHT,
+        height,
+        minHeight: MIN_BAND_HEIGHT,
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
         background: color.surfaceRaised,
-        borderBottom: `1px solid ${color.border}`,
+        // Text selection would otherwise follow the pointer across the step
+        // body while the divider is being dragged.
+        userSelect: dragging ? "none" : undefined,
       }}
     >
       <div
@@ -240,12 +336,25 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
           {step.title}
         </h2>
 
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={markdownComponents}
-        >
-          {step.body}
-        </ReactMarkdown>
+        {parseStepBody(step.body).map((segment, i) =>
+          segment.kind === "question" ? (
+            <QuestionCard
+              key={i}
+              question={segment.question}
+              // Keyed by position so an answered question stays answered when
+              // the student pages away from the step and comes back.
+              storageKey={`pincs-question-${safeIndex}-${i}`}
+            />
+          ) : (
+            <ReactMarkdown
+              key={i}
+              remarkPlugins={[remarkGfm]}
+              components={markdownComponents}
+            >
+              {segment.markdown}
+            </ReactMarkdown>
+          )
+        )}
       </div>
 
       <div
@@ -296,6 +405,48 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
         >
           Next ›
         </button>
+      </div>
+
+      {/* Divider between the instructions and whatever the plugin draws.
+          Doubles as the section's bottom border, so the band keeps its edge
+          whether or not anyone ever touches it. */}
+      <div
+        role="separator"
+        aria-label="Resize instructions"
+        aria-orientation="horizontal"
+        aria-valuenow={Math.round(height)}
+        aria-valuemin={MIN_BAND_HEIGHT}
+        tabIndex={0}
+        onPointerDown={onHandlePointerDown}
+        onPointerMove={onHandlePointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onKeyDown={onHandleKeyDown}
+        onDoubleClick={() => commitHeight(DEFAULT_BAND_HEIGHT)}
+        title="Drag to resize. Double-click to reset."
+        style={{
+          flex: "0 0 auto",
+          height: 9,
+          cursor: "row-resize",
+          background: dragging ? color.border : color.surfaceRaised,
+          borderTop: `1px solid ${color.border}`,
+          borderBottom: `1px solid ${color.border}`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          // The pointer must not be handed to the text above mid-drag.
+          touchAction: "none",
+        }}
+      >
+        <span
+          aria-hidden="true"
+          style={{
+            width: 34,
+            height: 3,
+            borderRadius: 2,
+            background: dragging ? color.accent : color.border,
+          }}
+        />
       </div>
     </section>
   );
