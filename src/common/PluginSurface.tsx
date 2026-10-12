@@ -103,8 +103,7 @@ export interface Stat {
 /** Placeholder for a statistic that has no value yet. */
 export const EMPTY = "—";
 
-// StatRow at full size. A narrow pane draws the whole row smaller by one
-// factor, so these only show as-is when there's room.
+// StatRow at full size. A narrow pane draws the whole row smaller by one factor, so these only show as-is when there's room.
 const STAT_LABEL_SIZE = 9;
 const STAT_VALUE_SIZE = 13;
 const STAT_GAP = 16;
@@ -112,11 +111,7 @@ const STAT_GAP = 16;
 /**
  * Footer row of numeric readouts, pinned below the stage.
  *
- * Always one line. When the stats are wider than the pane (a lesson gives the
- * plugin about half of a narrow column), the whole row, text and spacing
- * alike, shrinks by the same factor until it fits, and grows back to full
- * size when there's room. Wrapping would stack the stats onto extra lines and
- * take that height from the stage.
+ * Always one line. When the stats are wider than the pane (a lesson gives the plugin about half of a narrow column), the whole row, text and spacing alike, shrinks by the same factor until it fits, and grows back to full size when there's room. Wrapping would stack the stats onto extra lines and take that height from the stage.
  */
 export function StatRow({ stats }: { stats: readonly Stat[] }) {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -139,8 +134,7 @@ export function StatRow({ stats }: { stats: readonly Stat[] }) {
         0.1,
         Math.min(1, (current * Math.max(available - 1, 1)) / width)
       );
-      // Shrink whenever it overflows, but grow back only for a real gain, so
-      // text that doesn't scale exactly linearly can't make it flicker.
+      // Shrink whenever it overflows, but grow back only for a real gain, so text that doesn't scale exactly linearly can't make it flicker.
       if (width > available || next > current * 1.01) {
         scaleRef.current = next;
         setScale(next);
@@ -148,8 +142,7 @@ export function StatRow({ stats }: { stats: readonly Stat[] }) {
     };
 
     fit();
-    // Refit on the next frame instead of inside the callback, so the resize a
-    // refit causes doesn't trip the browser's ResizeObserver loop error.
+    // Refit on the next frame instead of inside the callback, so the resize a refit causes doesn't trip the browser's ResizeObserver loop error.
     let frame = 0;
     const observer = new ResizeObserver(() => {
       cancelAnimationFrame(frame);
