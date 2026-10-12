@@ -54,6 +54,12 @@ Structure is always: `PluginSurface` > `PluginStage` (the visual) >
 `StatRow` (the numbers). Stats go at the bottom because the visual is the point
 and the numbers are the confirmation.
 
+`StatRow` is always one line. In a narrow pane (a lesson gives the plugin about
+half of its column) the whole row, text and spacing alike, shrinks by one
+factor until it fits, instead of wrapping onto more lines and taking that
+height from the stage. Keep labels short: one long label shrinks every stat in
+the row. Don't build a readout strip of your own; use `StatRow`.
+
 ## Charts
 
 Shared scaffolding exists because charting code is where drift compounds

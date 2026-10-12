@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useReducer, useRef } from "react";
-import { color } from "../../common/tokens";
 import {
   EmptyState,
   PluginStage,
   PluginSurface,
+  StatRow,
 } from "../../common/PluginSurface";
 import instructions from "./instructions.md?raw";
 import State from "./state";
@@ -13,12 +13,6 @@ import type { BodySnapshot } from "./momentumCore";
 import type { OverlayPoint, Vec2 } from "./messages";
 
 const BODY_RENDER_SCALE = 0.82;
-
-/* ───────── Theme (readout strip only — the sim viewport stays dark) ───────── */
-
-const ink = "#4a2a38";
-const muted = "#9c8378";
-const accent = color.series[0];
 
 /* ───────── Formatting ───────── */
 
@@ -622,85 +616,39 @@ const Component = observer(({ state }: { state: State | undefined }) => {
   return (
     <PluginSurface instructions={instructions}>
       <PluginStage>
+        {/* Dark simulation viewport, framed on the cream stage */}
         <div
+          ref={containerRef}
           style={{
             width: "100%",
             height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-            padding: 8,
-            boxSizing: "border-box",
+            position: "relative",
+            borderRadius: 12,
+            overflow: "hidden",
+            background: "#160a0f",
           }}
         >
-          {/* Dark simulation viewport, framed on the cream stage */}
-          <div
-            ref={containerRef}
-            style={{
-              flex: 1,
-              minHeight: 0,
-              position: "relative",
-              borderRadius: 12,
-              overflow: "hidden",
-              background: "#160a0f",
-            }}
-          >
-            <canvas
-              ref={canvasRef}
-              style={{ width: "100%", height: "100%", display: "block" }}
-            />
-          </div>
-
-          {/* Conservation readout */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px 20px",
-              padding: "8px 12px",
-              borderRadius: 10,
-              backgroundColor: color.surfaceRaised,
-              border: `1px solid ${color.border}`,
-              fontSize: 13,
-            }}
-          >
-            <Readout
-              label="Momentum"
-              value={`${formatVector(pBefore)} → ${formatVector(pAfter)}`}
-            />
-            <Readout label="KE lost" value={formatPercent(keLoss)} />
-            <Readout
-              label="Collision"
-              value={state.derived.collisionOccurs ? "yes" : "no"}
-            />
-          </div>
+          <canvas
+            ref={canvasRef}
+            style={{ width: "100%", height: "100%", display: "block" }}
+          />
         </div>
       </PluginStage>
+      <StatRow
+        stats={[
+          {
+            label: "Momentum",
+            value: `${formatVector(pBefore)} → ${formatVector(pAfter)}`,
+          },
+          { label: "KE lost", value: formatPercent(keLoss) },
+          {
+            label: "Collision",
+            value: state.derived.collisionOccurs ? "yes" : "no",
+          },
+        ]}
+      />
     </PluginSurface>
   );
 });
-
-const Readout = ({ label, value }: { label: string; value: string }) => (
-  <span style={{ display: "inline-flex", alignItems: "baseline", gap: 6 }}>
-    <span
-      style={{
-        color: muted,
-        fontSize: 10,
-        textTransform: "uppercase",
-        letterSpacing: "0.08em",
-      }}
-    >
-      {label}
-    </span>
-    <span style={{ color: ink, fontWeight: 600, fontFamily: "monospace" }}>
-      {value}
-    </span>
-    <span style={{ color: accent }} aria-hidden>
-      ●
-    </span>
-  </span>
-);
 
 export default Component;

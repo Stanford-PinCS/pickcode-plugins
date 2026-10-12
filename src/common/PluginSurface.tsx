@@ -1,4 +1,11 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { color, font, radius, space, type } from "./tokens";
 import { PluginInstructions } from "./PluginInstructions";
 
@@ -96,27 +103,111 @@ export interface Stat {
 /** Placeholder for a statistic that has no value yet. */
 export const EMPTY = "—";
 
-/** Footer row of numeric readouts, pinned below the stage. */
+// StatRow at full size. A narrow pane draws the whole row smaller by one
+// factor, so these only show as-is when there's room.
+const STAT_LABEL_SIZE = 9;
+const STAT_VALUE_SIZE = 13;
+const STAT_GAP = 16;
+
+/**
+ * Footer row of numeric readouts, pinned below the stage.
+ *
+ * Always one line. When the stats are wider than the pane (a lesson gives the
+ * plugin about half of a narrow column), the whole row, text and spacing
+ * alike, shrinks by the same factor until it fits, and grows back to full
+ * size when there's room. Wrapping would stack the stats onto extra lines and
+ * take that height from the stage.
+ */
 export function StatRow({ stats }: { stats: readonly Stat[] }) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const scaleRef = useRef(1);
+  const [scale, setScale] = useState(1);
+
+  useLayoutEffect(() => {
+    const row = rowRef.current;
+    const content = contentRef.current;
+    if (!row || !content) return;
+
+    const fit = () => {
+      const available = row.clientWidth;
+      const width = content.getBoundingClientRect().width;
+      if (!available || !width) return;
+      const current = scaleRef.current;
+      // width / current is the stats' full-size width. Leave a pixel spare.
+      const next = Math.max(
+        0.1,
+        Math.min(1, (current * Math.max(available - 1, 1)) / width)
+      );
+      // Shrink whenever it overflows, but grow back only for a real gain, so
+      // text that doesn't scale exactly linearly can't make it flicker.
+      if (width > available || next > current * 1.01) {
+        scaleRef.current = next;
+        setScale(next);
+      }
+    };
+
+    fit();
+    // Refit on the next frame instead of inside the callback, so the resize a
+    // refit causes doesn't trip the browser's ResizeObserver loop error.
+    let frame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    });
+    observer.observe(row);
+    observer.observe(content);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, []);
+
   return (
     <div
+      ref={rowRef}
       style={{
         display: "flex",
         justifyContent: "center",
-        flexWrap: "wrap",
-        gap: space.xl,
-        padding: `${space.md}px ${space.lg}px ${space.lg}px`,
+        flexShrink: 0,
+        overflow: "hidden",
         borderTop: `1px solid ${color.border}`,
       }}
     >
-      {stats.map((s) => (
-        <div key={s.label} style={{ textAlign: "center", minWidth: 88 }}>
-          <div style={{ ...type.label, marginBottom: space.xs }}>{s.label}</div>
-          <div style={{ ...type.value, color: s.color ?? color.ink }}>
-            {s.value}
+      <div
+        ref={contentRef}
+        style={{
+          display: "flex",
+          flex: "none",
+          gap: STAT_GAP * scale,
+          padding: `${space.xs * scale}px ${space.md * scale}px`,
+          whiteSpace: "nowrap",
+        }}
+      >
+        {stats.map((s) => (
+          <div key={s.label} style={{ textAlign: "center" }}>
+            <div
+              style={{
+                ...type.label,
+                fontSize: STAT_LABEL_SIZE * scale,
+                lineHeight: 1.2,
+              }}
+            >
+              {s.label}
+            </div>
+            <div
+              style={{
+                ...type.value,
+                fontSize: STAT_VALUE_SIZE * scale,
+                lineHeight: 1.2,
+                color: s.color ?? color.ink,
+              }}
+            >
+              {s.value}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
