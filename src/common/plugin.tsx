@@ -83,6 +83,13 @@ export const plugin =
         }
       };
       window.addEventListener("message", onWindowMessage);
+      // Only now can a run reach this plugin, so this is when to say so.
+      // React mounts asynchronously: a host told "ready" any earlier (the
+      // lessons site's compiled pane waits for this) starts the run while
+      // nothing is listening, its drawing is dropped, and Play looks dead.
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: "plugin-ready" }, "*");
+      }
       return () => window.removeEventListener("message", onWindowMessage);
     }, []);
 
