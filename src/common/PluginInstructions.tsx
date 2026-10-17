@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { color, font, radius, space } from "./tokens";
 import { parseStepBody, parseSteps } from "../common/instructionSteps";
 import { QuestionCard } from "./QuestionCard";
+import { frameTermSource, type TermSource } from "./terms/sources";
+import { useTerms } from "./terms/useTerms";
+import { remarkTerms } from "./terms/remarkTerms";
+import { TermLayer } from "./terms/TermLayer";
 
 /**
  * The instruction band at the top of every plugin pane.
@@ -55,6 +59,13 @@ function writeStored(key: string, value: number): void {
   } catch {
     // Unavailable in this context, so the value just won't persist.
   }
+}
+
+// Recognized terms come through the page around the plugin; opened on its own, a plugin has none.
+let termSource: TermSource | null | undefined;
+function pageTermSource(): TermSource | null {
+  if (termSource === undefined) termSource = frameTermSource();
+  return termSource;
 }
 
 const markdownComponents = {
@@ -165,6 +176,9 @@ function NavButton({
 export function PluginInstructions({ markdown }: { markdown: string }) {
   const steps = parseSteps(markdown);
   const [index, setIndex] = useState(() => readStored(STEP_KEY, 0));
+  const [pageSource] = useState(pageTermSource);
+  const terms = useTerms(markdown, pageSource);
+  const remarkPlugins = useMemo(() => [remarkGfm, remarkTerms(terms)], [terms]);
 
   const goTo = (i: number) => {
     setIndex(i);
@@ -305,6 +319,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
         userSelect: dragging ? "none" : undefined,
       }}
     >
+      {pageSource && <TermLayer source={pageSource} />}
       <div
         style={{
           flex: 1,
@@ -348,7 +363,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
           ) : (
             <ReactMarkdown
               key={i}
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={remarkPlugins}
               components={markdownComponents}
             >
               {segment.markdown}
