@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { TERM_CLASS, TERM_WIKI_ATTR, type TermSummary } from "./terms";
+import { TERM_CLASS } from "./terms";
 import type { TermSource } from "./sources";
 
 const OPEN_DELAY_MS = 150;
@@ -13,14 +13,18 @@ const POPUP_ID = "pincs-term-popup";
 // The first layer in a document handles every term in it; any other stays idle.
 let layersMounted = 0;
 
-type Opened = { el: HTMLElement; title: string };
+type Opened = { el: HTMLElement; term: string; definition: string; url: string | null };
 
-/** The popup for recognized terms: hovering, focusing or tapping one shows the start of its Wikipedia article. Mount one per document; it finds terms by event delegation, so lesson text rendered as static HTML works too. */
+function readTerm(el: HTMLElement): Opened | null {
+  const definition = el.getAttribute("data-definition");
+  if (!definition) return null;
+  return { el, term: el.getAttribute("data-term") ?? el.textContent ?? "", definition, url: el.getAttribute("data-url") };
+}
+
+/** The popup for key terms: hovering, focusing or tapping one shows its definition. Mount one per document; it finds terms by event delegation, so lesson text rendered as static HTML works too. */
 export function TermLayer({ source }: { source: TermSource }) {
   const [active, setActive] = useState(false);
   const [opened, setOpened] = useState<Opened | null>(null);
-  // Keyed by title, so switching terms never shows the previous term's summary.
-  const [loaded, setLoaded] = useState<{ title: string; summary: TermSummary | null } | null>(null);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
 
@@ -49,13 +53,11 @@ export function TermLayer({ source }: { source: TermSource }) {
     };
     const show = (el: HTMLElement) => {
       cancel();
-      const title = el.getAttribute(TERM_WIKI_ATTR);
-      if (title) setOpened((current) => (current?.el === el ? current : { el, title }));
+      setOpened((current) => (current?.el === el ? current : readTerm(el)));
     };
     const toggle = (el: HTMLElement) => {
       cancel();
-      const title = el.getAttribute(TERM_WIKI_ATTR);
-      setOpened((current) => (current?.el === el || !title ? null : { el, title }));
+      setOpened((current) => (current?.el === el ? null : readTerm(el)));
     };
     const hide = () => {
       cancel();
@@ -129,19 +131,6 @@ export function TermLayer({ source }: { source: TermSource }) {
     };
   }, [active]);
 
-  const title = opened?.title;
-  useEffect(() => {
-    if (!title) return;
-    let cancelled = false;
-    source.summary(title).then((summary) => {
-      if (!cancelled) setLoaded({ title, summary });
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [title, source]);
-  const summary = opened && loaded?.title === opened.title ? loaded.summary : "loading";
-
   useEffect(() => {
     if (!opened) return;
     opened.el.setAttribute("aria-describedby", POPUP_ID);
@@ -161,9 +150,9 @@ export function TermLayer({ source }: { source: TermSource }) {
     const above = term.top - GAP_PX - box.height;
     const fitsBelow = below + box.height <= viewport.clientHeight - EDGE_PX;
     setPosition({ left, top: fitsBelow || above < EDGE_PX ? below : above });
-  }, [opened, summary]);
+  }, [opened]);
 
-  if (!active || !opened || summary === null) return null;
+  if (!active || !opened) return null;
 
   return createPortal(
     <div
@@ -177,28 +166,24 @@ export function TermLayer({ source }: { source: TermSource }) {
         visibility: position ? "visible" : "hidden",
       }}
     >
-      {summary === "loading" ? (
-        <span style={{ color: MUTED }}>Looking up {opened.title}…</span>
-      ) : (
-        <>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>{summary.title}</div>
-          <div>{summary.extract}</div>
-          <div style={{ marginTop: 8, fontSize: 12, color: MUTED }}>
-            <a
-              href={summary.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => {
-                e.preventDefault();
-                source.open(summary.url);
-              }}
-              style={{ color: "#2563eb", textDecoration: "underline" }}
-            >
-              From Wikipedia
-            </a>
-            {" · CC BY-SA 4.0"}
-          </div>
-        </>
+      <div style={{ fontWeight: 700, marginBottom: 4 }}>{opened.term}</div>
+      <div>{opened.definition}</div>
+      {opened.url && (
+        <div style={{ marginTop: 8, fontSize: 12, color: MUTED }}>
+          <a
+            href={opened.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              e.preventDefault();
+              source.open(opened.url!);
+            }}
+            style={{ color: "#2563eb", textDecoration: "underline" }}
+          >
+            From Wikipedia
+          </a>
+          {" · CC BY-SA 4.0"}
+        </div>
       )}
     </div>,
     document.body
@@ -224,5 +209,5 @@ const POPUP_STYLE: CSSProperties = {
   fontWeight: 400,
   lineHeight: 1.45,
   textAlign: "left",
-  whiteSpace: "normal",
+  whiteSpace: "pre-line",
 };
