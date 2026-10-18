@@ -7,7 +7,7 @@ type MdNode = {
   data?: Record<string, unknown>;
 };
 
-/** A remark plugin for react-markdown that marks recognized terms in the text with the same span TermMark renders. Code and link text are left alone. */
+/** A remark plugin for react-markdown that marks key terms in the text with the same span TermMark renders. Code and link text are left alone. */
 export function remarkTerms(terms: Term[]) {
   return () => (tree: unknown) => {
     if (terms.length) markTerms(tree as MdNode, terms);
@@ -31,7 +31,9 @@ function markTerms(node: MdNode, terms: Term[]) {
             hName: "span",
             hProperties: {
               className: [TERM_CLASS],
-              dataWiki: piece.term.wikiTitle,
+              dataTerm: piece.term.term,
+              dataDefinition: piece.term.definition,
+              ...(piece.term.url ? { dataUrl: piece.term.url } : {}),
               tabIndex: 0,
               style: TERM_STYLE_CSS,
             },

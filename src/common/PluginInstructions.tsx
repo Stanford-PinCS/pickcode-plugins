@@ -9,8 +9,8 @@ import {
   type CodeLanguage,
 } from "../common/instructionSteps";
 import { QuestionCard } from "./QuestionCard";
-import { frameTermSource, type TermSource } from "./terms/sources";
-import { useTerms } from "./terms/useTerms";
+import { frameTermSource } from "./terms/sources";
+import { readTermsBlock } from "./terms/termsBlock";
 import { remarkTerms } from "./terms/remarkTerms";
 import { TermLayer } from "./terms/TermLayer";
 
@@ -64,13 +64,6 @@ function writeStored(key: string, value: number): void {
   } catch {
     // Unavailable in this context, so the value just won't persist.
   }
-}
-
-// Recognized terms come through the page around the plugin; opened on its own, a plugin has none.
-let termSource: TermSource | null | undefined;
-function pageTermSource(): TermSource | null {
-  if (termSource === undefined) termSource = frameTermSource();
-  return termSource;
 }
 
 const markdownComponents = {
@@ -201,10 +194,10 @@ function hostLanguage(): CodeLanguage | null {
 }
 
 export function PluginInstructions({ markdown }: { markdown: string }) {
-  const steps = parseSteps(filterForLanguage(markdown, hostLanguage()));
+  // The key terms written in Plugin Studio are stored after the instructions; students only see the instructions.
+  const { body, terms } = useMemo(() => readTermsBlock(markdown), [markdown]);
+  const steps = parseSteps(filterForLanguage(body, hostLanguage()));
   const [index, setIndex] = useState(() => readStored(STEP_KEY, 0));
-  const [pageSource] = useState(pageTermSource);
-  const terms = useTerms(markdown, pageSource);
   const remarkPlugins = useMemo(() => [remarkGfm, remarkTerms(terms)], [terms]);
 
   const goTo = (i: number) => {
@@ -346,7 +339,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
         userSelect: dragging ? "none" : undefined,
       }}
     >
-      {pageSource && <TermLayer source={pageSource} />}
+      {terms.length > 0 && <TermLayer source={frameTermSource} />}
       <div
         style={{
           flex: 1,

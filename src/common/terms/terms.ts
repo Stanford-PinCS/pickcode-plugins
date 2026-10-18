@@ -1,24 +1,23 @@
-// Recognized terms, shared by lesson text on the site and plugin instructions inside the plugin iframe: the data format, the matcher, and how a term looks.
+// Key terms, shared by lesson text on the site and plugin instructions inside the plugin iframe: the data format, the matcher, and how a term looks.
 
-/** A term recognized in a lesson or a plugin's instructions, with the English Wikipedia article for the sense it's used in. */
+/** A key term the author confirmed: what to underline, and what its popup says. */
 export type Term = {
-  /** The term's name. */
+  /** The term's name, shown as the popup's heading. */
   term: string;
-  /** Every spelling of it in the content, such as singular and plural. Matching ignores case. */
+  /** Every spelling of it in the text, such as singular and plural. Matching ignores case. */
   forms: string[];
-  wikiTitle: string;
+  /** The popup's text: filled in from Wikipedia when extracted, and the author can rewrite it. */
+  definition: string;
+  /** The Wikipedia article the definition came from, for the popup's source link. */
+  wikiTitle?: string;
+  url?: string;
 };
-
-/** The start of a Wikipedia article, as the popup shows it. */
-export type TermSummary = { title: string; extract: string; url: string };
 
 /** A piece of text: plain, or one occurrence of a term. */
 export type TermPiece = string | { text: string; term: Term };
 
 /** TermLayer finds terms by this class, which is what lets lesson text rendered as static HTML share the popup. */
 export const TERM_CLASS = "pincs-term";
-/** Each term's Wikipedia article title, read by TermLayer. */
-export const TERM_WIKI_ATTR = "data-wiki";
 
 /** A quiet dotted underline, since every occurrence of every term is marked. */
 export const TERM_STYLE = {
@@ -35,9 +34,22 @@ export const TERM_STYLE_CSS = Object.entries(TERM_STYLE)
   .map(([key, value]) => `${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: ${value}`)
   .join("; ");
 
+/** True for a well-formed term, as stored in a lesson or in a plugin's instructions. */
+export function isTerm(value: unknown): value is Term {
+  const t = value as Term;
+  return (
+    typeof t === "object" &&
+    t !== null &&
+    typeof t.term === "string" &&
+    typeof t.definition === "string" &&
+    Array.isArray(t.forms) &&
+    t.forms.every((form) => typeof form === "string")
+  );
+}
+
 type Matcher = { re: RegExp; byForm: Map<string, Term> };
 
-// Built once per term list; useTerms hands out the same array until the terms change.
+// Built once per term list; callers hand out the same array until the terms change.
 const matchers = new WeakMap<Term[], Matcher | null>();
 
 function matcherFor(terms: Term[]): Matcher | null {
