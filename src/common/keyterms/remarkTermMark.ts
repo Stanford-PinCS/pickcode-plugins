@@ -9,8 +9,8 @@ type MdNode = {
   data?: Record<string, unknown>;
 };
 
-/** A remark plugin for react-markdown that marks key terms in the text with the same attributes as lesson text's marks (markAttributes). Code and link text are left alone. */
-export function remarkTerms(terms: Term[]) {
+/** A remark plugin for react-markdown that marks key terms in plugin instructions: the Markdown counterpart of the site's TermMark, which marks lesson text, and it writes the same mark (markAttributes). Code and link text are left alone. */
+export function remarkTermMark(terms: Term[]) {
   return () => (tree: unknown) => {
     if (terms.length) markTerms(tree as MdNode, terms);
   };
