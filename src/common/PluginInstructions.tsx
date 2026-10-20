@@ -9,10 +9,10 @@ import {
   type CodeLanguage,
 } from "../common/instructionSteps";
 import { QuestionCard } from "./QuestionCard";
-import { frameTermSource } from "./terms/sources";
-import { readTermsBlock } from "./terms/termsBlock";
-import { remarkTerms } from "./terms/remarkTerms";
-import { TermLayer } from "./terms/TermLayer";
+import { frameTermSource } from "./keyterms/sources";
+import { readTermsBlock } from "./keyterms/termsBlock";
+import { remarkTerms } from "./keyterms/remarkTerms";
+import { TermLayer } from "./keyterms/TermLayer";
 
 /**
  * The instruction band at the top of every plugin pane.
