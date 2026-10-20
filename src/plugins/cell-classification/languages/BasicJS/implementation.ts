@@ -21,7 +21,7 @@ const FEATURE_MAX = 10;
  */
 
 /** Past this, cells no longer fit on the tray without overlapping. */
-const MAX_CELLS = 25;
+const MAX_CELLS = 16;
 
 function toLabel(input: unknown, fnName: string): Label {
   const s = String(input).trim().toLowerCase().replace(/\s+/g, "-");

@@ -122,17 +122,26 @@ const Component = observer(({ state }: { state: State }) => {
               <g key={`cell-${c.target}`}>
                 {/* checkCell: a dashed ring around a cell being inspected. */}
                 {checked && (
-                  <rect
-                    x={cx - side / 2 - 5}
-                    y={cy - side / 2 - 5}
-                    width={side + 10}
-                    height={side + 10}
-                    rx={((side + 10) / 2) * (c.roundness / FEATURE_MAX)}
-                    fill="none"
-                    stroke={color.ink}
-                    strokeWidth={1}
-                    strokeDasharray="3 3"
-                  />
+                  <g>
+                    <rect
+                      x={cx - 20}
+                      y={cy + side / 2 + 7}
+                      width={40}
+                      height={18}
+                      rx={4}
+                      fill={color.surfaceRaised}
+                      stroke={color.border}
+                    />
+                    <text
+                      x={cx}
+                      y={cy + side / 2 + 16}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      style={{ ...type.tick, fill: color.ink }}
+                    >
+                      {`${c.size}, ${c.roundness}`}
+                    </text>
+                  </g>
                 )}
                 <rect
                   x={cx - side / 2}
@@ -148,23 +157,13 @@ const Component = observer(({ state }: { state: State }) => {
                 />
                 <text
                   x={cx}
-                  y={cy + side / 2 + 12}
+                  y={cy}
                   textAnchor="middle"
-                  style={type.tick}
+                  dominantBaseline="central"
+                  style={{ ...type.tick, fill: color.ink, fontWeight: 600,}}
                 >
                   {c.target}
                 </text>
-                {/* The measurements, in the order addExample takes them. */}
-                {checked && (
-                  <text
-                    x={cx}
-                    y={cy + side / 2 + 24}
-                    textAnchor="middle"
-                    style={{ ...type.tick, fill: color.ink }}
-                  >
-                    {`${c.size}, ${c.roundness}`}
-                  </text>
-                )}
               </g>
             );
           })}
@@ -323,7 +322,7 @@ const Component = observer(({ state }: { state: State }) => {
             </g>
           ))}
           <circle
-            cx={s.pad.left + 16 + 105}
+            cx={s.pad.left + 16 + 109}
             cy={LEGEND_TOP + LABELS.length * LEGEND_ROW - 16}
             r={6}
             fill="none"
@@ -332,7 +331,7 @@ const Component = observer(({ state }: { state: State }) => {
             strokeDasharray="4 3"
           />
           <text
-            x={s.pad.left + 28 + 105}
+            x={s.pad.left + 28 + 109}
             y={LEGEND_TOP + 4 + LABELS.length * LEGEND_ROW - 16}
             style={type.tick}
           >
