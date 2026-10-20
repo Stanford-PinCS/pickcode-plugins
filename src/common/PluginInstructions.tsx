@@ -11,7 +11,7 @@ import {
 import { QuestionCard } from "./QuestionCard";
 import { openArticleFromFrame } from "./keyterms/openArticle";
 import { readTermsBlock } from "./keyterms/termsBlock";
-import { remarkTerms } from "./keyterms/remarkTerms";
+import { remarkTermMark } from "./keyterms/remarkTermMark";
 import { TermLayer } from "./keyterms/TermLayer";
 
 /**
@@ -198,7 +198,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
   const { body, terms } = useMemo(() => readTermsBlock(markdown), [markdown]);
   const steps = parseSteps(filterForLanguage(body, hostLanguage()));
   const [index, setIndex] = useState(() => readStored(STEP_KEY, 0));
-  const remarkPlugins = useMemo(() => [remarkGfm, remarkTerms(terms)], [terms]);
+  const remarkPlugins = useMemo(() => [remarkGfm, remarkTermMark(terms)], [terms]);
 
   const goTo = (i: number) => {
     setIndex(i);

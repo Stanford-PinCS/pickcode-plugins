@@ -1,6 +1,6 @@
 import type { Term } from "./term";
 
-// How an occurrence of a key term is marked in the page. Lesson text (the site's TermMark) and plugin instructions (remarkTerms) both write the mark with markAttributes, and TermLayer reads it back with readMark, so the popup works the same on every mark.
+// How an occurrence of a key term is marked in the page. Lesson text (the site's TermMark) and plugin instructions (remarkTermMark) both write the mark with markAttributes, and TermLayer reads it back with readMark, so the popup works the same on every mark.
 
 /** TermLayer finds marks by this class, which is what lets lesson text rendered as static HTML share the popup. */
 export const TERM_CLASS = "pincs-term";
