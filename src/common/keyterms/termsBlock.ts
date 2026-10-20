@@ -1,4 +1,4 @@
-import { isTerm, type Term } from "./terms";
+import { isTerm, type Term } from "./term";
 
 // A plugin's key terms live at the end of its instructions file, in an HTML comment that markdown renderers don't show.
 const OPENER = "<!-- pincs-key-terms";

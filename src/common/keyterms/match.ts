@@ -1,51 +1,9 @@
-// Key terms, shared by lesson text on the site and plugin instructions inside the plugin iframe: the data format, the matcher, and how a term looks.
+import type { Term } from "./term";
 
-/** A key term the author confirmed: what to underline, and what its popup says. */
-export type Term = {
-  /** The term's name, shown as the popup's heading. */
-  term: string;
-  /** Every spelling of it in the text, such as singular and plural. Matching ignores case. */
-  forms: string[];
-  /** The popup's text: filled in from Wikipedia when extracted, and the author can rewrite it. */
-  definition: string;
-  /** The Wikipedia article the definition came from, for the popup's source link. */
-  wikiTitle?: string;
-  url?: string;
-};
+// Finding key terms in text: every occurrence of every spelling, as whole words, ignoring case, longest spelling first.
 
 /** A piece of text: plain, or one occurrence of a term. */
 export type TermPiece = string | { text: string; term: Term };
-
-/** TermLayer finds terms by this class, which is what lets lesson text rendered as static HTML share the popup. */
-export const TERM_CLASS = "pincs-term";
-
-/** A quiet dotted underline, since every occurrence of every term is marked. */
-export const TERM_STYLE = {
-  textDecorationLine: "underline",
-  textDecorationStyle: "dotted",
-  textDecorationColor: "rgba(100, 116, 139, 0.9)",
-  textDecorationThickness: "1.5px",
-  textUnderlineOffset: "3px",
-  cursor: "help",
-} as const;
-
-/** TERM_STYLE as a CSS declaration string, for markup built outside React. */
-export const TERM_STYLE_CSS = Object.entries(TERM_STYLE)
-  .map(([key, value]) => `${key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}: ${value}`)
-  .join("; ");
-
-/** True for a well-formed term, as stored in a lesson or in a plugin's instructions. */
-export function isTerm(value: unknown): value is Term {
-  const t = value as Term;
-  return (
-    typeof t === "object" &&
-    t !== null &&
-    typeof t.term === "string" &&
-    typeof t.definition === "string" &&
-    Array.isArray(t.forms) &&
-    t.forms.every((form) => typeof form === "string")
-  );
-}
 
 type Matcher = { re: RegExp; byForm: Map<string, Term> };
 
