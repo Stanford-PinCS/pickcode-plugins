@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { TERM_CLASS } from "./terms";
-import type { TermSource } from "./sources";
+import { readMark, TERM_CLASS } from "./mark";
+import type { ArticleOpener } from "./openArticle";
 
 const OPEN_DELAY_MS = 150;
 const CLOSE_DELAY_MS = 200;
@@ -16,13 +16,12 @@ let layersMounted = 0;
 type Opened = { el: HTMLElement; term: string; definition: string; url: string | null };
 
 function readTerm(el: HTMLElement): Opened | null {
-  const definition = el.getAttribute("data-definition");
-  if (!definition) return null;
-  return { el, term: el.getAttribute("data-term") ?? el.textContent ?? "", definition, url: el.getAttribute("data-url") };
+  const mark = readMark(el);
+  return mark && { el, ...mark };
 }
 
 /** The popup for key terms: hovering, focusing or tapping one shows its definition. Mount one per document; it finds terms by event delegation, so lesson text rendered as static HTML works too. */
-export function TermLayer({ source }: { source: TermSource }) {
+export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
   const [active, setActive] = useState(false);
   const [opened, setOpened] = useState<Opened | null>(null);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
@@ -176,7 +175,7 @@ export function TermLayer({ source }: { source: TermSource }) {
             rel="noopener noreferrer"
             onClick={(e) => {
               e.preventDefault();
-              source.open(opened.url!);
+              openArticle(opened.url!);
             }}
             style={{ color: "#2563eb", textDecoration: "underline" }}
           >

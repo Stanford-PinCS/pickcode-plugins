@@ -9,7 +9,7 @@ import {
   type CodeLanguage,
 } from "../common/instructionSteps";
 import { QuestionCard } from "./QuestionCard";
-import { frameTermSource } from "./keyterms/sources";
+import { openArticleFromFrame } from "./keyterms/openArticle";
 import { readTermsBlock } from "./keyterms/termsBlock";
 import { remarkTerms } from "./keyterms/remarkTerms";
 import { TermLayer } from "./keyterms/TermLayer";
@@ -339,7 +339,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
         userSelect: dragging ? "none" : undefined,
       }}
     >
-      {terms.length > 0 && <TermLayer source={frameTermSource} />}
+      {terms.length > 0 && <TermLayer openArticle={openArticleFromFrame} />}
       <div
         style={{
           flex: 1,
