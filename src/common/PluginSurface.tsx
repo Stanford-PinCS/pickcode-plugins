@@ -104,9 +104,15 @@ export interface Stat {
 export const EMPTY = "—";
 
 // StatRow at full size. A narrow pane draws the whole row smaller by one factor, so these only show as-is when there's room.
-// "large" is for a plugin whose numbers are the point of the readout, not a footnote to the chart; it uses the type tokens at their own size.
+// Both use the label and value type tokens at their own size. "large" is for a plugin whose numbers are the point of the readout, not a footnote to the chart; it adds room above and below them.
 const STAT_SIZES = {
-  default: { label: 9, value: 13, gap: 16, padY: space.xs, padX: space.md },
+  default: {
+    label: type.label.fontSize,
+    value: type.value.fontSize,
+    gap: space.xl,
+    padY: space.md,
+    padX: space.lg,
+  },
   large: {
     label: type.label.fontSize,
     value: type.value.fontSize,
