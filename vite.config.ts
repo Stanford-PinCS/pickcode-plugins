@@ -13,11 +13,33 @@ type Manifest = {
     [language: string]:
       | {
           implUrl: string;
+          // Reference solution for this language, used to verify a student's
+          // code produces the same message sequence. Not every plugin has one.
+          solutionUrl?: string;
+          // Starter/prefix/suffix code for this language, read from that
+          // language's starter-code/ folder. Not every plugin has all three.
           starterUrl?: string;
+          prefixUrl?: string;
+          suffixUrl?: string;
         }
       | string
       | undefined;
   };
+};
+
+// File extension used for each language's starter-code/{main,prefix,suffix}
+// files.
+const LANGUAGE_EXTENSION: Record<string, string> = {
+  BasicJS: "js",
+  Python: "py",
+};
+
+// Solution files live in their own top-level `solutions/` folder (sibling to
+// `languages/`), named after the language they're written in and mapped to
+// that language's manifest entry - not nested inside `languages/<lang>/`.
+const SOLUTION_FILE_TO_LANGUAGE: Record<string, string> = {
+  "solutionCode.js": "BasicJS",
+  "solutionCode.py": "Python",
 };
 
 function manifestPlugin() {
@@ -50,19 +72,53 @@ function manifestPlugin() {
         const langPath = path.join(languagesDir, lang);
         if (!(await fs.stat(langPath)).isDirectory()) continue;
 
-        const entry: { implUrl: string; starterUrl?: string } = {
+        const entry: {
+          implUrl: string;
+          starterUrl?: string;
+          prefixUrl?: string;
+          suffixUrl?: string;
+        } = {
           implUrl: `/plugins-code/${pluginName}/languages/${lang}/implementation.js`,
         };
 
-        const starterPath = path.join(langPath, "starter-code", "main.js");
-        try {
-          await fs.access(starterPath);
-          entry.starterUrl = `/plugins-code/${pluginName}/languages/${lang}/starter-code/main.js`;
-        } catch {
-          // no starter-code/main.js for this language, that's fine
+        // Starter/prefix/suffix code live together in this language's
+        // starter-code/ folder, named main/prefix/suffix by its extension.
+        // The site runs prefix + student code + suffix as one program, so a
+        // plugin can keep setup and the call that draws out of the editor.
+        const ext = LANGUAGE_EXTENSION[lang];
+        if (ext) {
+          for (const [file, key] of [
+            ["main", "starterUrl"],
+            ["prefix", "prefixUrl"],
+            ["suffix", "suffixUrl"],
+          ] as const) {
+            try {
+              await fs.access(path.join(langPath, "starter-code", `${file}.${ext}`));
+              entry[key] = `/plugins-code/${pluginName}/languages/${lang}/starter-code/${file}.${ext}`;
+            } catch {
+              // no such file for this plugin/language, that's fine
+            }
+          }
         }
 
         manifest[pluginName][lang] = entry;
+      }
+
+      // Check for a solutions/ folder directly in the plugin folder
+      // (sibling to `languages`, not inside it).
+      const solutionsDir = path.join(pluginPath, "solutions");
+      for (const [solutionFile, lang] of Object.entries(
+        SOLUTION_FILE_TO_LANGUAGE
+      )) {
+        const langEntry = manifest[pluginName][lang];
+        if (!langEntry || typeof langEntry === "string") continue;
+
+        try {
+          await fs.access(path.join(solutionsDir, solutionFile));
+          langEntry.solutionUrl = `/plugins-code/${pluginName}/solutions/${solutionFile}`;
+        } catch {
+          // no solution file of this kind for this plugin, that's fine
+        }
       }
     }
     return manifest;
@@ -222,6 +278,19 @@ export default defineConfig(({ mode }) => {
               let rel = path.relative(root, fullPath);
               rel = rel.split(path.sep).join(path.posix.sep);
               return rel; // e.g. "somePlugin/instructions.md"
+            },
+          },
+          {
+            // Copy each plugin's solution files (live at
+            // src/plugins/<name>/solutions/, not under languages/) to
+            // dist/plugins-code/<name>/solutions/
+            src: "src/plugins/*/solutions/*",
+            dest: "plugins-code",
+            rename: (fileName: string, extension: string, fullPath: string) => {
+              const root = path.resolve(process.cwd(), "src", "plugins");
+              let rel = path.relative(root, fullPath);
+              rel = rel.split(path.sep).join(path.posix.sep);
+              return rel; // e.g. "somePlugin/solutions/solutionCode.js"
             },
           },
         ],
