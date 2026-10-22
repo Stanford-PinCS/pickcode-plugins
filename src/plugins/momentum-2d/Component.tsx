@@ -396,10 +396,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
     ctx.clearRect(0, 0, width, height);
 
     // Dark-plum backdrop (warm, ties into the palette).
-    const background = ctx.createLinearGradient(0, 0, 0, height);
-    background.addColorStop(0, "#241019");
-    background.addColorStop(1, "#160a0f");
-    ctx.fillStyle = background;
+    ctx.fillStyle = "#1d0d14";
     ctx.fillRect(0, 0, width, height);
 
     for (let x = 0; x <= state.inputs.width; x += 80) {
