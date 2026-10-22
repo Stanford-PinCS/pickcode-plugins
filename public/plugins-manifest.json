@@ -135,7 +135,10 @@
     "instructionsUrl": "/plugins-code/population-ecology/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/population-ecology/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/population-ecology/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/population-ecology/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/population-ecology/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/population-ecology/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/population-ecology/solutions/solutionCode.js"
     },
     "Python": {
       "implUrl": "/plugins-code/population-ecology/languages/Python/implementation.js",
