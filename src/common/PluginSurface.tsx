@@ -111,7 +111,7 @@ const STAT_SIZES = {
     label: type.label.fontSize,
     value: type.value.fontSize,
     gap: space.xl,
-    padY: space.sm,
+    padY: space.lg,
     padX: space.lg,
   },
 } as const;
