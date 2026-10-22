@@ -104,16 +104,31 @@ export interface Stat {
 export const EMPTY = "—";
 
 // StatRow at full size. A narrow pane draws the whole row smaller by one factor, so these only show as-is when there's room.
-const STAT_LABEL_SIZE = 9;
-const STAT_VALUE_SIZE = 13;
-const STAT_GAP = 16;
+// "large" is for a plugin whose numbers are the point of the readout, not a footnote to the chart; it uses the type tokens at their own size.
+const STAT_SIZES = {
+  default: { label: 9, value: 13, gap: 16, padY: space.xs, padX: space.md },
+  large: {
+    label: type.label.fontSize,
+    value: type.value.fontSize,
+    gap: space.xl,
+    padY: space.sm,
+    padX: space.lg,
+  },
+} as const;
 
 /**
  * Footer row of numeric readouts, pinned below the stage.
  *
  * Always one line. When the stats are wider than the pane (a lesson gives the plugin about half of a narrow column), the whole row, text and spacing alike, shrinks by the same factor until it fits, and grows back to full size when there's room. Wrapping would stack the stats onto extra lines and take that height from the stage.
  */
-export function StatRow({ stats }: { stats: readonly Stat[] }) {
+export function StatRow({
+  stats,
+  size = "default",
+}: {
+  stats: readonly Stat[];
+  size?: keyof typeof STAT_SIZES;
+}) {
+  const sizes = STAT_SIZES[size];
   const rowRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const scaleRef = useRef(1);
@@ -172,8 +187,8 @@ export function StatRow({ stats }: { stats: readonly Stat[] }) {
         style={{
           display: "flex",
           flex: "none",
-          gap: STAT_GAP * scale,
-          padding: `${space.xs * scale}px ${space.md * scale}px`,
+          gap: sizes.gap * scale,
+          padding: `${sizes.padY * scale}px ${sizes.padX * scale}px`,
           whiteSpace: "nowrap",
         }}
       >
@@ -182,7 +197,7 @@ export function StatRow({ stats }: { stats: readonly Stat[] }) {
             <div
               style={{
                 ...type.label,
-                fontSize: STAT_LABEL_SIZE * scale,
+                fontSize: sizes.label * scale,
                 lineHeight: 1.2,
               }}
             >
@@ -191,7 +206,7 @@ export function StatRow({ stats }: { stats: readonly Stat[] }) {
             <div
               style={{
                 ...type.value,
-                fontSize: STAT_VALUE_SIZE * scale,
+                fontSize: sizes.value * scale,
                 lineHeight: 1.2,
                 color: s.color ?? color.ink,
               }}

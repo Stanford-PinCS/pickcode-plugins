@@ -20,8 +20,10 @@ interface Dot {
   newTimer: number;
 }
 
-const SIM_WIDTH = 400;
-const SIM_HEIGHT = 300;
+// The organism field is the graph's plot box, so the two panels match at any
+// pane size: both are drawn in the shared VIEW and scaled the same way.
+const SIM_WIDTH = VIEW.width - PAD.left - PAD.right;
+const SIM_HEIGHT = VIEW.height - PAD.top - PAD.bottom;
 const DOT_RADIUS = 5;
 const MAX_DISPLAY_DOTS = 10_000;
 
@@ -329,69 +331,68 @@ const Component = observer(({ state }: { state: State }) => {
             style={{
               minWidth: 0,
               minHeight: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
               overflow: "hidden",
             }}
           >
             <svg
-              viewBox={`0 0 ${SIM_WIDTH} ${SIM_HEIGHT}`}
+              viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
               preserveAspectRatio="xMidYMid meet"
-              style={{
-                width: "100%",
-                height: "auto",
-                minHeight: 0,
-                flex: 1,
-                background: color.surfaceRaised,
-                border: `1px solid ${color.border}`,
-                borderRadius: 4,
-              }}
+              style={{ width: "100%", height: "100%" }}
               role="img"
               aria-label={`${Math.min(
                 population,
                 MAX_DISPLAY_DOTS
               ).toLocaleString()} organisms shown`}
             >
-              {dots.map((dot) => (
-                <circle
-                  key={dot.id}
-                  cx={dot.x}
-                  cy={dot.y}
-                  r={DOT_RADIUS}
-                  fill={dot.newTimer > 0 ? color.series[1] : color.series[0]}
-                  opacity={0.85 + dot.newTimer * 0.15}
-                />
-              ))}
-            </svg>
+              <rect
+                x={PAD.left}
+                y={PAD.top}
+                width={SIM_WIDTH}
+                height={SIM_HEIGHT}
+                fill={color.surfaceRaised}
+                stroke={color.border}
+                rx={4}
+              />
+              <g transform={`translate(${PAD.left}, ${PAD.top})`}>
+                {dots.map((dot) => (
+                  <circle
+                    key={dot.id}
+                    cx={dot.x}
+                    cy={dot.y}
+                    r={DOT_RADIUS}
+                    fill={dot.newTimer > 0 ? color.series[1] : color.series[0]}
+                    opacity={0.85 + dot.newTimer * 0.15}
+                  />
+                ))}
+              </g>
 
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 12,
-                ...type.tick,
-              }}
-            >
-              <span>
-                <span style={{ color: color.series[0] }}>●</span> Existing
-                organisms
-              </span>
-              <span>
-                <span style={{ color: color.series[1] }}>●</span> Newly born
-              </span>
-              {population > MAX_DISPLAY_DOTS && (
-                <span>
-                  Showing {MAX_DISPLAY_DOTS.toLocaleString()} of{" "}
-                  {population.toLocaleString()}
-                </span>
-              )}
-            </div>
+              {/* Legend sits where the graph has its axis title. */}
+              <text
+                x={PAD.left + SIM_WIDTH / 2}
+                y={VIEW.height - 8}
+                textAnchor="middle"
+                style={type.tick}
+              >
+                <tspan fill={color.series[0]}>●</tspan>
+                <tspan> Existing organisms</tspan>
+                <tspan dx={14} fill={color.series[1]}>
+                  ●
+                </tspan>
+                <tspan> Newly born</tspan>
+                {population > MAX_DISPLAY_DOTS && (
+                  <tspan dx={14}>
+                    Showing {MAX_DISPLAY_DOTS.toLocaleString()} of{" "}
+                    {population.toLocaleString()}
+                  </tspan>
+                )}
+              </text>
+            </svg>
           </div>
         </div>
       </PluginStage>
 
       <StatRow
+        size="large"
         stats={[
           { label: "Day", value: String(state.currentDay) },
           {
