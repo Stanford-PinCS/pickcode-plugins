@@ -4,7 +4,7 @@
 
 Let's try to use what we know to visualize this exponential population growth model we've been talking about!
 
-To do this, you'll code part of our simulation, but don't worry, we'll teach you all the programming concepts you'll need to understand what to do!
+The code on the left already has everything our simulation needs. Over the next few steps, we'll walk through what each part of it does.
 
 Click the "Next" button to continue.
 
@@ -12,79 +12,45 @@ Click the "Next" button to continue.
 
 `getPopulationParameters` is an example of what we call a function. A function in programming is a block of code that performs a specific task.
 
-In this case, the specific task that we will be accomplishing with `getPopulationParameters` is to create the values that define our population.
-
-Based on what we've already learned, stop and think about what factors can define our simulation?
+In this case, the specific task that `getPopulationParameters` accomplishes is to create the values that define our population.
 
 ## Defining our population
 
 Although there are many factors that can define a population, two of the factors that we should definitely tell our simulation are how big the population is initially and how fast the population grows!
 
-To do this, we'll need to store these values as variables in our code.
+To do this, our code stores these values as variables. A variable is a piece of data that has a name and a value that gets stored along with it that we can use later in our code.
 
-A variable is a piece of data that has a name and a value that gets stored along with it that we can use later in our code.
+For example, `age = 17` would make a variable named `age` that stores the value `17`.
 
-## Making a variable
+## Our variables
 
-To show you how to make a variable, let's use an example. Imagine we wanted to store a person's age as a variable in our code.
-
-The way we could write this is `age=17`. In this case `age` is the name of our variable, which stores the value of `17`.
-
-## Your turn
-
-Now, you try! Delete the line of code that says `# TODO` and try making a variable called `initialPopSize` that stores the value of `30` to represent an initial population of 30 organisms. Make sure your line of code is indented like the following:
-
-```python
-def functionName():
-    age = 17
-```
-
-Now, go to the next line and try to create a variable called `growthRate` that stores the value of 0.5 to represent a population that has a per capita growth rate r of 0.5.
-
-## Check your code
-
-You should have something that looks like this:
+Our function makes two variables:
 
 ```python
 def getPopulationParameters():
     initialPopSize = 30
     growthRate = 0.5
 ```
+
+`initialPopSize` stores the value `30`, which represents an initial population of 30 organisms.
+
+`growthRate` stores the value `0.5`, which represents a population that has a per capita growth rate r of 0.5.
 
 ## Packaging our variables
 
-Just one last step left! Because these variables are contained within our function, we need to ship them out to give to our simulation!
-
-To do this, we use a `return` statement. A `return` statement is how a function sends its result back to whoever used the function. You can think of it like the function handing you back an answer after doing a problem.
-
-To write a return statement, we simply write a new line with the word `return` followed by whatever you want to send out of the function. For example, imagine we had a function that calculated someone's age in dog years. We could return the result like this:
+Because these variables are contained within our function, we need to ship them out to give to our simulation. That's what the last line does:
 
 ```python
-def getDogAge():
-    humanAge = 17
-    dogAge = 7 * humanAge
-    return dogAge
-```
-
-In our case, we want to return both variables together. We can simply do this by separating what we want to return together with commas. Make sure to return the initial population size first, as the order does matter when returning values this way.
-
-Try to return the two variables you made together!
-
-## Check your code
-
-You should now have something that looks like this:
-
-```python
-def getPopulationParameters():
-    initialPopSize = 30
-    growthRate = 0.5
-
     return initialPopSize, growthRate
 ```
 
+A `return` statement is how a function sends its result back to whoever used the function. You can think of it like the function handing you back an answer after doing a problem.
+
+Here we return both variables together, separated by a comma. The initial population size comes first, because the order does matter when returning values this way.
+
 ## Running the simulation
 
-Great work! Now that our function is complete, our simulation has everything it needs to model exponential population growth.
+Now that you know what our function does, let's see it in action!
 
 Press the play button and watch what happens on the right side of your screen. You should see a population simulation of organisms in a sandbox along with a graph to show how the population grows across time.
 
