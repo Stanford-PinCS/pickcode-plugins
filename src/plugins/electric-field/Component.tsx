@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { color, font } from "../../common/tokens";
 import {
   EMPTY,
@@ -8,6 +8,10 @@ import {
   PluginSurface,
   StatRow,
 } from "../../common/PluginSurface";
+import {
+  progressBetween,
+  useRunAnimation,
+} from "../../common/useRunAnimation";
 import State from "./state";
 import instructions from "./instructions.md?raw";
 
@@ -22,6 +26,13 @@ const POT_CELL = 6;
 // Rough spacing between equipotentials, as a fraction of the canvas's
 // shorter side.
 const POT_SPACING = 0.045;
+
+// On each run the field lines grow out of the charges over LINES_MS while
+// the equipotentials ripple outward, each ring fading in over RING_FADE_MS.
+const LINES_MS = 3000;
+const RIPPLE_MS = 3000;
+const RING_FADE_MS = 400;
+const ANIM_TOTAL_MS = Math.max(LINES_MS, RIPPLE_MS + RING_FADE_MS);
 
 const FIELD_LINE_COLOR = color.ink;
 const EQUIPOTENTIAL_COLOR = color.series[3];
@@ -195,11 +206,59 @@ function buildFieldLines(charges: Charge[], w: number, h: number): FieldLine[] {
   return lines;
 }
 
-function drawFieldLines(
-  ctx: CanvasRenderingContext2D,
+/** A field line ready to animate: ordered the way the field points. */
+type PreparedLine = {
+  pts: [number, number][];
+  /** On-screen length from the start up to each point. */
+  shown: number[];
+  /** Total on-screen length. */
+  length: number;
+  /** Arrowhead halfway along the on-screen length, pointing with the field. */
+  arrow: { x: number; y: number; ux: number; uy: number } | null;
+};
+
+function prepareFieldLines(
   charges: Charge[],
   w: number,
   h: number
+): PreparedLine[] {
+  const inside = ([x, y]: [number, number]) =>
+    x >= 0 && x <= w && y >= 0 && y <= h;
+
+  return buildFieldLines(charges, w, h)
+    .filter((line) => line.pts.length >= 2)
+    .map(({ pts: traced, dir }) => {
+      // Lines traced against the field (in from infinity) are flipped, so
+      // every line grows the way the field points.
+      const pts = dir === 1 ? traced : [...traced].reverse();
+
+      // Only on-screen stretches count toward the length, so a line that
+      // swings off the canvas and back doesn't pause while it's out of view.
+      const shown = [0];
+      for (let k = 1; k < pts.length; k++) {
+        const seg = Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]);
+        shown.push(shown[k - 1] + (inside(pts[k]) && inside(pts[k - 1]) ? seg : 0));
+      }
+      const length = shown[shown.length - 1];
+
+      let arrow: PreparedLine["arrow"] = null;
+      if (length > 40) {
+        let mid = shown.findIndex((d) => d >= length / 2);
+        mid = Math.min(Math.max(mid, 1), pts.length - 2);
+        const ux = pts[mid + 1][0] - pts[mid - 1][0];
+        const uy = pts[mid + 1][1] - pts[mid - 1][1];
+        const m = Math.hypot(ux, uy) || 1;
+        arrow = { x: pts[mid][0], y: pts[mid][1], ux: ux / m, uy: uy / m };
+      }
+      return { pts, shown, length, arrow };
+    });
+}
+
+/** Draws each line grown `progress` (0–1) of its on-screen length. */
+function drawFieldLines(
+  ctx: CanvasRenderingContext2D,
+  lines: PreparedLine[],
+  progress: number
 ) {
   ctx.save();
   ctx.strokeStyle = FIELD_LINE_COLOR;
@@ -208,60 +267,48 @@ function drawFieldLines(
   ctx.lineWidth = 1.25;
   ctx.lineJoin = "round";
 
-  for (const { pts, dir } of buildFieldLines(charges, w, h)) {
-    if (pts.length < 2) continue;
-
+  for (const { pts, shown, length, arrow } of lines) {
+    const reach = progress * length;
     ctx.beginPath();
     ctx.moveTo(pts[0][0], pts[0][1]);
-    for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]);
+    for (let k = 1; k < pts.length; k++) {
+      if (shown[k] <= reach || progress >= 1) {
+        ctx.lineTo(pts[k][0], pts[k][1]);
+        continue;
+      }
+      // The growing tip, part-way along this segment.
+      const f = (reach - shown[k - 1]) / (shown[k] - shown[k - 1]);
+      ctx.lineTo(
+        pts[k - 1][0] + (pts[k][0] - pts[k - 1][0]) * f,
+        pts[k - 1][1] + (pts[k][1] - pts[k - 1][1]) * f
+      );
+      break;
+    }
     ctx.stroke();
 
-    // One arrowhead, pointing the way the field points, halfway along the
-    // longest stretch of the line that is on screen.
-    let bestStart = 0;
-    let bestLen = 0;
-    let runStart = -1;
-    for (let k = 0; k <= pts.length; k++) {
-      const inside =
-        k < pts.length &&
-        pts[k][0] >= 0 &&
-        pts[k][0] <= w &&
-        pts[k][1] >= 0 &&
-        pts[k][1] <= h;
-      if (inside && runStart < 0) runStart = k;
-      if (!inside && runStart >= 0) {
-        if (k - runStart > bestLen) {
-          bestLen = k - runStart;
-          bestStart = runStart;
-        }
-        runStart = -1;
-      }
-    }
-    if (bestLen < 20) continue;
-    const mid = bestStart + Math.floor(bestLen / 2);
-    const [ax, ay] = pts[mid];
-    let ux = (pts[mid + 1][0] - pts[mid - 1][0]) * dir;
-    let uy = (pts[mid + 1][1] - pts[mid - 1][1]) * dir;
-    const m = Math.hypot(ux, uy) || 1;
-    ux /= m;
-    uy /= m;
+    // The arrowhead appears once the line has grown past it.
+    if (!arrow || reach < length / 2) continue;
+    const { x, y, ux, uy } = arrow;
     const ah = 5;
     ctx.beginPath();
-    ctx.moveTo(ax + ux * ah, ay + uy * ah);
-    ctx.lineTo(ax - ux * ah - uy * ah * 0.7, ay - uy * ah + ux * ah * 0.7);
-    ctx.lineTo(ax - ux * ah + uy * ah * 0.7, ay - uy * ah - ux * ah * 0.7);
+    ctx.moveTo(x + ux * ah, y + uy * ah);
+    ctx.lineTo(x - ux * ah - uy * ah * 0.7, y - uy * ah + ux * ah * 0.7);
+    ctx.lineTo(x - ux * ah + uy * ah * 0.7, y - uy * ah - ux * ah * 0.7);
     ctx.closePath();
     ctx.fill();
   }
   ctx.restore();
 }
 
-function drawEquipotentials(
-  ctx: CanvasRenderingContext2D,
+/**
+ * One Path2D per equipotential level, ordered from the strongest potential
+ * to the weakest: the rings nearest the charges first, V = 0 last.
+ */
+function computeEquipotentials(
   charges: Charge[],
   w: number,
   h: number
-) {
+): Path2D[] {
   // The grid is shifted off round numbers. A symmetric layout puts V = 0
   // exactly on a row or column of samples otherwise, where rounding noise
   // flips the sign from sample to sample and the line comes out dashed.
@@ -329,15 +376,13 @@ function drawEquipotentials(
     levels[nearest] = 0;
   }
 
-  ctx.save();
-  ctx.strokeStyle = EQUIPOTENTIAL_COLOR;
-  ctx.globalAlpha = 0.5;
-  ctx.lineWidth = 1;
+  levels.sort((x, y) => Math.abs(y) - Math.abs(x));
+  const paths: Path2D[] = [];
 
   // Marching squares: in each cell, join the points where the level crosses
   // the cell's edges.
   for (const level of levels) {
-    ctx.beginPath();
+    const path = new Path2D();
     for (let j = 0; j < ny; j++) {
       for (let i = 0; i < nx; i++) {
         const x0 = off + i * POT_CELL;
@@ -360,8 +405,8 @@ function drawEquipotentials(
 
         const seg = (p: number[] | null, q: number[] | null) => {
           if (!p || !q) return;
-          ctx.moveTo(p[0], p[1]);
-          ctx.lineTo(q[0], q[1]);
+          path.moveTo(p[0], p[1]);
+          path.lineTo(q[0], q[1]);
         };
 
         if (top && right && bottom && left) {
@@ -380,8 +425,30 @@ function drawEquipotentials(
         }
       }
     }
-    ctx.stroke();
+    paths.push(path);
   }
+  return paths;
+}
+
+/**
+ * Strokes the equipotentials as a ripple: each level fades in a little after
+ * the one before it, so the rings spread outward from the charges.
+ */
+function drawEquipotentials(
+  ctx: CanvasRenderingContext2D,
+  paths: Path2D[],
+  elapsed: number
+) {
+  ctx.save();
+  ctx.strokeStyle = EQUIPOTENTIAL_COLOR;
+  ctx.lineWidth = 1;
+  paths.forEach((path, i) => {
+    const start = (i / Math.max(paths.length, 1)) * RIPPLE_MS;
+    const fade = progressBetween(elapsed, start, RING_FADE_MS);
+    if (fade <= 0) return;
+    ctx.globalAlpha = 0.5 * fade;
+    ctx.stroke(path);
+  });
   ctx.restore();
 }
 
@@ -446,6 +513,26 @@ const Component = observer(({ state }: { state: State }) => {
     return () => window.removeEventListener("resize", resize);
   }, [particles.length]);
 
+  // The lines and contours depend only on the charges and canvas size, so
+  // they are worked out once and each animation frame only redraws them.
+  const geometry = useMemo(() => {
+    const charges: Charge[] = particles.map((p) => ({
+      cx: p.x * size.w,
+      cy: p.y * size.h,
+      q: p.q,
+    }));
+    if (charges.length === 0) return null;
+    return {
+      lines: prepareFieldLines(charges, size.w, size.h),
+      equipotentials: computeEquipotentials(charges, size.w, size.h),
+    };
+  }, [particles, size]);
+
+  const elapsed = useRunAnimation(
+    particles.length > 0 ? state : null,
+    ANIM_TOTAL_MS
+  );
+
   // Draw the field and charges.
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -460,12 +547,7 @@ const Component = observer(({ state }: { state: State }) => {
     ctx.fillStyle = color.surfaceRaised;
     ctx.fillRect(0, 0, w, h);
 
-    const charges: Charge[] = particles.map((p) => ({
-      cx: p.x * w,
-      cy: p.y * h,
-      q: p.q,
-    }));
-    if (charges.length > 0) drawEquipotentials(ctx, charges, w, h);
+    if (geometry) drawEquipotentials(ctx, geometry.equipotentials, elapsed);
 
     // Field vectors on a grid.
     if (particles.length > 0) {
@@ -521,7 +603,9 @@ const Component = observer(({ state }: { state: State }) => {
       }
     }
 
-    if (charges.length > 0) drawFieldLines(ctx, charges, w, h);
+    if (geometry) {
+      drawFieldLines(ctx, geometry.lines, progressBetween(elapsed, 0, LINES_MS));
+    }
 
     // Charges.
     for (const p of particles) {
@@ -557,8 +641,8 @@ const Component = observer(({ state }: { state: State }) => {
       ctx.stroke();
     }
 
-    if (charges.length > 0) drawLegend(ctx, h);
-  }, [particles, size]);
+    if (geometry) drawLegend(ctx, h);
+  }, [particles, size, geometry, elapsed]);
 
   if (particles.length === 0) {
     return (
