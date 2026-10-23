@@ -7,6 +7,11 @@ import {
   StatRow,
 } from "../../common/PluginSurface";
 import { color, type } from "../../common/tokens";
+import {
+  easeInOut,
+  progressBetween,
+  useRunAnimation,
+} from "../../common/useRunAnimation";
 import instructions from "./instructions.md?raw";
 import type { Line } from "./messages";
 import State from "./state";
@@ -20,6 +25,20 @@ const BASE_DEMAND: Line = {
   start: { x: -0.8, y: 0.8 },
   end: { x: 0.8, y: -0.8 },
 };
+
+// Animation, in ms. Each shifted curve slides from its original position to
+// its new one, one curve at a time, with the equilibrium moving along. Then
+// the drawn points appear one at a time, their guide lines reaching in from
+// the axes (sharing at most POINTS_MS between them).
+const SHIFT_MS = 1200;
+const POINT_MS = 600;
+const POINTS_MS = 2400;
+const PAUSE_MS = 250;
+
+const shiftLine = (line: Line, dx: number): Line => ({
+  start: { x: line.start.x + dx, y: line.start.y },
+  end: { x: line.end.x + dx, y: line.end.y },
+});
 
 function calculateIntersection(line1: Line, line2: Line) {
   const denominator =
@@ -48,8 +67,39 @@ function calculateIntersection(line1: Line, line2: Line) {
 const Component = observer(({ state }: { state: State }) => {
   const clipId = `market-plot-${useId().replace(/:/g, "")}`;
   const scales = makeScales(2, 2);
-  const supply = state.lines[0] ?? BASE_SUPPLY;
-  const demand = state.lines[1] ?? BASE_DEMAND;
+  const lines = state.lines;
+  const points = state.points;
+
+  // How far each curve moved from its original position. A run can shift a
+  // curve several times; the slide covers the total.
+  const bases = [BASE_SUPPLY, BASE_DEMAND];
+  const shifts = bases.map((base, i) =>
+    lines[i] ? lines[i].start.x - base.start.x : 0
+  );
+  const moving = shifts.map((dx) => Math.abs(dx) > 1e-9);
+  const shiftStarts: number[] = [];
+  let t0 = 0;
+  for (const m of moving) {
+    shiftStarts.push(t0);
+    if (m) t0 += SHIFT_MS;
+  }
+  const pointsStart = t0 > 0 ? t0 + PAUSE_MS : 0;
+  const pointMs = Math.min(POINT_MS, POINTS_MS / Math.max(points.length, 1));
+  const totalMs = pointsStart + points.length * pointMs;
+  const elapsed = useRunAnimation(totalMs > 0 ? state : null, totalMs);
+
+  // This frame's curves: each shifted one part-way through its slide.
+  const shownLines = lines.map((line, i) =>
+    i < 2 && moving[i]
+      ? shiftLine(
+          bases[i],
+          shifts[i] * easeInOut(progressBetween(elapsed, shiftStarts[i], SHIFT_MS))
+        )
+      : line
+  );
+
+  const supply = shownLines[0] ?? BASE_SUPPLY;
+  const demand = shownLines[1] ?? BASE_DEMAND;
   const equilibrium = state.helper
     ? calculateIntersection(supply, demand)
     : null;
@@ -137,7 +187,7 @@ const Component = observer(({ state }: { state: State }) => {
             {drawCurve(BASE_SUPPLY, color.series[0])}
             {drawCurve(BASE_DEMAND, color.series[1])}
 
-            {state.lines.map((line, index) =>
+            {shownLines.map((line, index) =>
               drawCurve(
                 line,
                 index === 0 ? color.series[0] : color.series[1],
@@ -146,34 +196,45 @@ const Component = observer(({ state }: { state: State }) => {
               )
             )}
 
-            {state.points.map((point, index) => {
+            {points.map((point, index) => {
               const plotted = toChartPoint({
                 x: point.quantity,
                 y: point.price,
               });
+              // Guide lines reach in from the price and quantity axes, then
+              // the point appears where they meet.
+              const p = progressBetween(
+                elapsed,
+                pointsStart + index * pointMs,
+                pointMs
+              );
+              if (p <= 0) return null;
+              const reach = easeInOut(Math.min(p / 0.7, 1));
+              const pop = progressBetween(p, 0.6, 0.4);
+              const axisY = scales.sy(0);
 
               return (
                 <g key={`point-${index}`}>
                   <line
                     x1={PAD.left}
                     y1={plotted.y}
-                    x2={plotted.x}
+                    x2={PAD.left + (plotted.x - PAD.left) * reach}
                     y2={plotted.y}
                     stroke={color.reference}
                     strokeDasharray="5 4"
                   />
                   <line
                     x1={plotted.x}
-                    y1={scales.sy(0)}
+                    y1={axisY}
                     x2={plotted.x}
-                    y2={plotted.y}
+                    y2={axisY + (plotted.y - axisY) * reach}
                     stroke={color.reference}
                     strokeDasharray="5 4"
                   />
                   <circle
                     cx={plotted.x}
                     cy={plotted.y}
-                    r={4.5}
+                    r={4.5 * pop}
                     fill={color.reference}
                     stroke={color.surfaceRaised}
                     strokeWidth={1.5}
