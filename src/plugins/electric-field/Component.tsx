@@ -19,9 +19,9 @@ const K = 1;
 const CHARGE_R = 11;
 // Equipotential sampling cell, in px.
 const POT_CELL = 6;
-// Equipotentials are drawn where a lone unit charge's potential would be at
-// these distances, as fractions of the canvas's shorter side.
-const POT_RADII = [0.06, 0.1, 0.15, 0.22, 0.32, 0.46];
+// Rough spacing between equipotentials, as a fraction of the canvas's
+// shorter side.
+const POT_SPACING = 0.045;
 
 const FIELD_LINE_COLOR = color.ink;
 const EQUIPOTENTIAL_COLOR = color.series[3];
@@ -50,10 +50,30 @@ function potentialAt(x: number, y: number, charges: Charge[]): number {
   return v;
 }
 
+// Field lines per unit of charge. Every charge, positive or negative, has
+// this many lines per unit touching it, so the line count is proportional
+// to the charge.
+const LINES_PER_UNIT = 12;
+
+const linesFor = (q: number) =>
+  Math.max(1, Math.round(LINES_PER_UNIT * Math.abs(q)));
+
+type FieldLine = {
+  pts: [number, number][];
+  /** Which way the field points relative to the order of `pts`. */
+  dir: 1 | -1;
+  /** The charge the line ran into, or null if it escaped to infinity. */
+  end: Charge | null;
+};
+
 /**
  * Follows the field from (x, y) — along it for dir = 1, against it for
- * dir = -1 — until the line leaves the canvas or runs into a charge that
- * absorbs it (a negative one going forward, a positive one going back).
+ * dir = -1 — until the line runs into a charge that absorbs it (a negative
+ * one going forward, a positive one going back) or escapes to infinity.
+ *
+ * Lines are traced well past the canvas edge: a dipole's outer lines swing
+ * out of view and come back to the other charge, and stopping at the edge
+ * would cut them off.
  */
 function traceFieldLine(
   x: number,
@@ -62,11 +82,16 @@ function traceFieldLine(
   charges: Charge[],
   w: number,
   h: number
-): [number, number][] {
-  const step = 2;
-  const maxSteps = Math.ceil((4 * (w + h)) / step);
+): FieldLine {
+  const escape = 25 * Math.max(w, h);
   const pts: [number, number][] = [[x, y]];
-  for (let i = 0; i < maxSteps; i++) {
+  for (let i = 0; i < 6000; i++) {
+    // Steps stay short near charges, where the field bends sharply, and grow
+    // far away, where it is nearly straight.
+    let dMin = Infinity;
+    for (const c of charges) dMin = Math.min(dMin, Math.hypot(x - c.cx, y - c.cy));
+    const step = Math.min(40, Math.max(1.5, 0.03 * dMin));
+
     // Midpoint (RK2) step, so lines curve smoothly instead of drifting.
     const [e1x, e1y] = fieldAt(x, y, charges);
     const m1 = Math.hypot(e1x, e1y);
@@ -80,13 +105,94 @@ function traceFieldLine(
     y += (dir * e2y * step) / m2;
     pts.push([x, y]);
 
-    if (x < 0 || x > w || y < 0 || y > h) break;
-    const absorbed = charges.some(
+    const sink = charges.find(
       (c) => c.q * dir < 0 && Math.hypot(x - c.cx, y - c.cy) < CHARGE_R
     );
-    if (absorbed) break;
+    if (sink) return { pts, dir, end: sink };
+    if (Math.hypot(x - w / 2, y - h / 2) > escape) break;
   }
-  return pts;
+  return { pts, dir, end: null };
+}
+
+const angleGap = (a: number, b: number) => {
+  const d = Math.abs(a - b) % (2 * Math.PI);
+  return Math.min(d, 2 * Math.PI - d);
+};
+
+/**
+ * Every positive charge sends out its lines. Each negative charge then
+ * counts the lines that arrived at it and, if it is still short of its share,
+ * gets the rest traced back out from the widest gaps around it. Those come
+ * in from infinity, like the extra lines of a net-negative arrangement do.
+ */
+function buildFieldLines(charges: Charge[], w: number, h: number): FieldLine[] {
+  const lines: FieldLine[] = [];
+  const arrivals = new Map<Charge, number[]>();
+
+  for (const src of charges.filter((c) => c.q > 0)) {
+    const count = linesFor(src.q);
+    for (let i = 0; i < count; i++) {
+      const angle = (2 * Math.PI * i) / count;
+      const line = traceFieldLine(
+        src.cx + Math.cos(angle) * (CHARGE_R + 1),
+        src.cy + Math.sin(angle) * (CHARGE_R + 1),
+        1,
+        charges,
+        w,
+        h
+      );
+      lines.push(line);
+      if (line.end) {
+        const [ex, ey] = line.pts[line.pts.length - 1];
+        const list = arrivals.get(line.end) ?? [];
+        list.push(Math.atan2(ey - line.end.cy, ex - line.end.cx));
+        arrivals.set(line.end, list);
+      }
+    }
+  }
+
+  for (const sink of charges.filter((c) => c.q < 0)) {
+    const taken = arrivals.get(sink) ?? [];
+    const missing = linesFor(sink.q) - taken.length;
+    if (missing <= 0) continue;
+
+    let angles: number[];
+    if (taken.length === 0) {
+      angles = Array.from({ length: missing }, (_, i) => (2 * Math.PI * i) / missing);
+    } else {
+      // Greedily take the direction farthest from every line already there.
+      angles = [];
+      const used = [...taken];
+      for (let k = 0; k < missing; k++) {
+        let best = 0;
+        let bestGap = -1;
+        for (let d = 0; d < 360; d++) {
+          const a = (d * Math.PI) / 180;
+          const gap = Math.min(...used.map((u) => angleGap(a, u)));
+          if (gap > bestGap) {
+            bestGap = gap;
+            best = a;
+          }
+        }
+        angles.push(best);
+        used.push(best);
+      }
+    }
+
+    for (const angle of angles) {
+      lines.push(
+        traceFieldLine(
+          sink.cx + Math.cos(angle) * (CHARGE_R + 1),
+          sink.cy + Math.sin(angle) * (CHARGE_R + 1),
+          -1,
+          charges,
+          w,
+          h
+        )
+      );
+    }
+  }
+  return lines;
 }
 
 function drawFieldLines(
@@ -95,13 +201,6 @@ function drawFieldLines(
   w: number,
   h: number
 ) {
-  // Lines leave positive charges. With only negative charges, trace back from
-  // them instead so the field still shows. A charge gets lines in proportion
-  // to its size, which is what makes a stronger charge look stronger.
-  const hasPositive = charges.some((c) => c.q > 0);
-  const dir: 1 | -1 = hasPositive ? 1 : -1;
-  const sources = charges.filter((c) => (hasPositive ? c.q > 0 : c.q < 0));
-
   ctx.save();
   ctx.strokeStyle = FIELD_LINE_COLOR;
   ctx.fillStyle = FIELD_LINE_COLOR;
@@ -109,42 +208,50 @@ function drawFieldLines(
   ctx.lineWidth = 1.25;
   ctx.lineJoin = "round";
 
-  for (const src of sources) {
-    const count = Math.min(36, Math.max(6, Math.round(12 * Math.abs(src.q))));
-    for (let i = 0; i < count; i++) {
-      const angle = (2 * Math.PI * i) / count;
-      const pts = traceFieldLine(
-        src.cx + Math.cos(angle) * (CHARGE_R + 1),
-        src.cy + Math.sin(angle) * (CHARGE_R + 1),
-        dir,
-        charges,
-        w,
-        h
-      );
-      if (pts.length < 2) continue;
+  for (const { pts, dir } of buildFieldLines(charges, w, h)) {
+    if (pts.length < 2) continue;
 
-      ctx.beginPath();
-      ctx.moveTo(pts[0][0], pts[0][1]);
-      for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]);
-      ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]);
+    ctx.stroke();
 
-      // One arrowhead halfway along, pointing the way the field points.
-      if (pts.length < 20) continue;
-      const mid = Math.floor(pts.length / 2);
-      const [ax, ay] = pts[mid];
-      let ux = (pts[mid + 1][0] - pts[mid - 1][0]) * dir;
-      let uy = (pts[mid + 1][1] - pts[mid - 1][1]) * dir;
-      const m = Math.hypot(ux, uy) || 1;
-      ux /= m;
-      uy /= m;
-      const ah = 5;
-      ctx.beginPath();
-      ctx.moveTo(ax + ux * ah, ay + uy * ah);
-      ctx.lineTo(ax - ux * ah - uy * ah * 0.7, ay - uy * ah + ux * ah * 0.7);
-      ctx.lineTo(ax - ux * ah + uy * ah * 0.7, ay - uy * ah - ux * ah * 0.7);
-      ctx.closePath();
-      ctx.fill();
+    // One arrowhead, pointing the way the field points, halfway along the
+    // longest stretch of the line that is on screen.
+    let bestStart = 0;
+    let bestLen = 0;
+    let runStart = -1;
+    for (let k = 0; k <= pts.length; k++) {
+      const inside =
+        k < pts.length &&
+        pts[k][0] >= 0 &&
+        pts[k][0] <= w &&
+        pts[k][1] >= 0 &&
+        pts[k][1] <= h;
+      if (inside && runStart < 0) runStart = k;
+      if (!inside && runStart >= 0) {
+        if (k - runStart > bestLen) {
+          bestLen = k - runStart;
+          bestStart = runStart;
+        }
+        runStart = -1;
+      }
     }
+    if (bestLen < 20) continue;
+    const mid = bestStart + Math.floor(bestLen / 2);
+    const [ax, ay] = pts[mid];
+    let ux = (pts[mid + 1][0] - pts[mid - 1][0]) * dir;
+    let uy = (pts[mid + 1][1] - pts[mid - 1][1]) * dir;
+    const m = Math.hypot(ux, uy) || 1;
+    ux /= m;
+    uy /= m;
+    const ah = 5;
+    ctx.beginPath();
+    ctx.moveTo(ax + ux * ah, ay + uy * ah);
+    ctx.lineTo(ax - ux * ah - uy * ah * 0.7, ay - uy * ah + ux * ah * 0.7);
+    ctx.lineTo(ax - ux * ah + uy * ah * 0.7, ay - uy * ah - ux * ah * 0.7);
+    ctx.closePath();
+    ctx.fill();
   }
   ctx.restore();
 }
@@ -173,12 +280,53 @@ function drawEquipotentials(
     }
   }
 
-  const base = Math.min(w, h);
+  // Levels are chosen from the potential actually on the canvas, so the
+  // contours come out about evenly spaced everywhere, around one charge or
+  // closing around several. Each sample counts in inverse proportion to its
+  // distance from the nearest charge: around a lone charge that makes every
+  // ring an equal share, so the rings are evenly spaced, and nowhere do the
+  // levels bunch up the way fixed levels do where V passes through zero.
+  const samples: { v: number; weight: number }[] = [];
+  let total = 0;
+  for (let j = 0; j <= ny; j++) {
+    for (let i = 0; i <= nx; i++) {
+      const x = off + i * POT_CELL;
+      const y = off + j * POT_CELL;
+      let dMin = Infinity;
+      for (const c of charges) dMin = Math.min(dMin, Math.hypot(x - c.cx, y - c.cy));
+      if (dMin < CHARGE_R) continue;
+      samples.push({ v: v[j * cols + i], weight: 1 / dMin });
+      total += 1 / dMin;
+    }
+  }
+  samples.sort((a, b) => a.v - b.v);
+
+  const spacing = POT_SPACING * Math.min(w, h);
+  // Each sample stands for one cell of area, and a ring of width `spacing`
+  // around a charge carries 2π·spacing of weight·area, so that many rings fit.
+  const count = Math.max(
+    1,
+    Math.round((total * POT_CELL * POT_CELL) / (2 * Math.PI * spacing))
+  );
   const levels: number[] = [];
-  for (const r of POT_RADII) levels.push(K / (r * base), -K / (r * base));
-  // V = 0 only exists between charges of opposite sign.
-  if (charges.some((c) => c.q > 0) && charges.some((c) => c.q < 0)) {
-    levels.push(0);
+  let acc = 0;
+  let next = 1;
+  for (let k = 0; k < samples.length - 1 && next <= count; k++) {
+    acc += samples[k].weight;
+    if (acc >= (next * total) / (count + 1)) {
+      // Between two samples, so no grid point sits exactly on the level.
+      levels.push((samples[k].v + samples[k + 1].v) / 2);
+      next++;
+    }
+  }
+
+  // Between opposite charges, the level nearest zero becomes exactly V = 0.
+  if (charges.some((c) => c.q > 0) && charges.some((c) => c.q < 0) && levels.length) {
+    let nearest = 0;
+    for (let k = 1; k < levels.length; k++) {
+      if (Math.abs(levels[k]) < Math.abs(levels[nearest])) nearest = k;
+    }
+    levels[nearest] = 0;
   }
 
   ctx.save();
