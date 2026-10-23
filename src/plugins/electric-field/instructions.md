@@ -33,6 +33,8 @@ createParticle(0.65, 0.5, -1);
 
 Run it. See how the field lines curve from the positive charge to the negative one? That pattern is called a **dipole**.
 
+The purple rings are **equipotentials**: every point on one ring has the same electric potential. Notice that they always cross the field lines at right angles.
+
 ## Experiment
 
 Try your own arrangements:
