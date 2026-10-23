@@ -3,8 +3,8 @@
 // no duplicated title bar, no hand-rolled axis code.
 
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
 import { color, type } from "../../common/tokens";
+import { useRunAnimation } from "../../common/useRunAnimation";
 import {
   PAD,
   VIEW,
@@ -32,30 +32,7 @@ const Component = observer(({ state }: { state: State }) => {
   const target = state.target ?? 0.5;
   const n = points.length;
 
-  // Elapsed time is tagged with the points it belongs to, so a new plot starts
-  // from zero on its very first frame instead of flashing the finished line.
-  const [anim, setAnim] = useState<{ owner: number[] | null; t: number }>({
-    owner: null,
-    t: 0,
-  });
-  const elapsed = anim.owner === points ? anim.t : 0;
-
-  useEffect(() => {
-    if (points.length === 0) return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      setAnim({ owner: points, t: ANIM_TOTAL_MS });
-      return;
-    }
-    const start = performance.now();
-    let frame = 0;
-    const tick = (now: number) => {
-      const t = now - start;
-      setAnim({ owner: points, t });
-      if (t < ANIM_TOTAL_MS) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [points]);
+  const elapsed = useRunAnimation(n > 0 ? points : null, ANIM_TOTAL_MS);
 
   if (n === 0) {
     return (

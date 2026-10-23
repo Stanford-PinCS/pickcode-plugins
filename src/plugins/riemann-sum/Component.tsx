@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
 import { color } from "../../common/tokens";
+import { useRunAnimation } from "../../common/useRunAnimation";
 import {
   EMPTY,
   EmptyState,
@@ -25,33 +25,7 @@ const Component = observer(({ state }: { state: State }) => {
   const curveVisible = state.curveVisible ?? false;
   const area = state.area ?? 0;
   const n = rects.length;
-  const hasRects = n > 0;
-
-  // Elapsed time is tagged with the state it belongs to, so a new run starts
-  // from zero on its very first frame instead of flashing the previous run's
-  // fully-grown rectangles.
-  const [anim, setAnim] = useState<{ owner: State | null; t: number }>({
-    owner: null,
-    t: 0,
-  });
-  const elapsed = anim.owner === state ? anim.t : 0;
-
-  useEffect(() => {
-    if (!hasRects) return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      setAnim({ owner: state, t: ANIM_TOTAL_MS });
-      return;
-    }
-    const start = performance.now();
-    let frame = 0;
-    const tick = (now: number) => {
-      const t = now - start;
-      setAnim({ owner: state, t });
-      if (t < ANIM_TOTAL_MS) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [state, hasRects]);
+  const elapsed = useRunAnimation(n > 0 ? state : null, ANIM_TOTAL_MS);
 
   // Zero-height rectangles (e.g. the left endpoint at x = 0) have nothing to
   // animate, so they don't get a time slot — otherwise the run opens on a pause.
