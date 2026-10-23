@@ -1,6 +1,10 @@
 import { observer } from "mobx-react-lite";
 import { color, type } from "../../common/tokens";
 import {
+  progressBetween,
+  useRunAnimation,
+} from "../../common/useRunAnimation";
+import {
   EmptyState,
   PluginStage,
   PluginSurface,
@@ -9,6 +13,16 @@ import instructions from "./instructions.md?raw";
 import State from "./state";
 
 const VIEW = { width: 520, height: 400 };
+
+// Animation, in ms. Each vector grows out of the origin while it swings up
+// from the +x axis to its angle, tracing the angle's arc. Then each pair of
+// components is built: x along the x-axis, then y up to the vector's tip.
+// Everything is sped up together if it would run past MAX_TOTAL_MS.
+const VECTOR_MS = 1200;
+const COMPONENT_MS = 800;
+const PAUSE_MS = 250;
+const MAX_TOTAL_MS = 5000;
+const ANGLE_ARC_R = 30;
 
 // Nearest "nice" grid step (1, 2, 5, x10^n) at or below the raw value.
 const niceStep = (raw: number) => {
@@ -21,6 +35,20 @@ const niceStep = (raw: number) => {
 const Component = observer(({ state }: { state: State }) => {
   const vectors = state?.vectors ?? [];
   const components = state?.components ?? [];
+
+  const naturalMs =
+    vectors.length * VECTOR_MS +
+    (vectors.length && components.length ? PAUSE_MS : 0) +
+    components.length * 2 * COMPONENT_MS;
+  const speed = Math.min(1, MAX_TOTAL_MS / Math.max(naturalMs, 1));
+  const vectorMs = VECTOR_MS * speed;
+  const componentMs = COMPONENT_MS * speed;
+  const componentsStart =
+    vectors.length * vectorMs + (vectors.length ? PAUSE_MS * speed : 0);
+  const elapsed = useRunAnimation(
+    vectors.length + components.length > 0 ? state : null,
+    naturalMs * speed
+  );
 
   if (vectors.length === 0 && components.length === 0) {
     return (
@@ -36,9 +64,25 @@ const Component = observer(({ state }: { state: State }) => {
   const cy = VIEW.height / 2;
 
   // magnitude/angle (degrees, CCW from +x) -> math-coord tip.
-  const vectorTips = vectors.map((v) => {
-    const rad = (v.angle * Math.PI) / 180;
-    return { x: v.magnitude * Math.cos(rad), y: v.magnitude * Math.sin(rad) };
+  const tipOf = (magnitude: number, degrees: number) => {
+    const rad = (degrees * Math.PI) / 180;
+    return { x: magnitude * Math.cos(rad), y: magnitude * Math.sin(rad) };
+  };
+  const vectorTips = vectors.map((v) => tipOf(v.magnitude, v.angle));
+
+  // This frame's vectors: grown and swung `p` of the way.
+  const shownVectors = vectors.map((v, i) => {
+    const p = progressBetween(elapsed, i * vectorMs, vectorMs);
+    return { p, angle: v.angle * p, tip: tipOf(v.magnitude * p, v.angle * p) };
+  });
+  // This frame's components: x grows first, then y.
+  const shownComponents = components.map((c, i) => {
+    const start = componentsStart + i * 2 * componentMs;
+    return {
+      x: c.xComponent * progressBetween(elapsed, start, componentMs),
+      y: c.yComponent * progressBetween(elapsed, start + componentMs, componentMs),
+      yStarted: elapsed > start + componentMs,
+    };
   });
 
   // Frame the view so the largest feature reaches ~85% toward the nearer edge,
@@ -87,6 +131,18 @@ const Component = observer(({ state }: { state: State }) => {
     return `${x2},${y2} ${bx + aw * perpX},${by + aw * perpY} ${
       bx - aw * perpX
     },${by - aw * perpY}`;
+  };
+
+  // The arc from the +x axis round to `degrees`, at ANGLE_ARC_R from the origin.
+  const angleArc = (degrees: number) => {
+    const clamped = Math.max(-359.9, Math.min(359.9, degrees));
+    const rad = (clamped * Math.PI) / 180;
+    const ex = cx + ANGLE_ARC_R * Math.cos(rad);
+    const ey = cy - ANGLE_ARC_R * Math.sin(rad);
+    const large = Math.abs(clamped) > 180 ? 1 : 0;
+    // Screen y points down, so counterclockwise in math is sweep-flag 0.
+    const sweep = clamped >= 0 ? 0 : 1;
+    return `M ${cx + ANGLE_ARC_R} ${cy} A ${ANGLE_ARC_R} ${ANGLE_ARC_R} 0 ${large} ${sweep} ${ex} ${ey}`;
   };
 
   const legend: { label: string; color: string }[] = [];
@@ -188,14 +244,14 @@ const Component = observer(({ state }: { state: State }) => {
           <circle cx={cx} cy={cy} r={3} fill={color.axis} />
 
           {/* Components underneath (vector drawn on top) */}
-          {components.map((c, i) => {
-            const cornerX = px(c.xComponent);
+          {shownComponents.map((c, i) => {
+            const cornerX = px(c.x);
             const cornerY = py(0);
-            const tipX = px(c.xComponent);
-            const tipY = py(c.yComponent);
+            const tipX = px(c.x);
+            const tipY = py(c.y);
             return (
               <g key={`comp-${i}`}>
-                {Math.abs(c.xComponent) > 1e-9 && (
+                {Math.abs(c.x) > 1e-9 && (
                   <>
                     <line
                       x1={cx}
@@ -212,7 +268,7 @@ const Component = observer(({ state }: { state: State }) => {
                     />
                   </>
                 )}
-                {Math.abs(c.yComponent) > 1e-9 && (
+                {c.yStarted && Math.abs(c.y) > 1e-9 && (
                   <>
                     <line
                       x1={cornerX}
@@ -234,23 +290,34 @@ const Component = observer(({ state }: { state: State }) => {
           })}
 
           {/* Vectors */}
-          {vectorTips.map((p, i) => (
-            <g key={`vec-${i}`}>
-              <line
-                x1={cx}
-                y1={cy}
-                x2={px(p.x)}
-                y2={py(p.y)}
-                stroke={vectorColor}
-                strokeWidth={3}
-                strokeLinecap="round"
-              />
-              <polygon
-                points={arrowHead(cx, cy, px(p.x), py(p.y))}
-                fill={vectorColor}
-              />
-            </g>
-          ))}
+          {shownVectors.map(({ p, angle, tip }, i) =>
+            p <= 0 ? null : (
+              <g key={`vec-${i}`}>
+                {Math.abs(angle) > 0.5 && (
+                  <path
+                    d={angleArc(angle)}
+                    fill="none"
+                    stroke={vectorColor}
+                    strokeWidth={1.5}
+                    opacity={0.6}
+                  />
+                )}
+                <line
+                  x1={cx}
+                  y1={cy}
+                  x2={px(tip.x)}
+                  y2={py(tip.y)}
+                  stroke={vectorColor}
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                />
+                <polygon
+                  points={arrowHead(cx, cy, px(tip.x), py(tip.y))}
+                  fill={vectorColor}
+                />
+              </g>
+            )
+          )}
 
           {/* Legend */}
           {legend.map((entry, i) => {
