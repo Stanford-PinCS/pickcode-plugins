@@ -1,9 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { color, font, radius, space } from "./tokens";
 import { parseStepBody, parseSteps } from "../common/instructionSteps";
 import { QuestionCard } from "./QuestionCard";
+import { openArticleFromFrame } from "./keyterms/openArticle";
+import { readTermsBlock } from "./keyterms/termsBlock";
+import { remarkTermMark } from "./keyterms/remarkTermMark";
+import { TermLayer } from "./keyterms/TermLayer";
 
 /**
  * The instruction band at the top of every plugin pane.
@@ -163,8 +167,11 @@ function NavButton({
 }
 
 export function PluginInstructions({ markdown }: { markdown: string }) {
-  const steps = parseSteps(markdown);
+  // The key terms written in Plugin Studio are stored after the instructions; students only see the instructions.
+  const { body, terms } = useMemo(() => readTermsBlock(markdown), [markdown]);
+  const steps = parseSteps(body);
   const [index, setIndex] = useState(() => readStored(STEP_KEY, 0));
+  const remarkPlugins = useMemo(() => [remarkGfm, remarkTermMark(terms)], [terms]);
 
   const goTo = (i: number) => {
     setIndex(i);
@@ -305,6 +312,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
         userSelect: dragging ? "none" : undefined,
       }}
     >
+      {terms.length > 0 && <TermLayer openArticle={openArticleFromFrame} />}
       <div
         style={{
           flex: 1,
@@ -348,7 +356,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
           ) : (
             <ReactMarkdown
               key={i}
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={remarkPlugins}
               components={markdownComponents}
             >
               {segment.markdown}
