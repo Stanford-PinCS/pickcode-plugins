@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { color } from "../../common/tokens";
+import { useRunAnimation } from "../../common/useRunAnimation";
 import {
   EMPTY,
   EmptyState,
@@ -15,11 +16,23 @@ const X_MIN = 0;
 const X_MAX = 4;
 const Y_MAX = 16;
 
+// Rectangles rise one at a time, left to right, at a constant rate. Each gets
+// an equal slice of ANIM_TOTAL_MS, so the whole sweep always takes that long.
+const ANIM_TOTAL_MS = 5000;
+
 const Component = observer(({ state }: { state: State }) => {
   const rects = state.rects ?? [];
   const curveVisible = state.curveVisible ?? false;
   const area = state.area ?? 0;
   const n = rects.length;
+  const elapsed = useRunAnimation(n > 0 ? state : null, ANIM_TOTAL_MS);
+
+  // Zero-height rectangles (e.g. the left endpoint at x = 0) have nothing to
+  // animate, so they don't get a time slot — otherwise the run opens on a pause.
+  const slots: number[] = [];
+  let visibleCount = 0;
+  for (const r of rects) slots.push(r.height > 0 ? visibleCount++ : -1);
+  const riseMs = ANIM_TOTAL_MS / Math.max(visibleCount, 1);
 
   const vw = 520;
   const vh = 420;
@@ -89,7 +102,11 @@ const Component = observer(({ state }: { state: State }) => {
           ))}
 
           {rects.map((r, i) => {
-            const h = Math.min(r.height, Y_MAX);
+            const p = Math.min(
+              Math.max((elapsed - slots[i] * riseMs) / riseMs, 0),
+              1
+            );
+            const h = Math.min(r.height, Y_MAX) * p;
             if (h <= 0) return null;
             return (
               <rect

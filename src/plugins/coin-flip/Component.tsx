@@ -4,6 +4,7 @@
 
 import { observer } from "mobx-react-lite";
 import { color, type } from "../../common/tokens";
+import { useRunAnimation } from "../../common/useRunAnimation";
 import {
   PAD,
   VIEW,
@@ -21,11 +22,17 @@ import {
 import instructions from "./instructions.md?raw";
 import State from "./state";
 
+// The line draws itself left to right at a constant rate, reaching the last
+// flip after ANIM_TOTAL_MS whatever the number of flips.
+const ANIM_TOTAL_MS = 5000;
+
 const Component = observer(({ state }: { state: State }) => {
   console.log("Coin Flip component rendered");
   const points = state.points ?? [];
   const target = state.target ?? 0.5;
   const n = points.length;
+
+  const elapsed = useRunAnimation(n > 0 ? points : null, ANIM_TOTAL_MS);
 
   if (n === 0) {
     return (
@@ -40,6 +47,17 @@ const Component = observer(({ state }: { state: State }) => {
   const finalProportion = points[n - 1];
   const xMax = Math.max(n, 10);
   const s = makeScales(xMax, 1);
+
+  // How far along the flips the line has reached, as a fractional index. The
+  // last segment ends at an interpolated point so the tip moves smoothly.
+  const reach = Math.min(elapsed / ANIM_TOTAL_MS, 1) * (n - 1);
+  const whole = Math.floor(reach);
+  let linePoints = polylinePoints(points.slice(0, whole + 1), s);
+  if (whole < n - 1) {
+    const f = reach - whole;
+    const y = points[whole] + (points[whole + 1] - points[whole]) * f;
+    linePoints += ` ${s.sx(whole + 1 + f)},${s.sy(y)}`;
+  }
 
   return (
     <PluginSurface instructions={instructions}>
@@ -85,7 +103,7 @@ const Component = observer(({ state }: { state: State }) => {
           />
 
           <polyline
-            points={polylinePoints(points, s)}
+            points={linePoints}
             fill="none"
             stroke={color.series[0]}
             strokeWidth={2.5}
