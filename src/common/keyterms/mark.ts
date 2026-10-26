@@ -1,4 +1,5 @@
-import type { Term } from "./term";
+import { color } from "../tokens";
+import { isWikipediaArticle, type Term } from "./term";
 
 // How an occurrence of a key term is marked in the page. Lesson text (the site's TermMark) and plugin instructions (remarkTermMark) both write the mark with markAttributes, and TermLayer reads it back with readMark, so the popup works the same on every mark.
 
@@ -9,7 +10,7 @@ export const TERM_CLASS = "pincs-term";
 export const TERM_STYLE = {
   textDecorationLine: "underline",
   textDecorationStyle: "dotted",
-  textDecorationColor: "rgba(100, 116, 139, 0.9)",
+  textDecorationColor: color.inkMuted,
   textDecorationThickness: "1.5px",
   textUnderlineOffset: "3px",
   cursor: "help",
@@ -26,7 +27,7 @@ export function markAttributes(term: Term) {
     className: TERM_CLASS,
     "data-term": term.term,
     "data-definition": term.definition,
-    "data-url": term.url || undefined,
+    "data-url": isWikipediaArticle(term.url) ? term.url : undefined,
     tabIndex: 0,
   };
 }
@@ -35,5 +36,6 @@ export function markAttributes(term: Term) {
 export function readMark(el: Element): { term: string; definition: string; url: string | null } | null {
   const definition = el.getAttribute("data-definition");
   if (!definition) return null;
-  return { term: el.getAttribute("data-term") ?? el.textContent ?? "", definition, url: el.getAttribute("data-url") };
+  const url = el.getAttribute("data-url");
+  return { term: el.getAttribute("data-term") ?? el.textContent ?? "", definition, url: isWikipediaArticle(url) ? url : null };
 }

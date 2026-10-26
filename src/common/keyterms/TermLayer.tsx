@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import { color, font, radius } from "../tokens";
 import { readMark, TERM_CLASS } from "./mark";
 import type { ArticleOpener } from "./openArticle";
 
@@ -25,7 +26,17 @@ export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
   const [active, setActive] = useState(false);
   const [opened, setOpened] = useState<Opened | null>(null);
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
+  // Bumped when the page scrolls or resizes, so an open popup follows its term instead of closing: focusing a term below the fold scrolls it into view, and that mustn't close the popup the focus just opened.
+  const [layoutTick, setLayoutTick] = useState(0);
   const popupRef = useRef<HTMLDivElement | null>(null);
+  const linkRef = useRef<HTMLAnchorElement | null>(null);
+  const openedRef = useRef<Opened | null>(null);
+  // The term keyboard focus is returning to from the popup's link, which shouldn't reopen the popup as it takes focus.
+  const quietFocus = useRef<HTMLElement | null>(null);
+
+  useLayoutEffect(() => {
+    openedRef.current = opened;
+  }, [opened]);
 
   useEffect(() => {
     if (layersMounted > 0) return;
@@ -39,6 +50,7 @@ export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
   useEffect(() => {
     if (!active) return;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let frame = 0;
     let down: { x: number; y: number } | null = null;
 
     const termAt = (target: EventTarget | null) =>
@@ -90,21 +102,40 @@ export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
     };
     const onFocusIn = (e: FocusEvent) => {
       const el = termAt(e.target);
-      if (el) show(el);
+      if (!el) return;
+      if (quietFocus.current === el) {
+        quietFocus.current = null;
+        return;
+      }
+      show(el);
     };
+    // Focus moving between a term and its popup keeps the popup; leaving both closes it.
     const onFocusOut = (e: FocusEvent) => {
-      if (termAt(e.target) && !inPopup(e.relatedTarget)) after(CLOSE_DELAY_MS, hide);
+      if (!termAt(e.target) && !inPopup(e.target)) return;
+      const to = e.relatedTarget;
+      if (inPopup(to) || (openedRef.current && termAt(to) === openedRef.current.el)) return;
+      after(CLOSE_DELAY_MS, hide);
     };
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") return hide();
       const el = termAt(e.target);
-      if (el && (e.key === "Enter" || e.key === " ")) {
+      if (!el) return;
+      if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
         toggle(el);
+      } else if (e.key === "Tab" && !e.shiftKey && openedRef.current?.el === el && linkRef.current) {
+        // The popup sits at the end of the page, where Tab would never reach it, so Tab steps into its link.
+        e.preventDefault();
+        cancel();
+        linkRef.current.focus();
       }
     };
-    const onScroll = (e: Event) => {
-      if (!inPopup(e.target)) hide();
+    const onScrollOrResize = (e: Event) => {
+      if (inPopup(e.target) || frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        setLayoutTick((tick) => tick + 1);
+      });
     };
 
     document.addEventListener("pointerover", onPointerOver);
@@ -114,10 +145,11 @@ export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
     document.addEventListener("focusin", onFocusIn);
     document.addEventListener("focusout", onFocusOut);
     document.addEventListener("keydown", onKeyDown);
-    window.addEventListener("scroll", onScroll, true);
-    window.addEventListener("resize", hide);
+    window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onScrollOrResize);
     return () => {
       cancel();
+      cancelAnimationFrame(frame);
       document.removeEventListener("pointerover", onPointerOver);
       document.removeEventListener("pointerout", onPointerOut);
       document.removeEventListener("pointerdown", onPointerDown);
@@ -125,8 +157,8 @@ export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
       document.removeEventListener("focusin", onFocusIn);
       document.removeEventListener("focusout", onFocusOut);
       document.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("resize", hide);
+      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onScrollOrResize);
     };
   }, [active]);
 
@@ -136,20 +168,21 @@ export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
     return () => opened.el.removeAttribute("aria-describedby");
   }, [opened]);
 
-  // Below the term, or above it when there's no room below; kept inside the viewport.
+  // Below the term, or above it when there's no room below; kept inside the viewport and moved with the term when the page scrolls. A term scrolled out of sight closes its popup.
   useLayoutEffect(() => {
     const popup = popupRef.current;
     if (!opened || !popup) return setPosition(null);
     if (!opened.el.isConnected) return setOpened(null);
     const term = opened.el.getBoundingClientRect();
-    const box = popup.getBoundingClientRect();
     const viewport = document.documentElement;
+    if (term.bottom < 0 || term.top > viewport.clientHeight) return setOpened(null);
+    const box = popup.getBoundingClientRect();
     const left = Math.max(EDGE_PX, Math.min(term.left, viewport.clientWidth - box.width - EDGE_PX));
     const below = term.bottom + GAP_PX;
     const above = term.top - GAP_PX - box.height;
     const fitsBelow = below + box.height <= viewport.clientHeight - EDGE_PX;
     setPosition({ left, top: fitsBelow || above < EDGE_PX ? below : above });
-  }, [opened]);
+  }, [opened, layoutTick]);
 
   if (!active || !opened) return null;
 
@@ -168,8 +201,9 @@ export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
       <div style={{ fontWeight: 700, marginBottom: 4 }}>{opened.term}</div>
       <div>{opened.definition}</div>
       {opened.url && (
-        <div style={{ marginTop: 8, fontSize: 12, color: MUTED }}>
+        <div style={{ marginTop: 8, fontSize: 12, color: color.inkMuted }}>
           <a
+            ref={linkRef}
             href={opened.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -177,7 +211,17 @@ export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
               e.preventDefault();
               openArticle(opened.url!);
             }}
-            style={{ color: "#2563eb", textDecoration: "underline" }}
+            // Tab, Shift+Tab and Escape take focus back to the term. Tab and Escape also close the popup, so the next Tab moves on from the term.
+            onKeyDown={(e) => {
+              if (e.key !== "Tab" && e.key !== "Escape") return;
+              e.preventDefault();
+              if (e.key === "Escape" || !e.shiftKey) {
+                quietFocus.current = opened.el;
+                setOpened(null);
+              }
+              opened.el.focus();
+            }}
+            style={{ color: color.accent, textDecoration: "underline" }}
           >
             From Wikipedia
           </a>
@@ -189,21 +233,21 @@ export function TermLayer({ openArticle }: { openArticle: ArticleOpener }) {
   );
 }
 
-const MUTED = "#64748b";
-
 const POPUP_STYLE: CSSProperties = {
   position: "fixed",
   zIndex: 2147483000,
   boxSizing: "border-box",
   width: "max-content",
   maxWidth: `min(320px, calc(100vw - ${EDGE_PX * 2}px))`,
+  // A long definition scrolls inside the popup instead of running off the page.
+  maxHeight: `min(320px, calc(100vh - ${EDGE_PX * 2}px))`,
+  overflowY: "auto",
   padding: "10px 12px",
-  background: "#ffffff",
-  color: "#1e293b",
-  border: "1px solid #e2e8f0",
-  borderRadius: 10,
-  boxShadow: "0 10px 30px rgba(15, 23, 42, 0.18)",
-  fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+  background: color.surface,
+  color: color.ink,
+  border: `1px solid ${color.border}`,
+  borderRadius: radius.md,
+  fontFamily: font.ui,
   fontSize: 14,
   fontWeight: 400,
   lineHeight: 1.45,

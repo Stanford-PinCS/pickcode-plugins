@@ -23,6 +23,15 @@ export function isTerm(value: unknown): value is Term {
     typeof t.term === "string" &&
     typeof t.definition === "string" &&
     Array.isArray(t.forms) &&
-    t.forms.every((form) => typeof form === "string")
+    t.forms.every((form) => typeof form === "string") &&
+    (t.wikiTitle === undefined || typeof t.wikiTitle === "string") &&
+    (t.url === undefined || typeof t.url === "string")
   );
+}
+
+const WIKIPEDIA_ARTICLE = /^https:\/\/en\.wikipedia\.org\/wiki\/[^\s]+$/;
+
+/** True for an English Wikipedia article URL, the only kind of link a popup shows or opens: a lesson's JSON can be edited by hand, so a stored url can't be trusted to be one. */
+export function isWikipediaArticle(url: unknown): url is string {
+  return typeof url === "string" && WIKIPEDIA_ARTICLE.test(url);
 }
