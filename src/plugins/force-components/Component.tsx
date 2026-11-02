@@ -1,18 +1,19 @@
 import { observer } from "mobx-react-lite";
-import { color, type } from "../../common/tokens";
+import { color, font, radius, type } from "../../common/tokens";
+import { VIEW, niceStep } from "../../common/chart";
 import {
   progressBetween,
   useRunAnimation,
 } from "../../common/useRunAnimation";
 import {
+  EMPTY,
   EmptyState,
   PluginStage,
   PluginSurface,
+  StatRow,
 } from "../../common/PluginSurface";
 import instructions from "./instructions.md?raw";
 import State from "./state";
-
-const VIEW = { width: 520, height: 400 };
 
 // Animation, in ms. Each vector grows out of the origin while it swings up
 // from the +x axis to its angle, tracing the angle's arc. Then each pair of
@@ -24,12 +25,11 @@ const PAUSE_MS = 250;
 const MAX_TOTAL_MS = 5000;
 const ANGLE_ARC_R = 30;
 
-// Nearest "nice" grid step (1, 2, 5, x10^n) at or below the raw value.
-const niceStep = (raw: number) => {
-  const pow = Math.pow(10, Math.floor(Math.log10(raw)));
-  const n = raw / pow;
-  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
-  return step * pow;
+// One decimal at most, so 100 reads "100" and 81.915 reads "81.9". Tiny
+// floating-point leftovers like cos(90°) = 6e-15 read as "0".
+const fmt = (n: number) => {
+  const r = Math.round(n * 10) / 10;
+  return Object.is(r, -0) ? "0" : String(r);
 };
 
 const Component = observer(({ state }: { state: State }) => {
@@ -54,7 +54,7 @@ const Component = observer(({ state }: { state: State }) => {
     return (
       <PluginSurface instructions={instructions}>
         <PluginStage>
-          <EmptyState message="Run your code to draw a vector and its components." />
+          <EmptyState message="Press Run to draw the force and its components." />
         </PluginStage>
       </PluginSurface>
     );
@@ -101,7 +101,7 @@ const Component = observer(({ state }: { state: State }) => {
   const px = (u: number) => cx + u * scale;
   const py = (u: number) => cy - u * scale;
 
-  const gridUnit = niceStep(maxExtent / 4);
+  const gridUnit = niceStep(maxExtent, 4);
   const maxUnitsX = Math.floor(VIEW.width / 2 / scale / gridUnit) * gridUnit;
   const maxUnitsY = Math.floor(VIEW.height / 2 / scale / gridUnit) * gridUnit;
   const xLines: number[] = [];
@@ -109,11 +109,18 @@ const Component = observer(({ state }: { state: State }) => {
   const yLines: number[] = [];
   for (let u = -maxUnitsY; u <= maxUnitsY + 1e-9; u += gridUnit) yLines.push(u);
 
-  // Vector + its two components. These come from the shared qualitative palette;
-  // the fallbacks keep it from breaking if color.series has fewer than 3 entries.
+  // The force and its two components, in series order.
   const vectorColor = color.series[0];
-  const xColor = color.series[1] ?? color.series[0];
-  const yColor = color.series[2] ?? color.series[0];
+  const xColor = color.series[1];
+  const yColor = color.series[2];
+
+  // The stats describe the last force and the last pair of components. Each
+  // component's number appears as its arrow starts to grow.
+  const lastVector = vectors[vectors.length - 1];
+  const lastComponents = components[components.length - 1];
+  const lastPairStart = componentsStart + (components.length - 1) * 2 * componentMs;
+  const xShown = elapsed >= lastPairStart;
+  const yShown = elapsed >= lastPairStart + componentMs;
 
   // Filled arrowhead at (x2,y2) pointing along the segment.
   const arrowHead = (x1: number, y1: number, x2: number, y2: number) => {
@@ -146,7 +153,7 @@ const Component = observer(({ state }: { state: State }) => {
   };
 
   const legend: { label: string; color: string }[] = [];
-  if (vectors.length) legend.push({ label: "Vector", color: vectorColor });
+  if (vectors.length) legend.push({ label: "Force", color: vectorColor });
   if (components.length) {
     legend.push({ label: "x-component", color: xColor });
     legend.push({ label: "y-component", color: yColor });
@@ -160,7 +167,14 @@ const Component = observer(({ state }: { state: State }) => {
           preserveAspectRatio="xMidYMid meet"
           style={{ width: "100%", height: "100%" }}
           role="img"
-          aria-label={`Vector diagram with ${vectors.length} vectors and ${components.length} component pairs`}
+          aria-label={
+            lastVector
+              ? `Force of size ${fmt(lastVector.magnitude)} at ${fmt(lastVector.angle)} degrees` +
+                (lastComponents
+                  ? `, split into x-component ${fmt(lastComponents.xComponent)} and y-component ${fmt(lastComponents.yComponent)}`
+                  : "")
+              : `${components.length} pairs of x and y components`
+          }
         >
           <rect
             x={0}
@@ -169,7 +183,7 @@ const Component = observer(({ state }: { state: State }) => {
             height={VIEW.height}
             fill={color.surfaceRaised}
             stroke={color.border}
-            rx={4}
+            rx={radius.sm}
           />
 
           {/* Grid */}
@@ -333,7 +347,11 @@ const Component = observer(({ state }: { state: State }) => {
                   strokeWidth={3}
                   strokeLinecap="round"
                 />
-                <text x={36} y={ly + 4} style={type.tick}>
+                <text
+                  x={36}
+                  y={ly + 4}
+                  style={{ ...type.tick, fontFamily: font.ui }}
+                >
                   {entry.label}
                 </text>
               </g>
@@ -341,6 +359,30 @@ const Component = observer(({ state }: { state: State }) => {
           })}
         </svg>
       </PluginStage>
+      <StatRow
+        stats={[
+          {
+            label: "Magnitude",
+            value: lastVector ? fmt(lastVector.magnitude) : EMPTY,
+            color: vectorColor,
+          },
+          {
+            label: "Angle",
+            value: lastVector ? `${fmt(lastVector.angle)}°` : EMPTY,
+            color: vectorColor,
+          },
+          {
+            label: "x-component",
+            value: lastComponents && xShown ? fmt(lastComponents.xComponent) : EMPTY,
+            color: xColor,
+          },
+          {
+            label: "y-component",
+            value: lastComponents && yShown ? fmt(lastComponents.yComponent) : EMPTY,
+            color: yColor,
+          },
+        ]}
+      />
     </PluginSurface>
   );
 });

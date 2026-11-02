@@ -116,8 +116,15 @@ const createExports = (sendMessage: (message: Command) => void) => {
         "createModel: activeMass must be one of the masses in the masses array. Add it there first."
       );
     }
+    const { weightForce } = args.inputs;
     return {
-      inputs: { method, masses: masses.slice(), rows: rows.slice(), activeMass },
+      inputs: {
+        method,
+        masses: masses.slice(),
+        rows: rows.slice(),
+        activeMass,
+        ...(typeof weightForce === "number" ? { weightForce } : {}),
+      },
       display: { showEquilibriumLine: true, ...(args.display ?? {}) },
     };
   }
@@ -143,7 +150,44 @@ const createExports = (sendMessage: (message: Command) => void) => {
     sendMessage({ type: "StartAnimation" });
   }
 
+  /**
+   * The starter code's one visible call. Hangs `mass` (kg) on the spring,
+   * pulls it down a little, and lets go. The spring stretches by
+   * weight(mass) / k, so the student's weight function decides the stretch.
+   * Returns the stretch in metres.
+   *
+   * @example hangMass(0.2, (m) => m * 9.81);
+   */
+  function hangMass(mass: number, weight: (mass: number) => number): number {
+    if (typeof mass !== "number" || !Number.isFinite(mass) || mass <= 0) {
+      throw new Error("hangMass: mass must be a positive number of kilograms, like 0.2.");
+    }
+    if (mass > 2) {
+      throw new Error(`hangMass: ${mass} kg would overstretch this spring. Use a mass up to 2 kg.`);
+    }
+    if (typeof weight !== "function") {
+      throw new Error("hangMass: the second value must be your weight function. Pass it by name: hangMass(mass, weight).");
+    }
+    const force = weight(mass);
+    if (typeof force !== "number" || !Number.isFinite(force)) {
+      throw new Error("hangMass: your weight function needs to return a number. Check that it has a return line.");
+    }
+    if (force <= 0) {
+      throw new Error(`hangMass: your weight function returned ${force}. Weight pulls down, so it should be a positive number of newtons.`);
+    }
+    if (force > 25) {
+      throw new Error(`hangMass: a weight of ${force} N would overstretch this spring. Keep it under 25 N.`);
+    }
+    run(
+      createModel({
+        inputs: { method: "static", masses: [mass], rows: [], activeMass: mass, weightForce: force },
+      })
+    );
+    return force / SIM_K_TRUE;
+  }
+
   return Promise.resolve({
+    hangMass,
     springLab: {
       measureDisplacement,
       measurePeriod,

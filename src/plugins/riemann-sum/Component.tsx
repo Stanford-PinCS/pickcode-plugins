@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
-import { color } from "../../common/tokens";
+import { PAD, VIEW, makeScales, ticks } from "../../common/chart";
+import { color, type } from "../../common/tokens";
 import { useRunAnimation } from "../../common/useRunAnimation";
 import {
   EMPTY,
@@ -12,9 +13,10 @@ import State from "./state";
 import instructions from "./instructions.md?raw";
 
 const EXACT_AREA = 64 / 3;
-const X_MIN = 0;
 const X_MAX = 4;
 const Y_MAX = 16;
+// Above this many rectangles the sample dots would overlap into a smear.
+const MAX_DOTS = 40;
 
 // Rectangles rise one at a time, left to right, at a constant rate. Each gets
 // an equal slice of ANIM_TOTAL_MS, so the whole sweep always takes that long.
@@ -24,6 +26,7 @@ const Component = observer(({ state }: { state: State }) => {
   const rects = state.rects ?? [];
   const curveVisible = state.curveVisible ?? false;
   const area = state.area ?? 0;
+  const hasArea = state.hasArea ?? false;
   const n = rects.length;
   const elapsed = useRunAnimation(n > 0 ? state : null, ANIM_TOTAL_MS);
 
@@ -34,14 +37,8 @@ const Component = observer(({ state }: { state: State }) => {
   for (const r of rects) slots.push(r.height > 0 ? visibleCount++ : -1);
   const riseMs = ANIM_TOTAL_MS / Math.max(visibleCount, 1);
 
-  const vw = 520;
-  const vh = 420;
-  const pad = { top: 24, right: 24, bottom: 44, left: 52 };
-  const plotW = vw - pad.left - pad.right;
-  const plotH = vh - pad.top - pad.bottom;
-
-  const sx = (x: number) => pad.left + ((x - X_MIN) / (X_MAX - X_MIN)) * plotW;
-  const sy = (y: number) => pad.top + plotH - (y / Y_MAX) * plotH;
+  const scales = makeScales(X_MAX, Y_MAX, VIEW, PAD);
+  const { sx, sy } = scales;
 
   const curvePoints = curveVisible
     ? Array.from({ length: 201 }, (_, i) => {
@@ -54,49 +51,53 @@ const Component = observer(({ state }: { state: State }) => {
     return (
       <PluginSurface instructions={instructions}>
         <PluginStage>
-          <EmptyState message="Run your code to approximate the area under f(x) = x² with Riemann rectangles." />
+          <EmptyState message="Run your code to fill the area under f(x) = x² with rectangles." />
         </PluginStage>
       </PluginSurface>
     );
   }
 
+  const error = Math.abs(area - EXACT_AREA);
+
   return (
     <PluginSurface instructions={instructions}>
       <PluginStage>
         <svg
-          viewBox={`0 0 ${vw} ${vh}`}
+          viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
           style={{ width: "100%", height: "100%" }}
           preserveAspectRatio="xMidYMid meet"
           role="img"
-          aria-label={`Riemann sum with ${n} rectangles`}
+          aria-label={`${n} rectangles under the curve f(x) = x squared from x = 0 to 4${
+            hasArea ? `, total area ${area.toFixed(2)}` : ""
+          }`}
         >
           <rect
-            x={pad.left}
-            y={pad.top}
-            width={plotW}
-            height={plotH}
+            x={PAD.left}
+            y={PAD.top}
+            width={scales.plotWidth}
+            height={scales.plotHeight}
             fill={color.surfaceRaised}
             stroke={color.border}
-            rx="4"
+            rx={4}
           />
 
-          {[4, 8, 12, 16].map((v) => (
+          {ticks(Y_MAX, 4).map((v) => (
             <line
               key={`gy-${v}`}
-              x1={pad.left}
+              x1={PAD.left}
               y1={sy(v)}
-              x2={pad.left + plotW}
+              x2={PAD.left + scales.plotWidth}
               y2={sy(v)}
               stroke={color.grid}
             />
           ))}
-          {[1, 2, 3, 4].map((v) => (
+          {ticks(X_MAX, 4).map((v) => (
             <line
               key={`gx-${v}`}
               x1={sx(v)}
-              y1={pad.top}
+              y1={PAD.top}
               x2={sx(v)}
-              y2={pad.top + plotH}
+              y2={sy(0)}
               stroke={color.grid}
             />
           ))}
@@ -115,10 +116,10 @@ const Component = observer(({ state }: { state: State }) => {
                 y={sy(h)}
                 width={sx(r.x + r.width) - sx(r.x)}
                 height={sy(0) - sy(h)}
-                fill={color.accent}
-                fillOpacity={0.4}
-                stroke={color.accent}
-                strokeWidth={n > 40 ? 0.3 : 1}
+                fill={color.series[0]}
+                fillOpacity={0.3}
+                stroke={color.series[0]}
+                strokeWidth={n > MAX_DOTS ? 0.3 : 1}
               />
             );
           })}
@@ -127,106 +128,106 @@ const Component = observer(({ state }: { state: State }) => {
             <polyline
               points={curvePoints}
               fill="none"
-              stroke={color.series[1] ?? color.reference}
-              strokeWidth="2.5"
+              stroke={color.series[1]}
+              strokeWidth={2.5}
               strokeLinejoin="round"
             />
           )}
 
+          {/* Where each rectangle touches the curve: the x whose x² is its
+              height. Only drawn when that x is inside the rectangle, i.e. the
+              rectangle really was sampled from f(x) = x². */}
+          {n <= MAX_DOTS &&
+            rects.map((r, i) => {
+              // A flat rectangle has no rise; its dot shows from the start.
+              const shownAt = slots[i] < 0 ? 0 : (slots[i] + 1) * riseMs;
+              if (elapsed <= 0 || elapsed < shownAt) return null;
+              const xs = Math.sqrt(r.height);
+              if (xs < r.x - 1e-9 || xs > r.x + r.width + 1e-9) return null;
+              if (r.height > Y_MAX) return null;
+              return (
+                <circle
+                  key={`dot-${i}`}
+                  cx={sx(xs)}
+                  cy={sy(r.height)}
+                  r={3.5}
+                  fill={color.series[0]}
+                  stroke={color.surfaceRaised}
+                  strokeWidth={1.5}
+                />
+              );
+            })}
+
           <line
-            x1={pad.left}
+            x1={PAD.left}
             y1={sy(0)}
-            x2={pad.left + plotW}
+            x2={PAD.left + scales.plotWidth}
             y2={sy(0)}
             stroke={color.axis}
-            strokeWidth="1.5"
           />
           <line
-            x1={pad.left}
-            y1={pad.top}
-            x2={pad.left}
+            x1={PAD.left}
+            y1={PAD.top}
+            x2={PAD.left}
             y2={sy(0)}
             stroke={color.axis}
-            strokeWidth="1.5"
           />
 
-          {[0, 1, 2, 3, 4].map((v) => (
-            <g key={`xt-${v}`}>
-              <line
-                x1={sx(v)}
-                y1={sy(0)}
-                x2={sx(v)}
-                y2={sy(0) + 6}
-                stroke={color.axis}
-              />
-              <text
-                x={sx(v)}
-                y={sy(0) + 22}
-                fill={color.inkMuted}
-                fontSize="13"
-                textAnchor="middle"
-              >
-                {v}
-              </text>
-            </g>
+          {ticks(X_MAX, 4).map((v) => (
+            <text
+              key={`xt-${v}`}
+              x={sx(v)}
+              y={sy(0) + 20}
+              textAnchor="middle"
+              style={type.tick}
+            >
+              {v}
+            </text>
           ))}
-          {[0, 4, 8, 12, 16].map((v) => (
-            <g key={`yt-${v}`}>
-              <line
-                x1={pad.left - 6}
-                y1={sy(v)}
-                x2={pad.left}
-                y2={sy(v)}
-                stroke={color.axis}
-              />
-              <text
-                x={pad.left - 12}
-                y={sy(v) + 4}
-                fill={color.inkMuted}
-                fontSize="13"
-                textAnchor="end"
-              >
-                {v}
-              </text>
-            </g>
+          {ticks(Y_MAX, 4).map((v) => (
+            <text
+              key={`yt-${v}`}
+              x={PAD.left - 8}
+              y={sy(v) + 4}
+              textAnchor="end"
+              style={type.tick}
+            >
+              {v}
+            </text>
           ))}
 
           <text
-            x={pad.left + plotW / 2}
-            y={sy(0) + 40}
-            fill={color.inkMuted}
-            fontSize="14"
+            x={PAD.left + scales.plotWidth / 2}
+            y={VIEW.height - 8}
             textAnchor="middle"
-            fontWeight="600"
+            style={type.axisTitle}
           >
             x
           </text>
           <text
             x={14}
-            y={pad.top + plotH / 2}
-            fill={color.inkMuted}
-            fontSize="14"
+            y={PAD.top + scales.plotHeight / 2}
             textAnchor="middle"
-            fontWeight="600"
-            transform={`rotate(-90, 14, ${pad.top + plotH / 2})`}
+            transform={`rotate(-90, 14, ${PAD.top + scales.plotHeight / 2})`}
+            style={type.axisTitle}
           >
-            y
+            f(x) = x²
           </text>
         </svg>
       </PluginStage>
 
       <StatRow
         stats={[
-          { label: "Rectangles (n)", value: String(n) },
+          { label: "Rectangles", value: String(n) },
           {
             label: "Approx. Area",
-            value: area ? area.toFixed(4) : EMPTY,
-            color: color.accent,
+            value: hasArea ? area.toFixed(4) : EMPTY,
+            color: color.series[0],
           },
           { label: "Exact Area", value: EXACT_AREA.toFixed(4) },
           {
             label: "Error",
-            value: area ? Math.abs(area - EXACT_AREA).toFixed(4) : EMPTY,
+            value: hasArea ? error.toFixed(4) : EMPTY,
           },
         ]}
       />

@@ -11,8 +11,9 @@ interface Rect {
 export class State {
     @observable accessor rects: Rect[] = [];
     @observable accessor curveVisible: boolean = false;
-    @observable accessor currentColor: string = "orange";
+    @observable accessor currentColor: string = "";
     @observable accessor area: number = 0;
+    @observable accessor hasArea: boolean = false;
 
     public init = () => {};
 
@@ -35,9 +36,16 @@ export class State {
                 break;
             case "showArea":
                 this.area = m.area;
+                this.hasArea = true;
                 break;
+            default:
+                assertNever(m);
         }
     };
+}
+
+function assertNever(m: never): never {
+    throw new Error(`Unhandled message: ${JSON.stringify(m)}`);
 }
 
 export default State;

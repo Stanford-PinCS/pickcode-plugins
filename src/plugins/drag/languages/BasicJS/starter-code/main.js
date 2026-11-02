@@ -1,24 +1,22 @@
-function getNextPosition(currentPosition, currentVelocity, timestep, getDrag) {
-  // getDrag returns acceleration caused by air resistance.
-  const dragAcceleration = getDrag(currentVelocity);
+// Predict a tennis ball's flight: what speeds it up or slows it down.
+// Change getAcceleration or the timestep, then press Run.
 
-  const accelerationX = dragAcceleration.x;
-  const accelerationY = dragAcceleration.y - 9.81;
+let timestep = 0.05;
 
-  // Update position using the current velocity.
-  const nextPosX = currentPosition.x + timestep * currentVelocity.x;
-  const nextPosY = currentPosition.y + timestep * currentVelocity.y;
-
-  // Update velocity using acceleration.
-  const nextVelX = currentVelocity.x + timestep * accelerationX;
-  const nextVelY = currentVelocity.y + timestep * accelerationY;
-
-  return {
-    x: nextPosX,
-    y: nextPosY,
-    xVel: nextVelX,
-    yVel: nextVelY,
-  };
+// The push from air resistance. The wind blows at the ball at 12 m/s.
+function getDrag(velocity) {
+    let airX = velocity.x + 12;
+    let airY = velocity.y;
+    let airSpeed = Math.sqrt(airX * airX + airY * airY);
+    let strength = 0.0211 * airSpeed;
+    return { x: -strength * airX, y: -strength * airY };
 }
 
-runSimulation(getNextPosition, 0.05);
+// Returns the ball's acceleration for its current velocity.
+function getAcceleration(velocity) {
+    let gravity = 9.81;
+    return { x: 0, y: -gravity };
+}
+
+// Launch the ball and draw your prediction next to the real flight.
+launchBall(getAcceleration, timestep);

@@ -1,4 +1,4 @@
-import { useMemo, useEffect, useRef, useState } from "react";
+import { useMemo } from "react";
 import { observer } from "mobx-react-lite";
 import { color, font } from "../../common/tokens";
 import {
@@ -9,43 +9,30 @@ import {
   StatRow,
 } from "../../common/PluginSurface";
 import State from "./state";
+import { useRunAnimation } from "../../common/useRunAnimation";
 import instructions from "./instructions.md?raw";
 
 const SVG_SIZE = 460;
 const CENTER = SVG_SIZE / 2;
 const ANIM_STEPS_PER_FRAME = 8;
+const FRAME_MS = 1000 / 60;
 
 const Component = observer(({ state }: { state: State }) => {
   const result = state.result ?? null;
 
-  // Animation state
-  const [animStep, setAnimStep] = useState(0);
-  const animStepRef = useRef(0);
-  const animFrameRef = useRef(0);
-
-  // Restart animation whenever a new result arrives
-  useEffect(() => {
-    cancelAnimationFrame(animFrameRef.current);
-    animStepRef.current = 0;
-    setAnimStep(0);
-
-    if (!result || result.trajectory.length === 0) return;
-
-    const total = result.trajectory.length;
-    const animate = () => {
-      animStepRef.current = Math.min(
-        animStepRef.current + ANIM_STEPS_PER_FRAME,
-        total - 1
-      );
-      setAnimStep(animStepRef.current);
-      if (animStepRef.current < total - 1) {
-        animFrameRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    animFrameRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animFrameRef.current);
-  }, [result]);
+  // Replays the trajectory at about ANIM_STEPS_PER_FRAME points per frame.
+  // useRunAnimation restarts it for each run and skips straight to the end
+  // with prefers-reduced-motion.
+  const total = result?.trajectory.length ?? 0;
+  const durationMs = (total / ANIM_STEPS_PER_FRAME) * FRAME_MS;
+  const t = useRunAnimation(result && total > 0 ? result : null, durationMs);
+  const animStep =
+    total > 0
+      ? Math.min(
+          total - 1,
+          Math.floor((durationMs > 0 ? t / durationMs : 1) * (total - 1))
+        )
+      : 0;
 
   const animDone = result ? animStep >= result.trajectory.length - 1 : false;
 
@@ -69,7 +56,7 @@ const Component = observer(({ state }: { state: State }) => {
   }
 
   const planetPos = result.trajectory[animStep];
-  // escaping = accent (pink), bound = the muted reference tone
+  // escaping = accent (pink), bound = amber
   const pathColor = result.escapes ? color.accent : color.reference;
   const statusLabel = result.escapes ? "ESCAPING" : "BOUND";
 
@@ -100,7 +87,7 @@ const Component = observer(({ state }: { state: State }) => {
   ) {
     const correct = result.studentPrediction === result.escapes;
     outcomeText = correct ? "Prediction confirmed" : "Prediction was wrong";
-    outcomeColor = correct ? color.series[0] : color.accent;
+    outcomeColor = correct ? color.ink : color.accent;
   }
 
   return (
@@ -145,21 +132,7 @@ const Component = observer(({ state }: { state: State }) => {
               aria-label={`Orbit simulation, object is ${statusLabel.toLowerCase()}`}
             >
               {/* Central body */}
-              <circle
-                cx={CENTER}
-                cy={CENTER}
-                r={22}
-                fill={color.accent}
-                opacity={0.1}
-              />
-              <circle
-                cx={CENTER}
-                cy={CENTER}
-                r={16}
-                fill={color.accent}
-                opacity={0.22}
-              />
-              <circle cx={CENTER} cy={CENTER} r={10} fill={color.accent} />
+              <circle cx={CENTER} cy={CENTER} r={12} fill={color.series[1]} />
 
               {/* Trail */}
               {trailPoints && (
@@ -176,21 +149,12 @@ const Component = observer(({ state }: { state: State }) => {
 
               {/* Moving object */}
               {planetPos && (
-                <>
-                  <circle
-                    cx={planetPos.x + CENTER}
-                    cy={planetPos.y + CENTER}
-                    r={9}
-                    fill={pathColor}
-                    opacity={0.3}
-                  />
-                  <circle
-                    cx={planetPos.x + CENTER}
-                    cy={planetPos.y + CENTER}
-                    r={6}
-                    fill={pathColor}
-                  />
-                </>
+                <circle
+                  cx={planetPos.x + CENTER}
+                  cy={planetPos.y + CENTER}
+                  r={6}
+                  fill={pathColor}
+                />
               )}
 
               {/* Outcome label after animation */}

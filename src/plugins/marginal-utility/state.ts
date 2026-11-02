@@ -19,7 +19,7 @@ export class State {
                 this.choices.push("banana")
                 return true;
             default:
-                this.error = `Your input (${message}) is not a valid choice`;
+                this.error = `choose returned ${JSON.stringify(message) ?? "nothing"}. Return "apple" or "banana".`;
                 return false;
         }
     };

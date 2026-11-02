@@ -112,8 +112,8 @@ const DEFAULT_DISPLAY_OPTIONS: MomentumDisplayOptions = {
 const clamp = (value: number, minimum: number, maximum: number) =>
     Math.min(Math.max(value, minimum), maximum);
 
-const sanitizeNumber = (value: number | undefined, fallback: number) =>
-    Number.isFinite(value) ? value : fallback;
+const sanitizeNumber = (value: number | undefined, fallback: number): number =>
+    typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
 const cloneVec = (vector: Vec2): Vec2 => ({ x: vector.x, y: vector.y });
 
@@ -195,7 +195,7 @@ const DEFAULT_BODIES: [BodyInputs, BodyInputs] = [
         radius: 34,
         position: { x: 200, y: 280 },
         velocity: { x: 210, y: 0 },
-        color: "#38bdf8",
+        color: "",
     },
     {
         label: "B",
@@ -203,7 +203,7 @@ const DEFAULT_BODIES: [BodyInputs, BodyInputs] = [
         radius: 34,
         position: { x: 560, y: 328 },
         velocity: { x: 0, y: 0 },
-        color: "#fb7185",
+        color: "",
     },
 ];
 
@@ -307,7 +307,7 @@ const normalizeDisplayOptions = (
                   color:
                       typeof point.color === "string" && point.color.trim()
                           ? point.color
-                          : "#f8fafc",
+                          : "",
                   radius: clamp(sanitizeNumber(point.radius, 4), 2, 14),
                   label:
                       typeof point.label === "string" && point.label.trim()
@@ -641,17 +641,69 @@ const createExports = (sendMessage: (message: Message) => void) => {
     ): OverlayPoint[] => [
         ...beforePoints.map((point) => ({
             ...point,
-            color: "#38bdf8",
+            color: "before",
             radius: 2,
         })),
         ...afterPoints.map((point) => ({
             ...point,
-            color: "#f59e0b",
+            color: "after",
             radius: 2,
         })),
     ];
 
+    const requireNumber = (name: string, value: unknown) => {
+        if (typeof value !== "number" || !Number.isFinite(value)) {
+            throw new Error(`collide: ${name} must be a number, like 1 or 210.`);
+        }
+        return value;
+    };
+
+    /**
+     * The starter code's one visible call. Body A starts on the left and body
+     * B on the right, a little lower, so the hit is off-center and the bodies
+     * fly apart at angles. Speeds are along x (positive = to the right).
+     *
+     * @example collide(1, 210, 1, 0, 0.92);
+     */
+    const collide = (
+        massA: number,
+        speedA: number,
+        massB: number,
+        speedB: number,
+        bounciness: number
+    ) => {
+        const values = { massA, speedA, massB, speedB, bounciness };
+        for (const [name, value] of Object.entries(values)) {
+            requireNumber(name, value);
+        }
+        for (const [name, value] of [["massA", massA], ["massB", massB]] as const) {
+            if (value < 0.25 || value > 20) {
+                throw new Error(`collide: ${name} must be between 0.25 and 20 kg. You gave ${value}.`);
+            }
+        }
+        if (bounciness < 0 || bounciness > 1) {
+            throw new Error(
+                `collide: bounciness must be between 0 (stick together) and 1 (perfect bounce). You gave ${bounciness}.`
+            );
+        }
+        const [bodyA, bodyB] = DEFAULT_BODIES;
+        const report = sendConfiguredSimulation({
+            inputs: {
+                restitution: bounciness,
+                friction: 0,
+                bodies: [
+                    { ...bodyA, mass: massA, velocity: { x: speedA, y: 0 } },
+                    { ...bodyB, mass: massB, velocity: { x: speedB, y: 0 } },
+                ],
+            },
+            display: { showGuides: true },
+        });
+        sendMessage({ type: "start" });
+        return report;
+    };
+
     return Promise.resolve({
+        collide,
         momentum2d: {
             defaultInputs: cloneInputs(DEFAULT_INPUTS),
             createModel: (model?: MomentumModel) => ({

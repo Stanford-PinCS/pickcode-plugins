@@ -1,19 +1,20 @@
 import { observer } from "mobx-react-lite";
-import { color, type } from "../../common/tokens";
+import { color, radius, type } from "../../common/tokens";
+import { VIEW, niceStep } from "../../common/chart";
 import {
   easeInOut,
   progressBetween,
   useRunAnimation,
 } from "../../common/useRunAnimation";
 import {
+  EMPTY,
   EmptyState,
   PluginStage,
   PluginSurface,
+  StatRow,
 } from "../../common/PluginSurface";
 import instructions from "./instructions.md?raw";
 import State, { ForceArrow } from "./state";
-
-const VIEW = { width: 520, height: 400 };
 
 // Animation, in ms. The forces grow out of the origin one at a time (sharing
 // at most FORCES_MS between them). When the last arrow is the net force,
@@ -32,12 +33,20 @@ type Vec = { x: number; y: number };
 /** One arrow to draw this frame, in chart units. */
 type DrawnArrow = { from: Vec; to: Vec; color: string; opacity: number };
 
-// Nearest "nice" grid step (1, 2, 5, x10^n) at or below the raw value.
-const niceStep = (raw: number) => {
-  const pow = Math.pow(10, Math.floor(Math.log10(raw)));
-  const n = raw / pow;
-  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
-  return step * pow;
+// drawForces tags each arrow with a role, which picks its token color: the
+// net force is the student's result (series[0]), the forces it adds up are
+// series[1]. Arrows from drawForce keep the color the code passed.
+const strokeOf = (f: ForceArrow) =>
+  f.role === "net"
+    ? color.series[0]
+    : f.role === "force"
+      ? color.series[1]
+      : f.color;
+
+// One decimal at most, so -20 reads "-20" and 22.3607 reads "22.4".
+const fmt = (n: number) => {
+  const r = Math.round(n * 10) / 10;
+  return Object.is(r, -0) ? "0" : String(r);
 };
 
 const Component = observer(({ state }: { state: State }) => {
@@ -64,7 +73,7 @@ const Component = observer(({ state }: { state: State }) => {
     return (
       <PluginSurface instructions={instructions}>
         <PluginStage>
-          <EmptyState message="Run your code to add up the forces and draw them." />
+          <EmptyState message="Press Run to draw the forces and add them up." />
         </PluginStage>
       </PluginSurface>
     );
@@ -96,7 +105,7 @@ const Component = observer(({ state }: { state: State }) => {
   const px = (u: number) => cx + u * scale;
   const py = (u: number) => cy - u * scale;
 
-  const gridUnit = niceStep(maxExtent / 4);
+  const gridUnit = niceStep(maxExtent, 4);
   const maxUnitsX = Math.floor(VIEW.width / 2 / scale / gridUnit) * gridUnit;
   const maxUnitsY = Math.floor(VIEW.height / 2 / scale / gridUnit) * gridUnit;
 
@@ -110,7 +119,7 @@ const Component = observer(({ state }: { state: State }) => {
   forces.forEach((f, i) => {
     const p = progressBetween(elapsed, i * growMs, growMs);
     if (p > 0) {
-      drawn.push({ from: origin, to: { x: f.x * p, y: f.y * p }, color: f.color, opacity: 1 });
+      drawn.push({ from: origin, to: { x: f.x * p, y: f.y * p }, color: strokeOf(f), opacity: 1 });
     }
   });
   if (hasNet) {
@@ -121,16 +130,19 @@ const Component = observer(({ state }: { state: State }) => {
         drawn.push({
           from: tail,
           to: { x: tail.x + f.x, y: tail.y + f.y },
-          color: f.color,
+          color: strokeOf(f),
           opacity: CHAIN_OPACITY,
         });
       });
     }
     const p = progressBetween(elapsed, netStart, NET_GROW_MS);
     if (p > 0) {
-      drawn.push({ from: origin, to: { x: last.x * p, y: last.y * p }, color: last.color, opacity: 1 });
+      drawn.push({ from: origin, to: { x: last.x * p, y: last.y * p }, color: strokeOf(last), opacity: 1 });
     }
   }
+
+  // The net force's numbers appear as its arrow starts to grow.
+  const netShown = hasNet && elapsed >= netStart;
 
   // Three points of a filled arrowhead sitting at the tip of a vector.
   const arrowPoints = (a: DrawnArrow) => {
@@ -160,7 +172,11 @@ const Component = observer(({ state }: { state: State }) => {
           preserveAspectRatio="xMidYMid meet"
           style={{ width: "100%", height: "100%" }}
           role="img"
-          aria-label={`Force diagram with ${forceArrows.length} vectors`}
+          aria-label={
+            hasNet
+              ? `${forces.length} forces adding up to a net force of (${fmt(last.x)}, ${fmt(last.y)})`
+              : `${forces.length} forces drawn from the origin`
+          }
         >
           <rect
             x={0}
@@ -169,7 +185,7 @@ const Component = observer(({ state }: { state: State }) => {
             height={VIEW.height}
             fill={color.surfaceRaised}
             stroke={color.border}
-            rx={4}
+            rx={radius.sm}
           />
 
           {/* Grid */}
@@ -243,8 +259,7 @@ const Component = observer(({ state }: { state: State }) => {
           {/* Origin */}
           <circle cx={cx} cy={cy} r={3} fill={color.axis} />
 
-          {/* Force vectors — the student's code decides colors, including the
-              green net force from drawForce(sumForces(forces), "green"). */}
+          {/* Force vectors, then the tip-to-tail copies, then the net force. */}
           {drawn.map((a, i) => (
             <g key={i} opacity={a.opacity}>
               <line
@@ -261,6 +276,18 @@ const Component = observer(({ state }: { state: State }) => {
           ))}
         </svg>
       </PluginStage>
+      <StatRow
+        stats={[
+          { label: "Forces", value: String(forces.length) },
+          { label: "Net x", value: netShown ? fmt(last.x) : EMPTY, color: color.series[0] },
+          { label: "Net y", value: netShown ? fmt(last.y) : EMPTY, color: color.series[0] },
+          {
+            label: "Net size",
+            value: netShown ? fmt(Math.hypot(last.x, last.y)) : EMPTY,
+            color: color.series[0],
+          },
+        ]}
+      />
     </PluginSurface>
   );
 });

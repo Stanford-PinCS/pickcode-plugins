@@ -2,7 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { color, font, radius, space } from "./tokens";
-import { parseStepBody, parseSteps } from "../common/instructionSteps";
+import {
+  filterForLanguage,
+  parseStepBody,
+  parseSteps,
+  type CodeLanguage,
+} from "../common/instructionSteps";
 import { QuestionCard } from "./QuestionCard";
 
 /**
@@ -162,8 +167,30 @@ function NavButton({
   );
 }
 
+/**
+ * Which language the student is writing, so the instructions show only that
+ * language's code. The PinCS site says so in the embed URL (`?language=python`)
+ * or, for a bundle it renders through srcdoc (no URL of its own), in
+ * `window.__PINCS_LANGUAGE__`. Null when the host doesn't say.
+ */
+function hostLanguage(): CodeLanguage | null {
+  let raw: unknown;
+  try {
+    raw =
+      (window as { __PINCS_LANGUAGE__?: unknown }).__PINCS_LANGUAGE__ ??
+      new URLSearchParams(window.location.search).get("language");
+  } catch {
+    return null;
+  }
+  const value = typeof raw === "string" ? raw.toLowerCase() : "";
+  if (value === "python" || value === "py") return "python";
+  if (value === "javascript" || value === "js" || value === "basicjs")
+    return "javascript";
+  return null;
+}
+
 export function PluginInstructions({ markdown }: { markdown: string }) {
-  const steps = parseSteps(markdown);
+  const steps = parseSteps(filterForLanguage(markdown, hostLanguage()));
   const [index, setIndex] = useState(() => readStored(STEP_KEY, 0));
 
   const goTo = (i: number) => {

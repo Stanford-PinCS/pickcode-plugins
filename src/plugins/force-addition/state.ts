@@ -5,6 +5,12 @@ export interface ForceArrow {
   x: number;
   y: number;
   color: string;
+  /**
+   * Set by drawForces: "force" for one of the forces, "net" for the net
+   * force. Component picks the token color from it. Arrows from drawForce
+   * have no role and keep the color the code passed.
+   */
+  role?: "force" | "net";
 }
 
 export class State {

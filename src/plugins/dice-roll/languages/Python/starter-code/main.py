@@ -1,33 +1,14 @@
-# ============================================
-# Dice Roll Simulation: Law of Large Numbers
-#
-# This time there are TWO things to experiment with:
-#   1. total_rolls  — how many times to roll the die
-#   2. num_sides    — how many sides the die has
-#
-# Start with num_sides = 6 and total_rolls = 100.
-# Then crank total_rolls up to 10000. What happens?
-# Now try num_sides = 12 or 20. Does LLN still work?
-# ============================================
+# This code rolls a die many times and graphs how often each face comes up.
+# Change totalRolls and numSides, then press Run.
 
 import random
 
-total_rolls = 100
-num_sides = 6
+totalRolls = 10
+numSides = 6
 
-# One counter for each face of the die
-face_counts = [0] * num_sides
+# Rolls one die and returns a whole number from 1 to numSides.
+def rollDie():
+    return random.randint(1, numSides)
 
-for i in range(total_rolls):
-    # Roll the die: random integer from 1 to num_sides
-    roll = random.randint(1, num_sides)
-
-    # Add 1 to that face's counter
-    face_counts[roll - 1] += 1
-
-# Convert counts to percentages
-percentages = [(count / total_rolls) * 100 for count in face_counts]
-
-# The expected percentage for a fair die
-show_target(100 / num_sides)
-show_bars(percentages)
+# Roll your die totalRolls times and draw the bars.
+rollDice(totalRolls, numSides, rollDie)

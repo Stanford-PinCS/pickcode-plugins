@@ -1,67 +1,145 @@
 # Escape Velocity
 
-Ever wondered why rockets need to go so fast to reach space? There's a specific speed — the **escape velocity** — that decides whether something stays in orbit or breaks free. You'll find it by experimenting, then write the formula yourself.
+Why do rockets need to go so fast to reach space? There's one special speed, the **escape velocity**, that decides whether a launched object falls back or breaks free forever. You'll find it by experimenting, then write a **function** that **returns** `true` or `false` to predict it.
 
-## Watch it orbit
+Click **Next** to continue.
 
-Hit the **Run** button. An object launches from the planet at `v0 = 10`. Does it escape?
-No, it curves back and stays in orbit — a _bound_ orbit. It doesn't have enough speed to break free.
+## Why some launches never come back
 
-## Find the threshold
+A planet's gravity pulls on everything near it. Launch an object too slowly and gravity bends its path into a loop around the planet. That's a **bound orbit**.
 
-Change `v0` to a larger number and hit **Run**. Keep trying until the object flies off instead of looping back.
+Launch it fast enough and gravity can never pull it back. It **escapes**.
 
-## Find the threshold
+The dividing speed is the escape velocity:
 
-Then narrow it down: what's the smallest whole number that escapes? One decimal place?
+**v = √(2 × mu / r)**
 
-## Hardcode your guess
+Here mu is how strong the planet's gravity is, and r is how far from the planet's center you start. Stronger gravity means you need more speed. Starting farther out means you need less.
 
-Look at `isEscaping`. It says `return v > 0`, so it always predicts ESCAPING which isn't an accurate predictor.
-Replace `0` with the number you found by expirementing on the last step.
+Surprisingly, the object's mass isn't in the formula. A pebble and a rocket need the same speed.
 
-## Hardcode your guess
+## Answering true or false with a function
 
-You should have typed: `return v > 17`
-
-Run it. Does the prediction banner match the outcome now?
-
-## Why hardcoding breaks
-
-When we type an exact number like `17` in our code, that's called **hardcoding**. The exact escape velocity is about `17.32`, and it's only right for _this_ planet. A stronger planet would need a different number, and your `17` would be incorrect.
-
-## Why hardcoding breaks
-
-Hardcoding often does not account for all cases, so it's good practice to stay away from hardcoding information.
-
-## The formula
-
-For any planet, escape velocity is: **v = √(2 × mu / r)**. Stronger gravity (`mu`) causes higher escape velocity. Farther out (`r`) causes lower escape velocity. Surprisingly, the object's mass doesn't appear — a pebble and a rocket need the same speed.
-
-## Square roots in code
-
-In math we write √x. In JavaScript code it's `Math.sqrt(x)
-
-So `Math.sqrt(9)` is `3`.
-
-## Formula in code
-
-So, the formula in JavaScript becomes:
+Your code starts with the launch speed:
 
 ```js
-Math.sqrt((2 * mu) / r);
+let v0 = 10;
 ```
 
-## Put it together
+Next comes your prediction function:
 
-Replace your hardcoded number with the formula:
+```js
+function isEscaping(v, mu, r) {
+    return v > 0;
+}
+```
 
-`return v > Math.sqrt((2 * mu) / r);`
+`isEscaping` gets three parameters: the speed `v`, the planet's gravity strength `mu`, and the starting distance `r`. A comparison like `v > 0` is either `true` or `false`, and `return` sends that answer back. Right now `v > 0` is `true` for every launch, so it always predicts escaping.
 
-## Put it together
+The last line puts both to work:
 
-Run it, then try several values of `v0`. It predicts correctly every time — because it computes the exact threshold from `mu` and `r` instead of guessing.
+```js
+runSimulation(v0, isEscaping);
+```
 
-## You did it!
+It launches the object at speed `v0`, asks `isEscaping` for a prediction, and shows on the right whether the prediction came true.
 
-You found the escape velocity by experiment, saw why hardcoding is fragile, and replaced it with a formula that works for any planet. You turned a physics formula into code and found why a computed threshold beats a hardcoded guess!
+## Run it
+
+Press the **Run** button.
+
+A teal planet sits in the middle. The object traces an amber loop around it: a bound orbit.
+
+The box on the right says **Your formula predicts: ESCAPING**. When the loop finishes, it adds **Prediction was wrong**.
+
+The bottom row shows **Starting Speed** (**v₀ = 10**), **True Escape Velocity** (≈ 17.32) and **Outcome** (BOUND). Your `isEscaping` guessed escaping, but the object stayed bound.
+
+## Step 1: Launch faster
+
+Change the first line of your code so `v0` is `20`:
+
+```js
+let v0 = 20;
+```
+
+Run it again.
+
+**Look for:** a pink path that curves away and flies off the edge. **Outcome** says ESCAPING, and the box says **Prediction confirmed**. Amber always means bound, and pink means escaping.
+
+## Step 2: Find the threshold
+
+Set `v0` to `15` and run it. Then try `17`, then `18`, running each one. Finish with this line:
+
+```js
+let v0 = 18;
+```
+
+**Look for:** at `15` and `17` the path swings so far out that it leaves the picture, but it stays amber and **Outcome** says BOUND. Given more room, it would come back. At `18` it turns pink and escapes.
+
+The threshold is between 17 and 18, right where **True Escape Velocity** says: about 17.32.
+
+## Step 3: Hardcode your guess
+
+Fix `isEscaping` with the number you found. Inside `isEscaping`, replace `return v > 0;` with:
+
+```js
+return v > 17;
+```
+
+Typing a fixed number into your code like this is called **hardcoding**.
+
+Run it again with `v0` still at `18`.
+
+**Look for:** **Your formula predicts: ESCAPING** and **Prediction confirmed**. It looks fixed.
+
+## Step 4: Test the edge
+
+Change `v0` to `17.2`, just above your guess but below the true 17.32:
+
+```js
+let v0 = 17.2;
+```
+
+Run it again.
+
+**Look for:** your function predicts ESCAPING, but the path stays amber (even as it swings out of the picture) and **Outcome** says BOUND. **Prediction was wrong.** A hardcoded guess breaks near the edge, and on any other planet it would be wrong everywhere.
+
+## Step 5: Use the formula
+
+Compute the threshold from `mu` and `r` instead. In code, a square root is written `Math.sqrt(...)`. Inside `isEscaping`, replace `return v > 17;` with:
+
+```js
+return v > Math.sqrt((2 * mu) / r);
+```
+
+The parentheses make `2 * mu` happen before the division.
+
+Run it again with `v0` still at `17.2`.
+
+**Look for:** **Your formula predicts: BOUND** and **Prediction confirmed**. Now it's right for any speed, on any planet.
+
+## Check your understanding
+
+<Question>
+What does `isEscaping` return for a speed below the escape velocity, once it uses the formula?
+- [ ] `true`
+- [x] `false`
+- [ ] The escape velocity itself
+> The comparison `v > Math.sqrt((2 * mu) / r)` is false when `v` is smaller than the threshold.
+</Question>
+
+<Question>
+Why is `return v > 17` a weak prediction?
+- [ ] `17` is much too big
+- [x] It only roughly fits this one planet and fails near the real threshold
+- [ ] Comparisons can't be returned from a function
+> The real threshold is 17.32 here, and a different planet has a different one. The formula adjusts to `mu` and `r`.
+</Question>
+
+## Wrap up
+
+You wrote `isEscaping`, a function that returns `true` or `false` by comparing `v` to the escape velocity `Math.sqrt((2 * mu) / r)`. You saw why a computed threshold beats a hardcoded one.
+
+You also learned that escape speed depends only on the planet's gravity and your distance from it, not on the object's mass.
+
+Space agencies use this exact formula to plan every launch that leaves Earth.

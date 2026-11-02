@@ -20,6 +20,8 @@ export class State {
         DEFAULT_DISPLAY_OPTIONS;
     @observable accessor stage: "ready" | "running" | "complete" = "ready";
     @observable accessor elapsedTime = 0;
+    /** False until a run (or a ?config= preview) delivers a collision to draw. */
+    @observable accessor hasRun = false;
 
     public init = () => {
         const configParam = new URLSearchParams(window.location.search).get("config");
@@ -32,6 +34,7 @@ export class State {
                 this.displayOptions = DEFAULT_DISPLAY_OPTIONS;
                 this.stage = "ready";
                 this.elapsedTime = 0;
+                this.hasRun = true;
                 return;
             } catch {
                 // fall through to default
@@ -48,22 +51,28 @@ export class State {
         this.displayOptions = DEFAULT_DISPLAY_OPTIONS;
         this.stage = "ready";
         this.elapsedTime = 0;
+        this.hasRun = false;
     };
 
     @action
     public onMessage = (message: Message) => {
-        if (message.type === "configureSimulation") {
-            this.inputs = cloneInputs(message.inputs);
-            this.derived = message.derived;
-            this.displayOptions = message.displayOptions;
-            this.stage = "ready";
-            this.elapsedTime = 0;
-            return;
-        }
-
-        if (message.type === "start") {
-            this.stage = "running";
-            this.elapsedTime = 0;
+        switch (message.type) {
+            case "configureSimulation":
+                this.inputs = cloneInputs(message.inputs);
+                this.derived = message.derived;
+                this.displayOptions = message.displayOptions;
+                this.stage = "ready";
+                this.elapsedTime = 0;
+                this.hasRun = true;
+                break;
+            case "start":
+                this.stage = "running";
+                this.elapsedTime = 0;
+                break;
+            default: {
+                const unhandled: never = message;
+                return unhandled;
+            }
         }
     };
 

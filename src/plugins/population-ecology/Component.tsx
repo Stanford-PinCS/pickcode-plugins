@@ -38,9 +38,15 @@ function createDot(id: number, isNew = false): Dot {
   };
 }
 
-function stepDots(dots: Dot[], dt: number): Dot[] {
+// With reduced motion the dots hold still; only the newborn color fades.
+function stepDots(dots: Dot[], dt: number, move: boolean): Dot[] {
   return dots.map((dot) => {
     let { x, y, vx, vy, newTimer } = dot;
+
+    if (!move) {
+      newTimer = Math.max(0, newTimer - dt * 2);
+      return { ...dot, newTimer };
+    }
 
     x += vx;
     y += vy;
@@ -278,12 +284,14 @@ const Component = observer(({ state }: { state: State }) => {
   }, [population]);
 
   useEffect(() => {
+    const move = !window.matchMedia?.("(prefers-reduced-motion: reduce)")
+      .matches;
     const animate = (time: number) => {
       const dt = lastTime.current
         ? Math.min((time - lastTime.current) / 1000, 0.1)
         : 0.016;
       lastTime.current = time;
-      setDots((previous) => stepDots(previous, dt));
+      setDots((previous) => stepDots(previous, dt, move));
       animationFrame.current = requestAnimationFrame(animate);
     };
 

@@ -1,8 +1,13 @@
 import { SimulationMessage } from "../../messages";
 
+type Vector = { x: number; y: number };
+
+// Launch conditions shared by runSimulation and launchBall.
+const INITIAL_SPEED = 50; // m/s
+const INITIAL_ANGLE = 0.23 * Math.PI; // radians above the ground
+
 const createExports = (sendMessage: (message: SimulationMessage) => void) => {
-    return Promise.resolve({
-        runSimulation: (
+    const runSimulation = (
             getNextPosition: (
                 currentPosition: { x: number; y: number },
                 currentVelocity: { x: number; y: number },
@@ -22,8 +27,6 @@ const createExports = (sendMessage: (message: SimulationMessage) => void) => {
             const SIMULATION_TIMESTEP = stepSize; // seconds (larger for simulation)
             const ACTUAL_TIMESTEP = 0.005; // seconds (smaller for actual)
 
-            const INITIAL_SPEED = 50; // Initial speed
-            const INITIAL_ANGLE = 0.23 * Math.PI; // Angle of inclination for launch
             const WIND_SPEED_X = -12; // Headwind speed in m/s (negative for headwind)
 
             const getDrag = (velocity: { x: number; y: number }) => {
@@ -152,8 +155,78 @@ const createExports = (sendMessage: (message: SimulationMessage) => void) => {
                     currentAnimation: currentAnimation,
                 });
             }, 50); // Update every 50ms
-        },
-    });
+        };
+
+    /**
+     * The student's version: they write only getAcceleration(velocity), which
+     * returns the ball's acceleration (the starter defines its own getDrag in
+     * main; getDrag is still passed as a second argument for older lessons). This steps the ball forward with
+     * it (position from velocity, then velocity from acceleration) and runs the
+     * same comparison as runSimulation.
+     */
+    const launchBall = (getAcceleration: unknown, timestep: unknown) => {
+        if (typeof getAcceleration !== "function") {
+            throw new Error(
+                "launchBall expects your getAcceleration function as its first input."
+            );
+        }
+        if (typeof timestep !== "number" || !isFinite(timestep) || timestep <= 0) {
+            throw new Error(
+                `timestep must be a number bigger than 0, like 0.05. It is ${String(timestep)}.`
+            );
+        }
+        const accelerationOf = getAcceleration as (
+            velocity: Vector,
+            getDrag: (velocity: Vector) => Vector
+        ) => unknown;
+        const readAcceleration = (
+            velocity: Vector,
+            getDrag: (velocity: Vector) => Vector
+        ): Vector => {
+            const a = accelerationOf({ ...velocity }, getDrag) as Partial<Vector> | null;
+            if (
+                !a ||
+                typeof a.x !== "number" ||
+                typeof a.y !== "number" ||
+                !isFinite(a.x) ||
+                !isFinite(a.y)
+            ) {
+                throw new Error(
+                    "getAcceleration should return an object with number x and y, like { x: 0, y: -9.81 }."
+                );
+            }
+            return { x: a.x, y: a.y };
+        };
+
+        // Check the student's function once now, so a mistake shows up as an
+        // error right away instead of inside the animation.
+        readAcceleration(
+            {
+                x: INITIAL_SPEED * Math.cos(INITIAL_ANGLE),
+                y: INITIAL_SPEED * Math.sin(INITIAL_ANGLE),
+            },
+            () => ({ x: 0, y: 0 })
+        );
+
+        runSimulation((position, velocity, dt, getDrag) => {
+            let acceleration: Vector;
+            try {
+                acceleration = readAcceleration(velocity, getDrag);
+            } catch {
+                // A bad answer mid-flight ends the prediction: a point below the
+                // ground is what tells runSimulation the prediction has landed.
+                return { x: position.x, y: -1, xVel: 0, yVel: 0 };
+            }
+            return {
+                x: position.x + dt * velocity.x,
+                y: position.y + dt * velocity.y,
+                xVel: velocity.x + dt * acceleration.x,
+                yVel: velocity.y + dt * acceleration.y,
+            };
+        }, timestep);
+    };
+
+    return Promise.resolve({ runSimulation, launchBall });
 };
 
 export default createExports;

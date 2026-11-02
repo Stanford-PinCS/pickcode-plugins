@@ -151,7 +151,7 @@ const DEFAULT_BODIES: [BodyInputs, BodyInputs] = [
     radius: 34,
     position: { x: 200, y: 280 },
     velocity: { x: 210, y: 0 },
-    color: "#38bdf8",
+    color: "",
   },
   {
     label: "B",
@@ -159,7 +159,7 @@ const DEFAULT_BODIES: [BodyInputs, BodyInputs] = [
     radius: 34,
     position: { x: 560, y: 328 },
     velocity: { x: 0, y: 0 },
-    color: "#fb7185",
+    color: "",
   },
 ];
 

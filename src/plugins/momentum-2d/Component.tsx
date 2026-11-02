@@ -6,6 +6,7 @@ import {
   PluginSurface,
   StatRow,
 } from "../../common/PluginSurface";
+import { color, font, radius } from "../../common/tokens";
 import instructions from "./instructions.md?raw";
 import State from "./state";
 import { getSnapshotAtTime, magnitude } from "./momentumCore";
@@ -14,19 +15,33 @@ import type { OverlayPoint, Vec2 } from "./messages";
 
 const BODY_RENDER_SCALE = 0.82;
 
+/** Body A is the primary series (pink), body B the second (teal). */
+const BODY_COLORS = [color.series[0], color.series[1]] as const;
+
+/** Legacy overlay points name their role instead of carrying a color. */
+const overlayPointColor = (name: string | undefined) =>
+  name === "after" ? color.reference : name === "before" ? color.series[1] : color.inkMuted;
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
 /* ───────── Formatting ───────── */
 
 const formatScalar = (value: number, digits = 2) =>
   Number.isFinite(value) ? value.toFixed(digits) : "0.00";
 
-const formatVector = (vector: Vec2, digits = 1) =>
-  `(${formatScalar(vector.x, digits)}, ${formatScalar(vector.y, digits)})`;
+// Whole numbers, and never "-0" from rounding a tiny negative.
+const formatComponent = (value: number) => {
+  const rounded = Number.isFinite(value) ? Math.round(value) : 0;
+  return String(rounded === 0 ? 0 : rounded);
+};
+
+const formatVector = (vector: Vec2) =>
+  `(${formatComponent(vector.x)}, ${formatComponent(vector.y)})`;
 
 const formatPercent = (value: number, digits = 1) =>
   `${(Number.isFinite(value) ? value * 100 : 0).toFixed(digits)}%`;
-
-const kineticEnergyFromSpeed = (mass: number, speed: number) =>
-  0.5 * mass * speed * speed;
 
 /* ───────── Vector helpers ───────── */
 
@@ -105,31 +120,27 @@ const drawArrow = (
 const drawBody = (
   ctx: CanvasRenderingContext2D,
   body: BodySnapshot,
+  bodyColor: string,
   center: Vec2,
   radius: number,
   velocityVector: Vec2
 ) => {
   ctx.save();
   ctx.translate(center.x, center.y);
-
-  ctx.shadowColor = body.color;
-  ctx.shadowBlur = 18;
   ctx.beginPath();
   ctx.arc(0, 0, radius, 0, Math.PI * 2);
-  ctx.fillStyle = body.color + "bb";
+  ctx.globalAlpha = 0.85;
+  ctx.fillStyle = bodyColor;
   ctx.fill();
-
-  ctx.shadowBlur = 0;
-  ctx.beginPath();
-  ctx.arc(0, 0, radius, 0, Math.PI * 2);
+  ctx.globalAlpha = 1;
   ctx.lineWidth = 1.5;
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+  ctx.strokeStyle = bodyColor;
   ctx.stroke();
   ctx.restore();
 
   ctx.save();
-  ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
-  ctx.font = "500 13px 'Segoe UI', system-ui, sans-serif";
+  ctx.fillStyle = color.surface;
+  ctx.font = `600 13px ${font.ui}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(body.label, center.x, center.y);
@@ -147,7 +158,7 @@ const drawBody = (
       y: velocityVector.y - dir.y * radius,
     };
     if (magnitude(edgeVector) > 1)
-      drawArrow(ctx, edgeStart, edgeVector, body.color);
+      drawArrow(ctx, edgeStart, edgeVector, bodyColor);
   }
 };
 
@@ -169,13 +180,10 @@ const drawAxisTicks = (
   step = 160
 ) => {
   ctx.save();
-  ctx.strokeStyle = "rgba(226, 232, 240, 0.42)";
-  ctx.fillStyle = "rgba(148, 163, 184, 0.92)";
+  ctx.strokeStyle = color.axis;
+  ctx.fillStyle = color.inkMuted;
   ctx.lineWidth = 1;
-  ctx.font = `${Math.max(
-    8,
-    Math.min(10, Math.round(scale * 16))
-  )}px Consolas, Monaco, monospace`;
+  ctx.font = `${Math.max(8, Math.min(10, Math.round(scale * 16)))}px ${font.data}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
 
@@ -230,7 +238,7 @@ const drawOverlayPoint = (
   ctx.save();
   ctx.beginPath();
   ctx.arc(canvasPoint.x, canvasPoint.y, point.radius ?? 4, 0, Math.PI * 2);
-  ctx.fillStyle = point.color ?? "#f8fafc";
+  ctx.fillStyle = overlayPointColor(point.color);
   ctx.globalAlpha = 0.95;
   ctx.fill();
   ctx.restore();
@@ -276,6 +284,13 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         requestRef.current = undefined;
       }
       previousFrameTimeRef.current = undefined;
+      return;
+    }
+
+    // Reduced motion: skip straight to the end of the collision.
+    if (prefersReducedMotion()) {
+      state.setElapsedTime(state.derived.playbackDuration);
+      state.completePlayback();
       return;
     }
 
@@ -347,10 +362,10 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         )})`
     );
 
-    ctx.font = `${hudStatusFontSize}px Consolas, Monaco, monospace`;
+    ctx.font = `${hudStatusFontSize}px ${font.data}`;
     const statusWidth = ctx.measureText(statusText).width;
 
-    ctx.font = `${hudPositionFontSize}px Consolas, Monaco, monospace`;
+    ctx.font = `${hudPositionFontSize}px ${font.data}`;
     const positionsWidth =
       positionTexts.reduce(
         (sum, text) => sum + ctx.measureText(text).width,
@@ -395,8 +410,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Dark-plum backdrop (warm, ties into the palette).
-    ctx.fillStyle = "#1d0d14";
+    ctx.fillStyle = color.surfaceRaised;
     ctx.fillRect(0, 0, width, height);
 
     for (let x = 0; x <= state.inputs.width; x += 80) {
@@ -404,7 +418,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       ctx.beginPath();
       ctx.moveTo(xPosition, offsetY);
       ctx.lineTo(xPosition, offsetY + scaledSceneHeight);
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.18)";
+      ctx.strokeStyle = color.grid;
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -413,7 +427,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       ctx.beginPath();
       ctx.moveTo(offsetX, yPosition);
       ctx.lineTo(offsetX + scaledSceneWidth, yPosition);
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.18)";
+      ctx.strokeStyle = color.grid;
       ctx.lineWidth = 1;
       ctx.stroke();
     }
@@ -422,14 +436,14 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       ctx,
       axisOrigin,
       { x: Math.max(scaledSceneWidth - 14, 0), y: 0 },
-      "rgba(226, 232, 240, 0.48)",
+      color.axis,
       2
     );
     drawArrow(
       ctx,
       axisOrigin,
       { x: 0, y: -Math.max(scaledSceneHeight - 14, 0) },
-      "rgba(226, 232, 240, 0.48)",
+      color.axis,
       2
     );
     drawAxisTicks(
@@ -441,8 +455,8 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       getAdaptiveAxisStep(sceneScale)
     );
 
-    ctx.fillStyle = "rgba(226, 232, 240, 0.92)";
-    ctx.font = "11px Consolas, Monaco, monospace";
+    ctx.fillStyle = color.inkMuted;
+    ctx.font = `11px ${font.data}`;
     ctx.textAlign = "left";
     ctx.fillText("0", axisOrigin.x + 6, axisOrigin.y - 8);
     ctx.fillText("x", axisOrigin.x + scaledSceneWidth - 12, axisOrigin.y - 8);
@@ -464,11 +478,11 @@ const Component = observer(({ state }: { state: State | undefined }) => {
         if (hasCollided && body.collisionPosition) {
           const collisionPos = toCanvas(body.collisionPosition);
           if (magnitude(body.initialVelocity) > 1e-6)
-            drawGuideLine(ctx, preStart, collisionPos, body.color);
+            drawGuideLine(ctx, preStart, collisionPos, BODY_COLORS[index]);
           if (magnitude(body.finalVelocity) > 1e-6)
-            drawGuideLine(ctx, collisionPos, currentPos, body.color);
+            drawGuideLine(ctx, collisionPos, currentPos, BODY_COLORS[index]);
         } else if (magnitude(body.initialVelocity) > 1e-6) {
-          drawGuideLine(ctx, preStart, currentPos, body.color);
+          drawGuideLine(ctx, preStart, currentPos, BODY_COLORS[index]);
         }
       });
 
@@ -477,9 +491,9 @@ const Component = observer(({ state }: { state: State | undefined }) => {
           ctx,
           toCanvas(initialCenterOfMassPosition),
           toCanvas(currentCenterOfMassPosition),
-          "#facc15",
-          [10, 8],
-          0.52
+          color.ink,
+          [4, 6],
+          0.6
         );
       }
     }
@@ -507,8 +521,11 @@ const Component = observer(({ state }: { state: State | undefined }) => {
           0,
           Math.PI * 2
         );
-        ctx.fillStyle = `rgba(255, 255, 255, ${0.18 + flashAmount * 0.42})`;
+        ctx.save();
+        ctx.globalAlpha = 0.15 + flashAmount * 0.35;
+        ctx.fillStyle = color.reference;
         ctx.fill();
+        ctx.restore();
       }
 
       const afterCollision =
@@ -517,7 +534,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       if (afterCollision) {
         const s = 5;
         ctx.save();
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+        ctx.strokeStyle = color.ink;
         ctx.lineWidth = 2;
         ctx.lineCap = "round";
         ctx.beginPath();
@@ -530,7 +547,8 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       }
     }
 
-    snapshot.bodies.forEach((body) => {
+    snapshot.bodies.forEach((body, index) => {
+      const bodyColor = BODY_COLORS[index];
       const center = toCanvas(body.position);
       const radius = body.radius * sceneScale * BODY_RENDER_SCALE;
       const velocityMagnitude = magnitude(body.velocity);
@@ -544,8 +562,8 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       ctx.save();
       ctx.setLineDash([4, 4]);
       ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.6;
-      ctx.strokeStyle = body.color;
+      ctx.globalAlpha = 0.45;
+      ctx.strokeStyle = bodyColor;
       ctx.beginPath();
       ctx.moveTo(center.x, center.y);
       ctx.lineTo(center.x, axisOrigin.y);
@@ -559,6 +577,7 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       drawBody(
         ctx,
         body,
+        bodyColor,
         center,
         radius,
         scaleVector(toCanvasVector(body.velocity), arrowScale)
@@ -569,34 +588,34 @@ const Component = observer(({ state }: { state: State | undefined }) => {
       const currentCenter = toCanvas(currentCenterOfMassPosition);
       ctx.beginPath();
       ctx.arc(currentCenter.x, currentCenter.y, 4.5, 0, Math.PI * 2);
-      ctx.fillStyle = "rgba(250, 204, 21, 0.95)";
+      ctx.fillStyle = color.ink;
       ctx.fill();
 
-      ctx.fillStyle = "rgba(254, 249, 195, 0.98)";
-      ctx.font = "700 11px 'Segoe UI', system-ui, sans-serif";
+      ctx.fillStyle = color.ink;
+      ctx.font = `700 11px ${font.ui}`;
       ctx.textAlign = "left";
       ctx.fillText("CM", currentCenter.x + 12, currentCenter.y - 10);
     }
 
     // Minimal HUD.
-    ctx.fillStyle = "rgba(148, 163, 184, 0.95)";
-    ctx.font = `${hudStatusFontSize}px Consolas, Monaco, monospace`;
+    ctx.fillStyle = color.inkMuted;
+    ctx.font = `${hudStatusFontSize}px ${font.data}`;
     const statusY = hudInsetY + hudStatusFontSize;
     ctx.textAlign = "left";
     ctx.fillText(statusText, hudInsetX, statusY);
 
-    ctx.font = `${hudPositionFontSize}px Consolas, Monaco, monospace`;
+    ctx.font = `${hudPositionFontSize}px ${font.data}`;
     const positionsY = positionsInline ? statusY : statusY + hudLineHeight;
     let currentX = positionsInline ? hudInsetX + statusWidth + 20 : hudInsetX;
     snapshot.bodies.forEach((body, index) => {
       const positionText = positionTexts[index];
-      ctx.fillStyle = body.color;
+      ctx.fillStyle = BODY_COLORS[index];
       ctx.fillText(positionText, currentX, positionsY);
       currentX += ctx.measureText(positionText).width + hudGap;
     });
   }, [state, snapshot, phaseLabel]);
 
-  if (!state || !snapshot || !currentTotalMomentum) {
+  if (!state || !state.hasRun || !snapshot || !currentTotalMomentum) {
     return (
       <PluginSurface instructions={instructions}>
         <PluginStage>
@@ -613,30 +632,38 @@ const Component = observer(({ state }: { state: State | undefined }) => {
   return (
     <PluginSurface instructions={instructions}>
       <PluginStage>
-        {/* Dark simulation viewport, framed on the cream stage */}
         <div
           ref={containerRef}
           style={{
             width: "100%",
             height: "100%",
             position: "relative",
-            borderRadius: 12,
+            borderRadius: radius.md,
+            border: `1px solid ${color.border}`,
             overflow: "hidden",
-            background: "#160a0f",
+            background: color.surfaceRaised,
           }}
         >
           <canvas
             ref={canvasRef}
+            role="img"
+            aria-label={`Body A (mass ${formatScalar(
+              state.inputs.bodies[0].mass,
+              2
+            )} kg) and body B (mass ${formatScalar(
+              state.inputs.bodies[1].mass,
+              2
+            )} kg) collide. Total momentum ${formatVector(
+              pBefore
+            )} before and ${formatVector(pAfter)} after.`}
             style={{ width: "100%", height: "100%", display: "block" }}
           />
         </div>
       </PluginStage>
       <StatRow
         stats={[
-          {
-            label: "Momentum",
-            value: `${formatVector(pBefore)} → ${formatVector(pAfter)}`,
-          },
+          { label: "Momentum before", value: formatVector(pBefore) },
+          { label: "Momentum after", value: formatVector(pAfter) },
           { label: "KE lost", value: formatPercent(keLoss) },
           {
             label: "Collision",
