@@ -1,4 +1,21 @@
 {
+  "acid-base-titration": {
+    "instructionsUrl": "/plugins-code/acid-base-titration/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/acid-base-titration/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/acid-base-titration/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/acid-base-titration/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/acid-base-titration/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/acid-base-titration/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/acid-base-titration/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/acid-base-titration/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/acid-base-titration/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/acid-base-titration/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/acid-base-titration/solutions/solutionCode.py"
+    }
+  },
   "canvas": {
     "BasicJS": {
       "implUrl": "/plugins-code/canvas/languages/BasicJS/implementation.js",
@@ -11,15 +28,55 @@
       "starterUrl": "/plugins-code/chat-demo/languages/BasicJS/starter-code/main.js"
     }
   },
+  "chemical-equilibrium": {
+    "instructionsUrl": "/plugins-code/chemical-equilibrium/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/chemical-equilibrium/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/chemical-equilibrium/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/chemical-equilibrium/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/chemical-equilibrium/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/chemical-equilibrium/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/chemical-equilibrium/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/chemical-equilibrium/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/chemical-equilibrium/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/chemical-equilibrium/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/chemical-equilibrium/solutions/solutionCode.py"
+    }
+  },
+  "classical-conditioning": {
+    "instructionsUrl": "/plugins-code/classical-conditioning/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/classical-conditioning/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/classical-conditioning/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/classical-conditioning/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/classical-conditioning/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/classical-conditioning/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/classical-conditioning/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/classical-conditioning/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/classical-conditioning/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/classical-conditioning/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/classical-conditioning/solutions/solutionCode.py"
+    }
+  },
   "coin-flip": {
     "instructionsUrl": "/plugins-code/coin-flip/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/coin-flip/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/coin-flip/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/coin-flip/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/coin-flip/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/coin-flip/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/coin-flip/solutions/solutionCode.js"
     },
     "Python": {
       "implUrl": "/plugins-code/coin-flip/languages/Python/implementation.js",
-      "starterUrl": "/plugins-code/coin-flip/languages/Python/starter-code/main.py"
+      "starterUrl": "/plugins-code/coin-flip/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/coin-flip/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/coin-flip/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/coin-flip/solutions/solutionCode.py"
     }
   },
   "console": {
@@ -38,53 +95,150 @@
     "instructionsUrl": "/plugins-code/dice-roll/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/dice-roll/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/dice-roll/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/dice-roll/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/dice-roll/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/dice-roll/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/dice-roll/solutions/solutionCode.js"
     },
     "Python": {
       "implUrl": "/plugins-code/dice-roll/languages/Python/implementation.js",
-      "starterUrl": "/plugins-code/dice-roll/languages/Python/starter-code/main.py"
+      "starterUrl": "/plugins-code/dice-roll/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/dice-roll/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/dice-roll/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/dice-roll/solutions/solutionCode.py"
+    }
+  },
+  "dna-replication": {
+    "instructionsUrl": "/plugins-code/dna-replication/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/dna-replication/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/dna-replication/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/dna-replication/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/dna-replication/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/dna-replication/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/dna-replication/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/dna-replication/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/dna-replication/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/dna-replication/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/dna-replication/solutions/solutionCode.py"
     }
   },
   "drag": {
     "instructionsUrl": "/plugins-code/drag/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/drag/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/drag/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/drag/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/drag/solutions/solutionCode.js"
     }
   },
   "electric-field": {
     "instructionsUrl": "/plugins-code/electric-field/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/electric-field/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/electric-field/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/electric-field/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/electric-field/solutions/solutionCode.js"
+    }
+  },
+  "electron-configuration": {
+    "instructionsUrl": "/plugins-code/electron-configuration/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/electron-configuration/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/electron-configuration/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/electron-configuration/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/electron-configuration/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/electron-configuration/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/electron-configuration/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/electron-configuration/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/electron-configuration/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/electron-configuration/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/electron-configuration/solutions/solutionCode.py"
     }
   },
   "escape-velocity": {
     "instructionsUrl": "/plugins-code/escape-velocity/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/escape-velocity/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/escape-velocity/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/escape-velocity/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/escape-velocity/solutions/solutionCode.js"
     }
   },
   "force-addition": {
     "instructionsUrl": "/plugins-code/force-addition/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/force-addition/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/force-addition/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/force-addition/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/force-addition/solutions/solutionCode.js"
     }
   },
   "force-components": {
     "instructionsUrl": "/plugins-code/force-components/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/force-components/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/force-components/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/force-components/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/force-components/solutions/solutionCode.js"
+    }
+  },
+  "forgetting-curve": {
+    "instructionsUrl": "/plugins-code/forgetting-curve/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/forgetting-curve/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/forgetting-curve/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/forgetting-curve/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/forgetting-curve/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/forgetting-curve/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/forgetting-curve/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/forgetting-curve/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/forgetting-curve/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/forgetting-curve/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/forgetting-curve/solutions/solutionCode.py"
+    }
+  },
+  "gas-laws": {
+    "instructionsUrl": "/plugins-code/gas-laws/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/gas-laws/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/gas-laws/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/gas-laws/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/gas-laws/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/gas-laws/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/gas-laws/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/gas-laws/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/gas-laws/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/gas-laws/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/gas-laws/solutions/solutionCode.py"
+    }
+  },
+  "gibbs-free-energy": {
+    "instructionsUrl": "/plugins-code/gibbs-free-energy/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/gibbs-free-energy/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/gibbs-free-energy/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/gibbs-free-energy/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/gibbs-free-energy/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/gibbs-free-energy/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/gibbs-free-energy/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/gibbs-free-energy/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/gibbs-free-energy/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/gibbs-free-energy/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/gibbs-free-energy/solutions/solutionCode.py"
     }
   },
   "haber-reaction": {
     "instructionsUrl": "/plugins-code/haber-reaction/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/haber-reaction/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/haber-reaction/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/haber-reaction/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/haber-reaction/solutions/solutionCode.js"
     }
   },
   "haber-reaction-python": {
@@ -97,18 +251,71 @@
       "starterUrl": "/plugins-code/haber-reaction-python/languages/Python/starter-code/main.py"
     }
   },
+  "heat-transfer": {
+    "instructionsUrl": "/plugins-code/heat-transfer/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/heat-transfer/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/heat-transfer/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/heat-transfer/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/heat-transfer/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/heat-transfer/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/heat-transfer/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/heat-transfer/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/heat-transfer/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/heat-transfer/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/heat-transfer/solutions/solutionCode.py"
+    }
+  },
+  "limiting-reactant": {
+    "instructionsUrl": "/plugins-code/limiting-reactant/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/limiting-reactant/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/limiting-reactant/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/limiting-reactant/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/limiting-reactant/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/limiting-reactant/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/limiting-reactant/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/limiting-reactant/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/limiting-reactant/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/limiting-reactant/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/limiting-reactant/solutions/solutionCode.py"
+    }
+  },
   "marginal-utility": {
     "instructionsUrl": "/plugins-code/marginal-utility/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/marginal-utility/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/marginal-utility/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/marginal-utility/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/marginal-utility/solutions/solutionCode.js"
+    }
+  },
+  "molecular-geometry": {
+    "instructionsUrl": "/plugins-code/molecular-geometry/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/molecular-geometry/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/molecular-geometry/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/molecular-geometry/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/molecular-geometry/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/molecular-geometry/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/molecular-geometry/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/molecular-geometry/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/molecular-geometry/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/molecular-geometry/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/molecular-geometry/solutions/solutionCode.py"
     }
   },
   "momentum-2d": {
     "instructionsUrl": "/plugins-code/momentum-2d/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/momentum-2d/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/momentum-2d/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/momentum-2d/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/momentum-2d/solutions/solutionCode.js"
     }
   },
   "music": {
@@ -121,14 +328,16 @@
     "instructionsUrl": "/plugins-code/particle-simulation/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/particle-simulation/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/particle-simulation/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/particle-simulation/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/particle-simulation/solutions/solutionCode.js"
     }
   },
   "planets": {
     "instructionsUrl": "/plugins-code/planets/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/planets/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/planets/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/planets/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/planets/solutions/solutionCode.js"
     }
   },
   "population-ecology": {
@@ -148,25 +357,79 @@
       "solutionUrl": "/plugins-code/population-ecology/solutions/solutionCode.py"
     }
   },
+  "reaction-kinetics": {
+    "instructionsUrl": "/plugins-code/reaction-kinetics/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/reaction-kinetics/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/reaction-kinetics/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/reaction-kinetics/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/reaction-kinetics/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/reaction-kinetics/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/reaction-kinetics/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/reaction-kinetics/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/reaction-kinetics/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/reaction-kinetics/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/reaction-kinetics/solutions/solutionCode.py"
+    }
+  },
+  "reinforcement-schedules": {
+    "instructionsUrl": "/plugins-code/reinforcement-schedules/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/reinforcement-schedules/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/reinforcement-schedules/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/reinforcement-schedules/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/reinforcement-schedules/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/reinforcement-schedules/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/reinforcement-schedules/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/reinforcement-schedules/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/reinforcement-schedules/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/reinforcement-schedules/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/reinforcement-schedules/solutions/solutionCode.py"
+    }
+  },
   "riemann-sum": {
     "instructionsUrl": "/plugins-code/riemann-sum/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/riemann-sum/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/riemann-sum/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/riemann-sum/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/riemann-sum/solutions/solutionCode.js"
     }
   },
   "simple-harmonic-motion": {
     "instructionsUrl": "/plugins-code/simple-harmonic-motion/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/simple-harmonic-motion/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/simple-harmonic-motion/solutions/solutionCode.js"
     }
   },
   "supply-demand": {
     "instructionsUrl": "/plugins-code/supply-demand/instructions.md",
     "BasicJS": {
       "implUrl": "/plugins-code/supply-demand/languages/BasicJS/implementation.js",
-      "starterUrl": "/plugins-code/supply-demand/languages/BasicJS/starter-code/main.js"
+      "starterUrl": "/plugins-code/supply-demand/languages/BasicJS/starter-code/main.js",
+      "solutionUrl": "/plugins-code/supply-demand/solutions/solutionCode.js"
+    }
+  },
+  "synapse-transmission": {
+    "instructionsUrl": "/plugins-code/synapse-transmission/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/synapse-transmission/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/synapse-transmission/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/synapse-transmission/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/synapse-transmission/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/synapse-transmission/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/synapse-transmission/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/synapse-transmission/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/synapse-transmission/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/synapse-transmission/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/synapse-transmission/solutions/solutionCode.py"
     }
   }
 }
