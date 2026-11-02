@@ -163,3 +163,52 @@ export function parseStepBody(body: string): StepSegment[] {
 
   return segments;
 }
+
+/* ------------------------------------------------------------------ *
+ * Language-specific text
+ *
+ * One instructions.md serves every language a plugin ships, but a student
+ * should only ever see their own. Code fences tagged ```js / ```javascript
+ * or ```python / ```py are kept only for that language, and so is anything
+ * wrapped in a <JavaScript>...</JavaScript> or <Python>...</Python> tag
+ * (which works inline too: `<Python>True</Python><JavaScript>true</JavaScript>`).
+ * Untagged text and fences are shown to everyone.
+ * ------------------------------------------------------------------ */
+
+export type CodeLanguage = "javascript" | "python";
+
+const FENCE_LANGUAGE: Record<string, CodeLanguage> = {
+  js: "javascript",
+  javascript: "javascript",
+  py: "python",
+  python: "python",
+};
+
+/**
+ * Removes the parts of `markdown` written for other languages. With no
+ * language (a host that doesn't say which one is running), every variant is
+ * kept so nothing a student needs is ever hidden.
+ */
+export function filterForLanguage(
+  markdown: string,
+  language: CodeLanguage | null
+): string {
+  const keep = (lang: CodeLanguage) => language === null || language === lang;
+
+  const withoutFences = markdown.replace(
+    /^```([A-Za-z]+)[^\n]*\n[\s\S]*?^```[ \t]*$\n?/gm,
+    (block, tag: string) => {
+      const lang = FENCE_LANGUAGE[tag.toLowerCase()];
+      return !lang || keep(lang) ? block : "";
+    }
+  );
+
+  return withoutFences
+    .replace(/<javascript>([\s\S]*?)<\/javascript>/gi, (_, inner: string) =>
+      keep("javascript") ? inner : ""
+    )
+    .replace(/<python>([\s\S]*?)<\/python>/gi, (_, inner: string) =>
+      keep("python") ? inner : ""
+    )
+    .replace(/\n{3,}/g, "\n\n");
+}
