@@ -42,10 +42,11 @@ async function loadImplementationCode(
 
 async function loadStarterCode(
   name: string,
-  language: SandboxLanguage
+  language: SandboxLanguage,
+  file: "main" | "prefix" | "suffix" = "main"
 ): Promise<string | undefined> {
   const extension = language === "Python" ? "py" : "js";
-  const url = `/plugins-code/${name}/languages/${language}/starter-code/main.${extension}`;
+  const url = `/plugins-code/${name}/languages/${language}/starter-code/${file}.${extension}`;
   const res = await fetch(url);
   if (!res.ok) return undefined;
   const text = await res.text();
@@ -80,6 +81,9 @@ export const Sandbox = () => {
     undefined
   );
   const [codeText, setCodeText] = useState("");
+  // Hidden setup/teardown code, run around the editor's code like the PinCS site does.
+  const [prefixCode, setPrefixCode] = useState("");
+  const [suffixCode, setSuffixCode] = useState("");
   const storageKey = `codeText:${pluginName ?? "unknown"}:${language}`;
 
   useEffect(() => {
@@ -108,6 +112,8 @@ export const Sandbox = () => {
     }).catch(() => {
       setImplementation(undefined);
     });
+    loadStarterCode(pluginName, language, "prefix").then((c) => setPrefixCode(c ?? ""));
+    loadStarterCode(pluginName, language, "suffix").then((c) => setSuffixCode(c ?? ""));
     const savedCode = localStorage.getItem(storageKey);
     if (!savedCode) {
       loadStarterCode(pluginName, language).then((starter) => {
@@ -172,13 +178,16 @@ export const Sandbox = () => {
         <iframe
           ref={iframeRef}
           className="flex grow border border-slate-500 rounded-lg"
-          src={`/embed/${pluginName}`}
+          src={`/embed/${pluginName}?language=${language === "Python" ? "python" : "javascript"}`}
         />
       </div>
       <div
         className="absolute cursor-pointer right-5 bottom-5 bg-green-500 text-green-50 px-4 py-2 rounded-lg and-i-need-it-now hover:ring-2 hover:ring-green-800"
         onClick={() => {
-          runtimeRef.current?.startExecution(codeText, implementation ?? "");
+          runtimeRef.current?.startExecution(
+            prefixCode + "\n" + codeText + "\n" + suffixCode,
+            implementation ?? ""
+          );
         }}
       >
         Play
