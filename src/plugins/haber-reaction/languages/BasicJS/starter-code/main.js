@@ -1,22 +1,13 @@
-function resulting_nh3() {
+// Mix hydrogen and nitrogen to make ammonia: N2 + 3H2 -> 2NH3.
+// Change h2 and n2, then make findLimiting give the right answer.
 
-    let h2 = 5;
-    let n2 = 3;
-    // TODO 3: define needed_n2 here
+let h2 = 6; // moles of hydrogen
+let n2 = 3; // moles of nitrogen
 
-    // TODO 1: define nh3_made variables here
-
-    let nh3_made = 0;
-    let limiting = ""; // write "n2" or "h2" or "None"
-
-    // TODO 2: write if statements here
-
-    return {
-        "h2_reactant_amount": h2, 
-        "n2_reactant_amount": n2, 
-        "nh3_product_made": nh3_made, 
-        "limiting_reactant": limiting
-    };
+// Return the gas that runs out first: "h2", "n2", or "neither".
+function findLimiting(h2, n2) {
+    return "h2";
 }
 
-proceed(resulting_nh3);
+// React the gases and check your answer.
+reactGases(h2, n2, findLimiting);

@@ -1,83 +1,146 @@
-# Making a Simulation
+# Population Growth Simulation
 
-### Getting started
+Let's use what we know to visualize the exponential population growth model we've been talking about! You'll watch a population of organisms grow day by day. Along the way you'll practice **variables** and **functions that return values**.
 
-Let's try to use what we know to visualize this exponential population growth model we've been talking about!
+Click **Next** to continue.
 
-The code on the left already has everything our simulation needs. Over the next few steps, we'll walk through what each part of it does.
+## How populations grow
 
-Click the "Next" button to continue.
+Two things shape how a population changes: how big it is at the start, and how fast it grows. The per capita growth rate *r* is how much each organism adds to the population (births minus deaths) over time.
 
-## getPopulationParameters
+In **exponential growth**, the population grows in proportion to its own size. The bigger it gets, the more organisms are added each day:
 
-`getPopulationParameters` is an example of what we call a function. A function in programming is a block of code that performs a specific task.
+> N(t) = N₀ · e^(r·t)
 
-In this case, the specific task that `getPopulationParameters` accomplishes is to create the values that define our population.
+Here N₀ is the starting population, *r* is the growth rate, and t is the number of days.
 
-## Defining our population
+## Returning values from a function
 
-Although there are many factors that can define a population, two of the factors that we should definitely tell our simulation are how big the population is initially and how fast the population grows!
+Your code is one **function**, `getPopulationParameters`, a named block of code whose job is to set up your population:
 
-To do this, our code stores these values as variables. A variable is a piece of data that has a name and a value that gets stored along with it that we can use later in our code.
+```js
+function getPopulationParameters() {
+    let initialPopSize = 30;
+    let growthRate = 0.5;
 
-For example, `age = 17` would make a variable named `age` that stores the value `17`.
-
-## Our variables
-
-Our function makes two variables:
+    return [initialPopSize, growthRate];
+}
+```
 
 ```python
 def getPopulationParameters():
     initialPopSize = 30
     growthRate = 0.5
-```
 
-`initialPopSize` stores the value `30`, which represents an initial population of 30 organisms.
-
-`growthRate` stores the value `0.5`, which represents a population that has a per capita growth rate r of 0.5.
-
-## Packaging our variables
-
-Because these variables are contained within our function, we need to ship them out to give to our simulation. That's what the last line does:
-
-```python
     return initialPopSize, growthRate
 ```
 
-A `return` statement is how a function sends its result back to whoever used the function. You can think of it like the function handing you back an answer after doing a problem.
+Inside it, two **variables** store values: `initialPopSize` is 30 organisms, and `growthRate` is the *r* of 0.5. The `return` line hands both values back, `initialPopSize` first and `growthRate` second. The order matters.
 
-Here we return both variables together, separated by a comma. The initial population size comes first, because the order does matter when returning values this way.
+The last line, `simulatePopulation(getPopulationParameters)`, calls your function and grows that population for 10 days on the right.
 
-## Running the simulation
+## Run it
 
-Now that you know what our function does, let's see it in action!
+Press the **Run** button. The simulation takes about 20 seconds, two seconds per day.
 
-Press the play button and watch what happens on the right side of your screen. You should see a population simulation of organisms in a sandbox along with a graph to show how the population grows across time.
+On the left, a pink line with pink dots graphs **Population** against **Day**. The amber label in the corner shows r = 0.5. On the right, a box shows the organisms moving around. Pink dots are existing organisms and teal dots are newly born.
 
-Take a moment to look at the graph. Does the shape remind you of anything we talked about earlier?
+The bottom row shows **Day**, **Population**, **Initial Size**, and **Growth Rate**.
 
-## Reading the graph
+The curve starts slow, then gets steeper and steeper. That's an exponential growth curve. By day 10 the population is about 4,452.
 
-The curve you're seeing is called an exponential growth curve. Notice how the population starts growing slowly, but then gets faster and faster over time.
+## Step 1: Speed up growth
 
-This happens because the growth rate r continuously applies to the population size of the previous day. The bigger the population gets, the more new organisms are being added each day.
+Inside `getPopulationParameters`, change the value of `growthRate` from `0.5` to `1.2`:
 
-## Experimenting
+```js
+    let growthRate = 1.2;
+```
 
-Now let's explore! Once the simulation has run fully, try changing the value of `growthRate` to something larger, like `1.2`, and let the simulation run fully again. What do you notice about the graph?
+```python
+    growthRate = 1.2
+```
 
-Now try a smaller value, like `0.1` and let the simulation run fully. How does the population grow differently?
+Run it again and let it finish all 10 days.
 
-Finally, try a negative value like `-0.2` and let the simulation run fully. What do you think will happen before you run it?
+**Look for:** the curve shoots up much more steeply. By day 10, **Population** is in the millions. The box can't fit them all, so it shows 10,000 of them.
 
-## What did you find?
+## Step 2: Slow down growth
 
-A larger `growthRate` makes the population explode upward much more steeply, representing a population where the organisms are reproducing much faster than they're dying.
+Change `growthRate` again, this time to `0.1`:
 
-A smaller `growthRate` means slower, more gradual growth in a population. It is still exponential growth, but simply less dramatic.
+```js
+    let growthRate = 0.1;
+```
 
-A negative `growthRate` means the population is actually shrinking over time because deaths are outpacing births. This could represent a species under threat of extinction.
+```python
+    growthRate = 0.1
+```
 
-## Wrapping up
+Run it again and let it finish.
 
-In the next section, we'll look at what happens when we add one more variable to our model: a limit on how large the population can actually get. That's where things get really interesting!
+**Look for:** the line rises gently, ending at only about 82. It's still exponential growth, just much less dramatic.
+
+## Step 3: Make the population shrink
+
+Before you run it, predict what a negative growth rate will do.
+
+Then change `growthRate` to `-0.2`:
+
+```js
+    let growthRate = -0.2;
+```
+
+```python
+    growthRate = -0.2
+```
+
+Run it again and let it finish.
+
+**Look for:** the curve slopes down. The population drops to about 4 by day 10, because deaths are outpacing births.
+
+## Step 4: Model an endangered species
+
+A species starts with 200 organisms and has a growth rate of -0.3.
+
+Change both variables: `initialPopSize` to `200` and `growthRate` to `-0.3`:
+
+```js
+    let initialPopSize = 200;
+    let growthRate = -0.3;
+```
+
+```python
+    initialPopSize = 200
+    growthRate = -0.3
+```
+
+Run it again and let it finish.
+
+**Look for:** **Initial Size** shows 200. The curve drops quickly at first, then levels off. **Population** on day 10 is just 10.
+
+## Check your understanding
+
+<Question>
+What does a negative `growthRate` mean for a population?
+- [ ] It grows faster than a positive rate
+- [ ] It stays the same size forever
+- [x] Deaths outpace births, so it shrinks over time
+> A negative growth rate means each organism adds less than nothing on average, so the population keeps getting smaller.
+</Question>
+
+<Question>
+Why does order matter in the `return` line of `getPopulationParameters`?
+- [ ] It doesn't matter; the simulation figures out which is which
+- [x] The simulation reads the first value as the starting size and the second as the growth rate
+- [ ] Only the last value gets returned
+> Values returned together arrive in the same order they were listed. Swap them and the simulation would start with 0.5 organisms!
+</Question>
+
+## Wrap up
+
+You modeled an endangered species: 200 organisms with a growth rate of -0.3 shrink to about 10 in just 10 days. You also saw that a large positive `growthRate` makes a population explode, and a small one makes it grow gently.
+
+On the code side, you edited variables inside a function and saw how `return` hands their values back, in order.
+
+Next, you'll add one more variable to the model: a limit on how large the population can get. That's where things get really interesting!

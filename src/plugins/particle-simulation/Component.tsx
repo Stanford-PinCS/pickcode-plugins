@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
-import { color } from "../../common/tokens";
+import { color, radius } from "../../common/tokens";
 import {
   EmptyState,
   PluginStage,
@@ -10,7 +10,21 @@ import {
 import State, { type Particle } from "./state";
 import instructions from "./instructions.md?raw";
 
-const SIM_BG = "#0b1020";
+const PARTICLE_RADIUS = 6;
+// Each frame, every particle's speed moves this fraction of the way toward
+// the speed that matches the average temperature, so a mix slowly evens out.
+const MIXING_RATE = 0.001;
+// With prefers-reduced-motion the box is drawn once, and each particle gets
+// a short line showing which way and how fast it is moving.
+const STILL_TRAIL_FRAMES = 4;
+
+// Hot group pink (series[0]), cold group teal (series[1]). Older lessons
+// pass their own color, which still wins.
+const particleColor = (particle: Particle) =>
+  particle.color ||
+  (particle.group !== undefined
+    ? color.series[particle.group % color.series.length]
+    : color.accent);
 
 type ParticleState = Particle & {
   x: number;
@@ -37,6 +51,8 @@ const Component = observer(({ state }: { state: State }) => {
     if (!ctx) return;
 
     let animationFrameId = 0;
+    const still =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
     const initParticles = (width: number, height: number) => {
       particleStatesRef.current = particles.map((particle) => {
@@ -77,14 +93,29 @@ const Component = observer(({ state }: { state: State }) => {
         initParticles(width, height);
       }
 
-      ctx.fillStyle = SIM_BG;
-      ctx.fillRect(0, 0, width, height);
-
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(1, 1, width - 2, height - 2);
+      ctx.clearRect(0, 0, width, height);
 
       const targetSpeed = Math.sqrt(avgTemperature) * 0.5;
+
+      if (still) {
+        ctx.lineWidth = 2;
+        for (const particle of particleStatesRef.current) {
+          const fill = particleColor(particle);
+          ctx.beginPath();
+          ctx.moveTo(particle.x, particle.y);
+          ctx.lineTo(
+            particle.x - particle.vx * STILL_TRAIL_FRAMES,
+            particle.y - particle.vy * STILL_TRAIL_FRAMES
+          );
+          ctx.strokeStyle = fill;
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, PARTICLE_RADIUS, 0, Math.PI * 2);
+          ctx.fillStyle = fill;
+          ctx.fill();
+        }
+        return;
+      }
 
       for (const particle of particleStatesRef.current) {
         particle.x += particle.vx;
@@ -93,7 +124,7 @@ const Component = observer(({ state }: { state: State }) => {
         const currentSpeed = Math.hypot(particle.vx, particle.vy) || 1e-6;
 
         const smoothedSpeed =
-          currentSpeed + (targetSpeed - currentSpeed) * 0.001;
+          currentSpeed + (targetSpeed - currentSpeed) * MIXING_RATE;
 
         const angle = Math.atan2(particle.vy, particle.vx);
 
@@ -109,8 +140,8 @@ const Component = observer(({ state }: { state: State }) => {
         }
 
         ctx.beginPath();
-        ctx.arc(particle.x, particle.y, 6, 0, Math.PI * 2);
-        ctx.fillStyle = particle.color || color.accent;
+        ctx.arc(particle.x, particle.y, PARTICLE_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = particleColor(particle);
         ctx.fill();
       }
 
@@ -140,6 +171,8 @@ const Component = observer(({ state }: { state: State }) => {
 
   const minTemp = Math.min(...temperatures);
   const maxTemp = Math.max(...temperatures);
+  // Teal and pink only mean something once the box holds two temperatures.
+  const mixed = maxTemp > minTemp;
 
   return (
     <PluginSurface instructions={instructions}>
@@ -148,14 +181,16 @@ const Component = observer(({ state }: { state: State }) => {
           style={{
             width: "100%",
             height: "100%",
-            borderRadius: 8,
+            borderRadius: radius.md,
             overflow: "hidden",
-            background: SIM_BG,
+            background: color.surfaceRaised,
             border: `1px solid ${color.border}`,
           }}
         >
           <canvas
             ref={canvasRef}
+            role="img"
+            aria-label={`${particleCount} particles bouncing in a box, temperatures from ${minTemp.toFixed(1)} to ${maxTemp.toFixed(1)}, average ${avgTemp.toFixed(1)}`}
             style={{
               display: "block",
               width: "100%",
@@ -171,10 +206,18 @@ const Component = observer(({ state }: { state: State }) => {
           {
             label: "Avg Temp",
             value: avgTemp.toFixed(1),
-            color: color.accent,
+            color: color.reference,
           },
-          { label: "Coldest", value: minTemp.toFixed(1) },
-          { label: "Hottest", value: maxTemp.toFixed(1) },
+          {
+            label: "Coldest",
+            value: minTemp.toFixed(1),
+            color: mixed ? color.series[1] : color.ink,
+          },
+          {
+            label: "Hottest",
+            value: maxTemp.toFixed(1),
+            color: mixed ? color.series[0] : color.ink,
+          },
         ]}
       />
     </PluginSurface>

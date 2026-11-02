@@ -4,6 +4,7 @@ import type { AddParticlesMessage } from "./messages";
 export interface Particle {
   color: string;
   temperature: number;
+  group?: number;
 }
 
 export class State {
@@ -17,6 +18,7 @@ export class State {
     const newParticles = Array.from({ length: message.numParticles }, () => ({
       color: message.color,
       temperature: message.temperature,
+      group: message.group,
     }));
 
     this.particles = [...this.particles, ...newParticles];

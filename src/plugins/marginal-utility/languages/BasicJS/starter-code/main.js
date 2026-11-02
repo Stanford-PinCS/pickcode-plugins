@@ -1,4 +1,10 @@
+// Your choose function picks which fruit to buy each round.
+// Change what it returns, then press Run again.
+
 function choose(mu_a, p_a, mu_b, p_b) {
-    // Write your code in place of this line.
+    // mu = marginal utility, p = price; _a = apple, _b = banana
+    return "apple";
 }
-optimize(choose)
+
+// Go shopping: optimize calls choose once for every fruit you buy.
+optimize(choose);

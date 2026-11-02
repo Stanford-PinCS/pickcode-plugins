@@ -1,14 +1,10 @@
-// Choose a price and quantity to investigate.
-const marketPrice = 1.25;
-const marketQuantity = 0.9;
+// These numbers control the market graph: two curve shifts and your guess.
+// Change one number at a time, then press Run again.
 
-// Send the values to the graph, then draw the point.
-setPrice(marketPrice);
-setQuantity(marketQuantity);
-draw();
+let supplyShift = 0;
+let demandShift = 0;
+let guessPrice = 1.25;
+let guessQuantity = 0.9;
 
-// Try changing one value at a time and run the code again.
-// For example:
-// setPrice(0.75);
-// setQuantity(1.4);
-// draw();
+// Draw the market with your shifts, your guess, and the equilibrium.
+showMarket(supplyShift, demandShift, guessPrice, guessQuantity);

@@ -2,7 +2,7 @@ import { Message } from "../../messages";
 
 const createExports = (sendMessage: (message: Message) => void) => {
     return Promise.resolve({
-        plotLine: (points: any) => {
+        plotLine: (points: ArrayLike<number> | Iterable<number>) => {
             sendMessage({ type: "plotLine", points: Array.from(points) });
         },
 

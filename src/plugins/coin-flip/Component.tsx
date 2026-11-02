@@ -1,7 +1,3 @@
-// Migrated example: plugins/coin-flip/Component.tsx
-// Same behaviour as the current version. 268 lines -> 118. No hex values,
-// no duplicated title bar, no hand-rolled axis code.
-
 import { observer } from "mobx-react-lite";
 import { color, type } from "../../common/tokens";
 import { useRunAnimation } from "../../common/useRunAnimation";
@@ -13,7 +9,6 @@ import {
   ticks,
 } from "../../common/chart";
 import {
-  EMPTY,
   EmptyState,
   PluginStage,
   PluginSurface,
@@ -27,7 +22,6 @@ import State from "./state";
 const ANIM_TOTAL_MS = 5000;
 
 const Component = observer(({ state }: { state: State }) => {
-  console.log("Coin Flip component rendered");
   const points = state.points ?? [];
   const target = state.target ?? 0.5;
   const n = points.length;

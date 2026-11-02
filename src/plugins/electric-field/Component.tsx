@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useRef, useEffect, useMemo, useState } from "react";
-import { color, font } from "../../common/tokens";
+import { color, font, radius } from "../../common/tokens";
 import {
   EMPTY,
   EmptyState,
@@ -36,6 +36,8 @@ const ANIM_TOTAL_MS = Math.max(LINES_MS, RIPPLE_MS + RING_FADE_MS);
 
 const FIELD_LINE_COLOR = color.ink;
 const EQUIPOTENTIAL_COLOR = color.series[3];
+const POSITIVE_COLOR = color.series[0];
+const NEGATIVE_COLOR = color.series[1];
 
 type Charge = { cx: number; cy: number; q: number };
 
@@ -612,15 +614,7 @@ const Component = observer(({ state }: { state: State }) => {
       const cx = p.x * w;
       const cy = p.y * h;
       const positive = p.q >= 0;
-      const fill = positive ? color.accent : "#2f7d8c";
-
-      // Glow
-      ctx.beginPath();
-      ctx.arc(cx, cy, 16, 0, Math.PI * 2);
-      ctx.fillStyle = positive
-        ? "rgba(214,68,107,0.15)"
-        : "rgba(47,125,140,0.15)";
-      ctx.fill();
+      const fill = positive ? POSITIVE_COLOR : NEGATIVE_COLOR;
 
       // Body
       ctx.beginPath();
@@ -629,7 +623,7 @@ const Component = observer(({ state }: { state: State }) => {
       ctx.fill();
 
       // + / − sign
-      ctx.strokeStyle = "#fff";
+      ctx.strokeStyle = color.surface;
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(cx - 5, cy);
@@ -648,7 +642,7 @@ const Component = observer(({ state }: { state: State }) => {
     return (
       <PluginSurface instructions={instructions}>
         <PluginStage>
-          <EmptyState message="Use createParticle(x, y, q) to place charges and see the electric field they create." />
+          <EmptyState message="Press Run to place your charges and see their electric field." />
         </PluginStage>
       </PluginSurface>
     );
@@ -663,12 +657,16 @@ const Component = observer(({ state }: { state: State }) => {
       <PluginStage>
         <canvas
           ref={canvasRef}
+          role="img"
+          aria-label={`Electric field lines and equipotentials around ${particles.length} ${
+            particles.length === 1 ? "charge" : "charges"
+          }: ${positives} positive, ${negatives} negative, net charge ${netCharge.toFixed(1)}`}
           style={{
             width: "100%",
             height: "100%",
             background: color.surfaceRaised,
             border: `1px solid ${color.border}`,
-            borderRadius: 8,
+            borderRadius: radius.md,
             display: "block",
           }}
         />
@@ -680,12 +678,12 @@ const Component = observer(({ state }: { state: State }) => {
           {
             label: "Positive",
             value: positives > 0 ? String(positives) : EMPTY,
-            color: color.accent,
+            color: POSITIVE_COLOR,
           },
           {
             label: "Negative",
             value: negatives > 0 ? String(negatives) : EMPTY,
-            color: "#2f7d8c",
+            color: NEGATIVE_COLOR,
           },
           {
             label: "Net Charge",

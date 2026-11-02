@@ -14,6 +14,9 @@ export type ModelInputs = {
   masses?: number[];            // allowed masses in kg; activeMass must come from this list
   rows: DataRow[];
   activeMass: number;        // which mass to animate on screen, in kg
+  // Downward force on the spring, in N. Optional: defaults to activeMass * g.
+  // Set by hangMass(), which gets it from the student's weight function.
+  weightForce?: number;
 };
 
 export type ModelDisplay = {

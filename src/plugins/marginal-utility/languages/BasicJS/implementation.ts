@@ -3,6 +3,9 @@ import { Message } from "../../messages";
 const createExports = (sendMessage: (message: Message) => void) => {
     return Promise.resolve({
         optimize: (choose: (mu_apple: number, p_apple: number, mu_banana: number, p_banana: number) => string) => {
+            if (typeof choose !== "function") {
+                throw new Error("optimize expects your choose function, like optimize(choose).");
+            }
             let budget = 7;
 
             let appleMU = 30;

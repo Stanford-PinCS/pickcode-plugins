@@ -6,7 +6,7 @@ import {
   PluginSurface,
   StatRow,
 } from "../../common/PluginSurface";
-import { color } from "../../common/tokens";
+import { color, font } from "../../common/tokens";
 import instructions from "./instructions.md?raw";
 import { getSnapshotAtTime } from "./springLabCore";
 import { SpringLabState } from "./state";
@@ -31,6 +31,7 @@ const APPARATUS = {
 
 type WaveRecord = {
   mass: number;
+  weight: number;
   period: number;
   amplitude: number;
   equilibriumExtension: number;
@@ -43,7 +44,23 @@ type WaveStore = typeof globalThis & {
 
 const waveStore = globalThis as WaveStore;
 const waveHistory = (waveStore.__shmWaveHistory ??= []);
-const waveColors = [color.series[0], color.series[1], color.reference];
+// One color per tested setup, in series order. The chart keeps the last few
+// runs so the student can compare them; the newest is always drawn last.
+const waveColors = color.series;
+const MAX_WAVES = waveColors.length;
+let wavesAdded = 0;
+
+const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/** The history entry for this setup: same mass and same stretch. */
+const findWave = (mass: number, equilibriumExtension: number) =>
+  waveHistory.findIndex(
+    (wave) =>
+      Math.abs(wave.mass - mass) < 1e-9 &&
+      Math.abs(wave.equilibriumExtension - equilibriumExtension) < 1e-9
+  );
 
 type Props = {
   state: SpringLabState;
@@ -105,21 +122,35 @@ const Component = observer(({ state }: Props) => {
   }, [state.model]);
 
   useEffect(() => {
-    if (state.phase !== "playing" || !state.model || !state.derived) return;
+    // "done" too: with reduced motion a run can finish before this effect runs.
+    if (
+      (state.phase !== "playing" && state.phase !== "done") ||
+      !state.model ||
+      !state.derived
+    )
+      return;
 
     const mass = state.model.inputs.activeMass;
-    if (waveHistory.some((wave) => Math.abs(wave.mass - mass) < 1e-9)) {
+    const snapshot = getSnapshotAtTime(state.model.inputs, state.derived, 0);
+    const equilibriumExtension = snapshot.equilibriumY - snapshot.naturalEndY;
+
+    // Running the same setup again replays its curve instead of adding one.
+    const existing = findWave(mass, equilibriumExtension);
+    if (existing >= 0) {
+      waveHistory.push(...waveHistory.splice(existing, 1));
       return;
     }
 
-    const snapshot = getSnapshotAtTime(state.model.inputs, state.derived, 0);
     waveHistory.push({
       mass,
+      weight: equilibriumExtension * state.derived.simulationK,
       period: snapshot.hudPeriod,
       amplitude: state.derived.amplitude,
-      equilibriumExtension: snapshot.equilibriumY - snapshot.naturalEndY,
-      stroke: waveColors[waveHistory.length % waveColors.length],
+      equilibriumExtension,
+      stroke: waveColors[wavesAdded % waveColors.length],
     });
+    wavesAdded += 1;
+    if (waveHistory.length > MAX_WAVES) waveHistory.shift();
   }, [state.phase, state.model, state.derived]);
 
   useEffect(() => {
@@ -128,7 +159,10 @@ const Component = observer(({ state }: Props) => {
       const previous = previousTimestamp.current;
       previousTimestamp.current = timestamp;
 
-      if (previous !== null) {
+      if (currentState.phase === "playing" && prefersReducedMotion()) {
+        // Reduced motion: draw the finished curve and a resting mass.
+        currentState.advanceTime(SIMULATION_DURATION - currentState.simTime);
+      } else if (previous !== null) {
         currentState.advanceTime(Math.min((timestamp - previous) / 1000, 0.05));
       }
 
@@ -223,8 +257,8 @@ const Component = observer(({ state }: Props) => {
     context.lineWidth = 1;
     context.strokeRect(left, top, width, height);
 
-    context.fillStyle = color.axis;
-    context.font = "11px ui-sans-serif, system-ui, sans-serif";
+    context.fillStyle = color.inkMuted;
+    context.font = `11px ${font.data}`;
     context.textAlign = "center";
     for (let index = 0; index <= 5; index += 1) {
       const seconds = (index / 5) * SIMULATION_DURATION;
@@ -238,12 +272,12 @@ const Component = observer(({ state }: Props) => {
     }
 
     context.textAlign = "center";
-    context.font = "600 12px ui-sans-serif, system-ui, sans-serif";
-    context.fillText("Time", left + width / 2, CANVAS_HEIGHT - 12);
+    context.font = `600 12px ${font.ui}`;
+    context.fillText("Time (s)", left + width / 2, CANVAS_HEIGHT - 12);
     context.save();
     context.translate(14, top + height / 2);
     context.rotate(-Math.PI / 2);
-    context.fillText("Spring extension (m)", 0, 0);
+    context.fillText("Spring stretch (m)", 0, 0);
     context.restore();
 
     context.save();
@@ -279,12 +313,16 @@ const Component = observer(({ state }: Props) => {
     });
     context.restore();
 
-    context.font = "600 11px ui-sans-serif, system-ui, sans-serif";
+    context.font = `600 11px ${font.data}`;
     context.textAlign = "left";
     waveHistory.forEach((wave, index) => {
       context.fillStyle = wave.stroke;
       context.fillRect(left + 10, top + 10 + index * 17, 8, 8);
-      context.fillText(formatMass(wave.mass), left + 24, top + 18 + index * 17);
+      context.fillText(
+        `${formatMass(wave.mass)}, ${wave.weight.toFixed(2)} N`,
+        left + 24,
+        top + 18 + index * 17
+      );
     });
   }
 
@@ -328,13 +366,15 @@ const Component = observer(({ state }: Props) => {
 
     drawSpring(context, centerX, supportY + 7, massY - 20);
 
-    context.fillStyle = color.series[0];
+    // The mass wears the color of its curve on the chart.
+    const activeWave = waveHistory[waveHistory.length - 1];
+    context.fillStyle = activeWave?.stroke ?? color.series[0];
     context.fillRect(centerX - 25, massY - 20, 50, 40);
     context.strokeStyle = color.axis;
     context.strokeRect(centerX - 25, massY - 20, 50, 40);
 
-    context.fillStyle = color.axis;
-    context.font = "11px ui-sans-serif, system-ui, sans-serif";
+    context.fillStyle = color.inkMuted;
+    context.font = `11px ${font.ui}`;
     context.textAlign = "center";
     context.fillText("equilibrium", centerX, equilibriumY - 6);
     context.fillText("natural length", centerX, naturalEndY - 6);
@@ -356,7 +396,7 @@ const Component = observer(({ state }: Props) => {
       context.lineTo(x + offset, y - segmentHeight / 2);
       context.lineTo(x, y);
     }
-    context.strokeStyle = color.series[1];
+    context.strokeStyle = color.inkMuted;
     context.lineWidth = 2.25;
     context.stroke();
   }
@@ -365,7 +405,7 @@ const Component = observer(({ state }: Props) => {
     return (
       <PluginSurface instructions={instructions}>
         <PluginStage>
-          <EmptyState message="Run your code to configure a spring and compare static and dynamic measurements." />
+          <EmptyState message="Run your code to hang a mass on the spring." />
         </PluginStage>
       </PluginSurface>
     );
@@ -378,6 +418,10 @@ const Component = observer(({ state }: Props) => {
   );
   const method = state.model.inputs.method;
   const extension = snapshot.equilibriumY - snapshot.naturalEndY;
+  const weight = extension * state.derived.simulationK;
+  // Data-collection programs (springLab with rows) also get their method and
+  // row count; a plain hangMass() run doesn't need them.
+  const hasRows = state.derived.rowCount > 0;
 
   return (
     <PluginSurface instructions={instructions}>
@@ -408,33 +452,35 @@ const Component = observer(({ state }: Props) => {
               borderRadius: 4,
             }}
             role="img"
-            aria-label={`Spring-mass system using the ${method} method with ${formatMass(
+            aria-label={`A ${formatMass(
               state.model.inputs.activeMass
-            )}`}
+            )} mass bouncing on a spring. It stretches the spring ${extension.toFixed(
+              3
+            )} m and bounces once every ${snapshot.hudPeriod.toFixed(2)} s.`}
           />
         </div>
       </PluginStage>
 
       <StatRow
         stats={[
-          {
-            label: "Method",
-            value: method === "static" ? "Static" : "Dynamic",
-          },
+          ...(hasRows
+            ? [
+                {
+                  label: "Method",
+                  value: method === "static" ? "Static" : "Dynamic",
+                },
+              ]
+            : []),
           {
             label: "Mass",
             value: formatMass(state.model.inputs.activeMass),
-            color: color.series[0],
           },
-          {
-            label: method === "static" ? "Extension" : "Period",
-            value:
-              method === "static"
-                ? `${extension.toFixed(4)} m`
-                : `${snapshot.hudPeriod.toFixed(3)} s`,
-            color: color.reference,
-          },
-          { label: "Measurements", value: String(state.derived.rowCount) },
+          { label: "Weight", value: `${weight.toFixed(2)} N` },
+          { label: "Stretch", value: `${extension.toFixed(3)} m` },
+          { label: "Period", value: `${snapshot.hudPeriod.toFixed(2)} s` },
+          ...(hasRows
+            ? [{ label: "Measurements", value: String(state.derived.rowCount) }]
+            : []),
         ]}
       />
     </PluginSurface>

@@ -10,10 +10,13 @@ function computeTrueValues(n2: number, h2: number) {
 
     const true_nh3 = Math.min(nh3_from_n2, nh3_from_h2);
 
+    // Treat amounts that differ only by floating-point rounding as equal,
+    // so an exact 1 : 3 ratio like 2 and 6 always reads as "None".
+    const tolerance = 1e-9 * Math.max(1, nh3_from_n2, nh3_from_h2);
     let true_limiting: string;
-    if (nh3_from_n2 < nh3_from_h2) {
+    if (nh3_from_n2 < nh3_from_h2 - tolerance) {
         true_limiting = "n2";
-    } else if (nh3_from_h2 < nh3_from_n2) {
+    } else if (nh3_from_h2 < nh3_from_n2 - tolerance) {
         true_limiting = "h2";
     } else {
         true_limiting = "None";
@@ -31,6 +34,15 @@ function computeTrueValues(n2: number, h2: number) {
 
 let runCounter = 0;
 
+// "neither" (what the lesson teaches) and "None" (older lessons) both mean
+// that no reactant runs out first.
+const normalizeLimiting = (s: string): string => {
+    const t = s.trim().toLowerCase();
+    return t === "neither" ? "none" : t;
+};
+const sameLimiting = (answer: string, truth: string): boolean =>
+    normalizeLimiting(answer) === normalizeLimiting(truth);
+
 type StudentResultObject = {
     h2_reactant_amount?: number;
     n2_reactant_amount?: number;
@@ -38,10 +50,66 @@ type StudentResultObject = {
     limiting_reactant?: string;
 };
 
+const requireAmount = (name: string, value: unknown): number => {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+        throw new Error(`reactGases: ${name} must be a number of moles, like 6.`);
+    }
+    if (value < 0) {
+        throw new Error(`reactGases: ${name} can't be negative. You gave ${value}.`);
+    }
+    if (value > 1000) {
+        throw new Error(`reactGases: ${name} is too big for this reactor. Use 1000 mol or less.`);
+    }
+    return value;
+};
+
 const createExports = (
     sendMessage: (message: FromRuntimeMessage) => void
 ) => {
     return Promise.resolve({
+        /**
+         * The starter code's one visible call. Reacts `h2` and `n2` mol of gas,
+         * asks the student's function which reactant runs out first, and marks
+         * that answer against the true limiting reactant.
+         *
+         * @example reactGases(6, 3, (h2, n2) => "h2");
+         */
+        reactGases: (
+            h2: number,
+            n2: number,
+            findLimiting: (h2: number, n2: number) => unknown
+        ) => {
+            const input_h2 = requireAmount("h2", h2);
+            const input_n2 = requireAmount("n2", n2);
+            if (typeof findLimiting !== "function") {
+                throw new Error(
+                    "reactGases: the third value must be your findLimiting function. Pass it by name: reactGases(h2, n2, findLimiting)."
+                );
+            }
+            const answer = findLimiting(input_h2, input_n2);
+            if (typeof answer !== "string") {
+                throw new Error(
+                    'reactGases: findLimiting needs to return "h2", "n2", or "neither" (in quotes). Check every path has a return line.'
+                );
+            }
+            runCounter++;
+            const trueVals = computeTrueValues(input_n2, input_h2);
+            sendMessage({
+                run_id: runCounter,
+                input_n2,
+                input_h2,
+                true_nh3: trueVals.true_nh3,
+                true_limiting: trueVals.true_limiting,
+                n2_consumed: trueVals.n2_consumed,
+                h2_consumed: trueVals.h2_consumed,
+                n2_remaining: trueVals.n2_remaining,
+                h2_remaining: trueVals.h2_remaining,
+                student_limiting: answer.trim(),
+                limiting_correct:
+                    sameLimiting(answer, trueVals.true_limiting),
+            });
+        },
+
         proceed: (resulting_nh3: () => StudentResultObject | [number, number, number, string]) => {
             runCounter++;
             // Default fallback inputs (used if student function throws)

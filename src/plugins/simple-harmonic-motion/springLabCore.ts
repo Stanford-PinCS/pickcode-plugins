@@ -109,8 +109,13 @@ export function getSnapshotAtTime(
   const k = derived.simulationK;
   const A = derived.amplitude;
 
-  // Static equilibrium: spring stretches by mg/k under mass m.
-  const xEq = (m * G) / k;
+  // Static equilibrium: spring stretches by F/k, where F is the weight
+  // (mg unless the program supplied its own weight force).
+  const force =
+    typeof inputs.weightForce === "number" && Number.isFinite(inputs.weightForce)
+      ? inputs.weightForce
+      : m * G;
+  const xEq = force / k;
   const equilibriumY = SUPPORT_Y_M + NATURAL_LEN_M + xEq;
   const naturalEndY = SUPPORT_Y_M + NATURAL_LEN_M;
 

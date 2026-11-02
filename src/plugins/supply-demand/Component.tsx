@@ -2,6 +2,8 @@ import { observer } from "mobx-react-lite";
 import { useId } from "react";
 import { PAD, VIEW, makeScales, ticks } from "../../common/chart";
 import {
+  EMPTY,
+  EmptyState,
   PluginStage,
   PluginSurface,
   StatRow,
@@ -31,6 +33,10 @@ const BASE_DEMAND: Line = {
 // the drawn points appear one at a time, their guide lines reaching in from
 // the axes (sharing at most POINTS_MS between them).
 const SHIFT_MS = 1200;
+
+// The student's guess points. series[0] and [1] are the curves, and amber is
+// the equilibrium (the reference value), so a guess takes the next series color.
+const GUESS = color.series[3];
 const POINT_MS = 600;
 const POINTS_MS = 2400;
 const PAUSE_MS = 250;
@@ -104,6 +110,22 @@ const Component = observer(({ state }: { state: State }) => {
     ? calculateIntersection(supply, demand)
     : null;
 
+  const lastPoint = points.length ? points[points.length - 1] : null;
+  const formatShift = (i: number) =>
+    moving[i] ? `${shifts[i] > 0 ? "+" : "−"}${Math.abs(shifts[i]).toFixed(2)}` : "None";
+  const formatQP = (q: number, p: number) =>
+    `Q ${Math.max(0, q).toFixed(2)} · P ${Math.max(0, p).toFixed(2)}`;
+
+  if (lines.length === 0 && points.length === 0 && !state.helper) {
+    return (
+      <PluginSurface instructions={instructions}>
+        <PluginStage>
+          <EmptyState message="Run your code to draw the market." />
+        </PluginStage>
+      </PluginSurface>
+    );
+  }
+
   const toChartPoint = ({ x, y }: { x: number; y: number }) => ({
     x: scales.sx(x + 1),
     y: scales.sy(y + 1),
@@ -141,7 +163,19 @@ const Component = observer(({ state }: { state: State }) => {
           preserveAspectRatio="xMidYMid meet"
           style={{ width: "100%", height: "100%" }}
           role="img"
-          aria-label="Supply and demand graph"
+          aria-label={`Supply and demand curves${
+            equilibrium
+              ? ` crossing at quantity ${(equilibrium.x + 1).toFixed(2)}, price ${(
+                  equilibrium.y + 1
+                ).toFixed(2)}`
+              : ""
+          }${
+            lastPoint
+              ? `, with a guess at quantity ${(lastPoint.quantity + 1).toFixed(
+                  2
+                )}, price ${(lastPoint.price + 1).toFixed(2)}`
+              : ""
+          }`}
         >
           <defs>
             <clipPath id={clipId}>
@@ -188,12 +222,14 @@ const Component = observer(({ state }: { state: State }) => {
             {drawCurve(BASE_DEMAND, color.series[1])}
 
             {shownLines.map((line, index) =>
-              drawCurve(
-                line,
-                index === 0 ? color.series[0] : color.series[1],
-                true,
-                `shifted-${index}`
-              )
+              index < 2 && !moving[index]
+                ? null
+                : drawCurve(
+                    line,
+                    index === 0 ? color.series[0] : color.series[1],
+                    true,
+                    `shifted-${index}`
+                  )
             )}
 
             {points.map((point, index) => {
@@ -220,24 +256,26 @@ const Component = observer(({ state }: { state: State }) => {
                     y1={plotted.y}
                     x2={PAD.left + (plotted.x - PAD.left) * reach}
                     y2={plotted.y}
-                    stroke={color.reference}
-                    strokeDasharray="5 4"
+                    stroke={GUESS}
+                    strokeOpacity={0.6}
+                    strokeDasharray="3 4"
                   />
                   <line
                     x1={plotted.x}
                     y1={axisY}
                     x2={plotted.x}
                     y2={axisY + (plotted.y - axisY) * reach}
-                    stroke={color.reference}
-                    strokeDasharray="5 4"
+                    stroke={GUESS}
+                    strokeOpacity={0.6}
+                    strokeDasharray="3 4"
                   />
                   <circle
                     cx={plotted.x}
                     cy={plotted.y}
-                    r={4.5 * pop}
-                    fill={color.reference}
-                    stroke={color.surfaceRaised}
-                    strokeWidth={1.5}
+                    r={8 * pop}
+                    fill="none"
+                    stroke={GUESS}
+                    strokeWidth={2.5}
                   />
                 </g>
               );
@@ -250,22 +288,22 @@ const Component = observer(({ state }: { state: State }) => {
                   y1={scales.sy(equilibrium.y + 1)}
                   x2={scales.sx(equilibrium.x + 1)}
                   y2={scales.sy(equilibrium.y + 1)}
-                  stroke={color.axis}
-                  strokeDasharray="6 5"
+                  stroke={color.reference}
+                  strokeDasharray="8 5"
                 />
                 <line
                   x1={scales.sx(equilibrium.x + 1)}
                   y1={scales.sy(0)}
                   x2={scales.sx(equilibrium.x + 1)}
                   y2={scales.sy(equilibrium.y + 1)}
-                  stroke={color.axis}
-                  strokeDasharray="6 5"
+                  stroke={color.reference}
+                  strokeDasharray="8 5"
                 />
                 <circle
                   cx={scales.sx(equilibrium.x + 1)}
                   cy={scales.sy(equilibrium.y + 1)}
                   r={5}
-                  fill={color.axis}
+                  fill={color.reference}
                   stroke={color.surfaceRaised}
                   strokeWidth={1.5}
                 />
@@ -349,28 +387,28 @@ const Component = observer(({ state }: { state: State }) => {
       <StatRow
         stats={[
           {
-            label: "Market Points",
-            value: String(state.pointsCount),
-          },
-          {
-            label: "Supply",
-            value: state.lines.length >= 1 ? "Shifted" : "Base",
+            label: "Supply Shift",
+            value: formatShift(0),
             color: color.series[0],
           },
           {
-            label: "Demand",
-            value: state.lines.length >= 2 ? "Shifted" : "Base",
+            label: "Demand Shift",
+            value: formatShift(1),
             color: color.series[1],
           },
           {
             label: "Equilibrium",
             value: equilibrium
-              ? `Q ${Math.max(0, equilibrium.x + 1).toFixed(2)} · P ${Math.max(
-                  0,
-                  equilibrium.y + 1
-                ).toFixed(2)}`
+              ? formatQP(equilibrium.x + 1, equilibrium.y + 1)
               : "Hidden",
             color: color.reference,
+          },
+          {
+            label: "Your Guess",
+            value: lastPoint
+              ? formatQP(lastPoint.quantity + 1, lastPoint.price + 1)
+              : EMPTY,
+            color: GUESS,
           },
         ]}
       />

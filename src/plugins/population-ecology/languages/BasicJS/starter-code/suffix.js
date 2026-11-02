@@ -1,2 +1,1 @@
-;[N0, r] = getPopulationParameters();
-createSimulationExponential(N0, r, 10, 2000);
+// Nothing runs after your code. simulatePopulation (in the hidden prefix) runs the simulation.

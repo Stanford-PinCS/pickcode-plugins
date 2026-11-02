@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
-import { color } from "../../common/tokens";
+import { color, type } from "../../common/tokens";
 import { PAD, VIEW, makeScales, niceStep, ticks } from "../../common/chart";
 import {
   progressBetween,
@@ -43,6 +43,15 @@ function recoverCounts(percentages: number[]): number[] | null {
 }
 
 /**
+ * Counts from percentages when the code also said how many rolls there were.
+ * Falls back to recoverCounts if they don't add up (hand-made percentages).
+ */
+function countsFromTotal(percentages: number[], total: number): number[] | null {
+  const counts = percentages.map((p) => Math.round((p * total) / 100));
+  return counts.reduce((a, b) => a + b, 0) === total ? counts : null;
+}
+
+/**
  * The rolls behind the counts, in random order. Given only the counts, every
  * order is equally likely, so this replay is statistically the same as the
  * real sequence of rolls.
@@ -63,11 +72,14 @@ const Component = observer(({ state }: { state: State }) => {
   const percentages = state.percentages ?? [];
   const numSides = percentages.length;
   const target = state.target ?? 0;
+  const knownTotal = state.totalRolls;
 
   const rolls = useMemo(() => {
-    const counts = recoverCounts(percentages);
+    const counts =
+      (knownTotal ? countsFromTotal(percentages, knownTotal) : null) ??
+      recoverCounts(percentages);
     return counts ? shuffledRolls(counts) : null;
-  }, [percentages]);
+  }, [percentages, knownTotal]);
   const totalRolls = rolls?.length ?? 0;
 
   // Roll k lands at ANIM_TOTAL_MS · (k / N)^a. The exponent puts the first
@@ -233,7 +245,7 @@ const Component = observer(({ state }: { state: State }) => {
                 x={scales.sx(face)}
                 y={scales.sy(0) + 20}
                 textAnchor="middle"
-                style={{ fontSize: 11, fill: color.inkMuted }}
+                style={type.tick}
               >
                 {face}
               </text>
@@ -246,7 +258,7 @@ const Component = observer(({ state }: { state: State }) => {
               x={PAD.left - 8}
               y={scales.sy(value) + 4}
               textAnchor="end"
-              style={{ fontSize: 11, fill: color.inkMuted }}
+              style={type.tick}
             >
               {value.toFixed(1)}%
             </text>
@@ -256,11 +268,7 @@ const Component = observer(({ state }: { state: State }) => {
             x={PAD.left + scales.plotWidth / 2}
             y={VIEW.height - 8}
             textAnchor="middle"
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              fill: color.inkMuted,
-            }}
+            style={type.axisTitle}
           >
             Die Face
           </text>
@@ -270,11 +278,7 @@ const Component = observer(({ state }: { state: State }) => {
             y={PAD.top + scales.plotHeight / 2}
             textAnchor="middle"
             transform={`rotate(-90, 14, ${PAD.top + scales.plotHeight / 2})`}
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              fill: color.inkMuted,
-            }}
+            style={type.axisTitle}
           >
             Frequency (%)
           </text>
