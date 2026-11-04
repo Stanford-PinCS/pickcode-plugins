@@ -297,11 +297,11 @@ Real polymerase makes about 1 mistake per 100,000 bases. What keeps the final er
 - [ ] Helicase unzips the DNA more slowly
 - [x] Polymerase proofreads each new pair and fixes mismatches
 - [ ] The new strand is built from 3' to 5'
-> Polymerase checks each new pair and replaces a mismatched base, leaving about 1 mistake per billion bases.
+> Polymerase checks each new pair and replaces a mismatched base, cutting mistakes to about 1 per 10 million bases. Repair enzymes fix most of the rest, leaving about 1 mistake per billion bases.
 </Question>
 
 ## Wrap up
 
 You wrote the base-pairing rules as an `if` and <JavaScript>`else if`</JavaScript><Python>`elif`</Python> chain: A to T, T to A, G to C, C to G. Your `for` loop applied them to every base, like DNA polymerase stepping along the template. You counted G–C pairs with an `if` inside the loop, and used <JavaScript>`Math.random()`</JavaScript><Python>`random.random()`</Python> to model copying mistakes.
 
-Each copy keeps one old strand and one new strand: semi-conservative replication. The same pairing idea shows up again in transcription, when a cell copies DNA into RNA to make proteins.
+Each copy keeps one old strand and one new strand: semi-conservative replication. The same pairing idea shows up again in transcription, when a cell copies DNA into RNA to make proteins. RNA uses U in place of T, so an A on the DNA pairs with a U.

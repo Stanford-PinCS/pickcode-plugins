@@ -98,7 +98,8 @@ const Component = observer(({ state }: { state: State }) => {
   let gcPairs = 0;
   for (let j = 0; j < placed; j++) {
     if (!isMatch(j)) mismatches++;
-    if (template[j] === "G" || template[j] === "C") gcPairs++;
+    // A mutated base across from a G or C isn't a G-C pair.
+    if (isMatch(j) && (template[j] === "G" || template[j] === "C")) gcPairs++;
   }
 
   const block = (
