@@ -11,7 +11,7 @@ import {
 import { readTermsBlock } from "./keyTerms";
 import { remarkTermMark } from "./keyTermMarks";
 import { QuestionCard } from "./QuestionCard";
-import { KeyTermLayer, openArticleFromFrame } from "./KeyTermLayer";
+import { KeyTermLayer } from "./KeyTermLayer";
 
 /**
  * The instruction band at the top of every plugin pane.
@@ -44,7 +44,7 @@ const STEP_KEY = "pincs-instructions-step";
 const HEIGHT_KEY = "pincs-instructions-height";
 
 // sessionStorage throws (not just returns empty) on the opaque origin of a
-// sandbox="allow-scripts"-only iframe, which is exactly how PinCS renders
+// sandboxed iframe without allow-same-origin, which is exactly how PinCS renders
 // plugin bundles. Both accessors below fall back to unpersisted state there.
 function readStored(key: string, fallback: number): number {
   try {
@@ -338,7 +338,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
         userSelect: dragging ? "none" : undefined,
       }}
     >
-      {terms.length > 0 && <KeyTermLayer openArticle={openArticleFromFrame} />}
+      {terms.length > 0 && <KeyTermLayer />}
       <div
         style={{
           flex: 1,

@@ -16,7 +16,7 @@ import type { Question } from "./instructionSteps";
  */
 /**
  * sessionStorage *throws* (rather than returning null) on the opaque origin of
- * a sandbox="allow-scripts" iframe, which is exactly how the PinCS site renders
+ * a sandboxed iframe without allow-same-origin, which is exactly how the PinCS site renders
  * plugin bundles — same reason PluginInstructions guards its own reads. An
  * unpersisted question still works; a thrown exception would blank the pane.
  */
