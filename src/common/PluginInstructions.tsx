@@ -7,12 +7,11 @@ import {
   parseStepBody,
   parseSteps,
   type CodeLanguage,
-} from "../common/instructionSteps";
+} from "./instructionSteps";
+import { readTermsBlock } from "./keyTerms";
+import { remarkTermMark } from "./keyTermMarks";
 import { QuestionCard } from "./QuestionCard";
-import { openArticleFromFrame } from "./keyterms/openArticle";
-import { readTermsBlock } from "./keyterms/termsBlock";
-import { remarkTermMark } from "./keyterms/remarkTermMark";
-import { TermLayer } from "./keyterms/TermLayer";
+import { KeyTermLayer, openArticleFromFrame } from "./KeyTermLayer";
 
 /**
  * The instruction band at the top of every plugin pane.
@@ -339,7 +338,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
         userSelect: dragging ? "none" : undefined,
       }}
     >
-      {terms.length > 0 && <TermLayer openArticle={openArticleFromFrame} />}
+      {terms.length > 0 && <KeyTermLayer openArticle={openArticleFromFrame} />}
       <div
         style={{
           flex: 1,
