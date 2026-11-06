@@ -25,6 +25,12 @@ Each plugin has exactly these files. Nothing else goes in a plugin folder.
 | `instructions.md`   | Student-facing explanation            | HTML, styling                      |
 | `languages/<lang>/` | Starter code + exports                | Rendering                          |
 
+`instructions.md` may end with a hidden `<!-- pincs-key-terms … -->` block: the
+plugin's key terms, written by Plugin Studio's Key terms tab.
+`PluginInstructions` hides the block and underlines the terms in the text. It's
+the one exception to "no HTML" in that file, so keep it at the end when you edit
+the instructions. See `docs/term-definitions.md` in interactive-lessons-site.
+
 ## Hard rules
 
 1. **No raw hex values, ever.** Every color comes from `shared/tokens.ts`. If

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { color, font, radius, space } from "./tokens";
@@ -7,8 +7,11 @@ import {
   parseStepBody,
   parseSteps,
   type CodeLanguage,
-} from "../common/instructionSteps";
+} from "./instructionSteps";
+import { readTermsBlock } from "./keyTerms";
+import { remarkTermMark } from "./keyTermMarks";
 import { QuestionCard } from "./QuestionCard";
+import { KeyTermLayer } from "./KeyTermLayer";
 
 /**
  * The instruction band at the top of every plugin pane.
@@ -41,7 +44,7 @@ const STEP_KEY = "pincs-instructions-step";
 const HEIGHT_KEY = "pincs-instructions-height";
 
 // sessionStorage throws (not just returns empty) on the opaque origin of a
-// sandbox="allow-scripts"-only iframe, which is exactly how PinCS renders
+// sandboxed iframe without allow-same-origin, which is exactly how PinCS renders
 // plugin bundles. Both accessors below fall back to unpersisted state there.
 function readStored(key: string, fallback: number): number {
   try {
@@ -190,8 +193,11 @@ function hostLanguage(): CodeLanguage | null {
 }
 
 export function PluginInstructions({ markdown }: { markdown: string }) {
-  const steps = parseSteps(filterForLanguage(markdown, hostLanguage()));
+  // The key terms written in Plugin Studio are stored after the instructions; students only see the instructions.
+  const { body, terms } = useMemo(() => readTermsBlock(markdown), [markdown]);
+  const steps = parseSteps(filterForLanguage(body, hostLanguage()));
   const [index, setIndex] = useState(() => readStored(STEP_KEY, 0));
+  const remarkPlugins = useMemo(() => [remarkGfm, remarkTermMark(terms)], [terms]);
 
   const goTo = (i: number) => {
     setIndex(i);
@@ -332,6 +338,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
         userSelect: dragging ? "none" : undefined,
       }}
     >
+      {terms.length > 0 && <KeyTermLayer />}
       <div
         style={{
           flex: 1,
@@ -375,7 +382,7 @@ export function PluginInstructions({ markdown }: { markdown: string }) {
           ) : (
             <ReactMarkdown
               key={i}
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={remarkPlugins}
               components={markdownComponents}
             >
               {segment.markdown}
