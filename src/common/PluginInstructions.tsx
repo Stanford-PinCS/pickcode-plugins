@@ -69,11 +69,12 @@ const markdownComponents = {
   p: ({ children }: { children?: React.ReactNode }) => (
     <p style={{ margin: `0 0 ${space.sm}px` }}>{children}</p>
   ),
+  // Tailwind's preflight sets `list-style: none` on every list, which left the indent with no bullet or number in front of it, so name the marker here.
   ul: ({ children }: { children?: React.ReactNode }) => (
-    <ul style={{ margin: `0 0 ${space.sm}px`, paddingLeft: 18 }}>{children}</ul>
+    <ul style={{ margin: `0 0 ${space.sm}px`, paddingLeft: 18, listStyle: "disc" }}>{children}</ul>
   ),
   ol: ({ children }: { children?: React.ReactNode }) => (
-    <ol style={{ margin: `0 0 ${space.sm}px`, paddingLeft: 18 }}>{children}</ol>
+    <ol style={{ margin: `0 0 ${space.sm}px`, paddingLeft: 18, listStyle: "decimal" }}>{children}</ol>
   ),
   li: ({ children }: { children?: React.ReactNode }) => (
     <li style={{ margin: "2px 0" }}>{children}</li>
