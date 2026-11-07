@@ -167,4 +167,4 @@ For n = 10 and p = 0.7, μ_X = 7. What does that mean in context?
 
 You wrote `choose`, a function whose for loop builds up a product in an accumulator, and `binomialProbability` called it for the binomial coefficient in P(X = x) = (n choose x) · p^x · (1 − p)^(n − x). Once `choose` counted every order, the probabilities added up to 1 and matched the relative frequencies from 10,000 simulated sessions. The mean μ_X = np and standard deviation σ_X = √(np(1 − p)) gave the center and spread: with p = 0.5 the distribution was symmetric about np, and with 50 trials it spread into a smooth mound.
 
-Next, you'll use simulation to see how a statistic varies from one random sample to the next.
+Next, in **Confidence Intervals**, 100 pollsters each turn a random sample into a confidence interval for the proportion of students who support a later start time.

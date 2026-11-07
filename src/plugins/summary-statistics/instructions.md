@@ -153,4 +153,4 @@ When 58 became 98 in Step 3, which of these changed?
 
 You wrote `median`, a function that uses a list index to find the middle value and an if / else with `%` to handle a list with an even number of values. `drawBoxplot` called it three times, on the whole list and on each half, to get the median, Q1 and Q3 of the five-number summary. The boxplot showed the 1.5 × IQR rule marking an outlier. The mean sat to the right of the median in this skewed-right distribution, and it moved when the outlier grew while the resistant median and IQR stayed put.
 
-Next, you'll compare the distributions of two groups side by side.
+Next, in **Binomial Distribution**, you'll build the probability distribution of a basketball player's made free throws and check it against a simulation.

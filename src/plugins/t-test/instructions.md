@@ -197,4 +197,4 @@ In Step 2's test of Ha: μ < 500, which of these would be a Type I error?
 
 You wrote `standardDeviation`, a function whose for loop adds up squared deviations, the same way `mean` adds up values. `tStatistic` called both functions to find t = (x̄ − μ0) / (s / √n), and the p-value came from the t-distribution with n − 1 degrees of freedom. The p-value follows the direction of Ha: a two-sided test counts both tails, a one-sided test only the tail Ha points to. With a p-value ≤ α = 0.05, the inspector rejected H0. But when H0 was true, the test still rejected it in about 5% of samples, because the probability of a Type I error is α.
 
-Next, you'll use a two-sample t-test to compare the means of two populations.
+Next, in **Least-Squares Regression**, you'll find the line that best predicts test scores from hours studied.

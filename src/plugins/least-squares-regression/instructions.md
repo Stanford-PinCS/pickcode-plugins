@@ -196,5 +196,3 @@ In Step 3, why did one student who studied 12 hours and scored 50 change the slo
 ## Wrap up
 
 You wrote `slope`, a function whose for loop walks through two parallel lists at the same index and adds up two sums at once, Σ(xᵢ − x̄)(yᵢ − ȳ) and Σ(xᵢ − x̄)². Their quotient is the slope of the least-squares regression line, the line that makes the sum of the squared residuals as small as possible. For these students it was ŷ = 48 + 5x, with r = 0.89, r² = 0.8 and a residual plot with no pattern. You used it to predict a score by interpolation and read its slope in context. Then one student who didn't fit the pattern pulled the slope from 5 to 2.01 and r from 0.89 to 0.41.
-
-Next, you'll use residual plots to decide when a straight line isn't the right model for two quantitative variables.

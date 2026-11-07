@@ -166,4 +166,4 @@ Two pollsters both found p̂ = 0.60. One asked 50 students and got the 95% confi
 
 You wrote `confidenceInterval`, a function that returns a list of two values: p̂ − z\* × SE and p̂ + z\* × SE, with a square root for the standard error SE = √(p̂(1 − p̂) / n). 100 random samples showed what a confidence level means: about 95% of the 95% intervals and about 90% of the 90% intervals captured p. A lower confidence level made the intervals narrower, and so did a larger sample size, with the width about proportional to 1 / √n.
 
-Next, you'll set up a significance test for a claim about a population proportion.
+Next, in **One-Sample t-Test**, you'll test a cereal company's claim about the mean weight of its boxes.
