@@ -6,6 +6,7 @@
     "scripts": {
         "init-plugin": "tsx .scripts/init-module.ts",
         "update-plugin": "tsx .scripts/update-plugin.ts",
+        "check-plugins": "tsx .scripts/check-plugin-code.ts",
         "start": "vite",
         "build": "vite build",
         "build:plugins": "vite build --mode plugins",
