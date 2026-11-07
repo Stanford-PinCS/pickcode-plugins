@@ -16,6 +16,23 @@
       "solutionUrl": "/plugins-code/acid-base-titration/solutions/solutionCode.py"
     }
   },
+  "binomial-distribution": {
+    "instructionsUrl": "/plugins-code/binomial-distribution/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/binomial-distribution/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/binomial-distribution/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/binomial-distribution/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/binomial-distribution/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/binomial-distribution/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/binomial-distribution/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/binomial-distribution/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/binomial-distribution/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/binomial-distribution/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/binomial-distribution/solutions/solutionCode.py"
+    }
+  },
   "canvas": {
     "BasicJS": {
       "implUrl": "/plugins-code/canvas/languages/BasicJS/implementation.js",
@@ -77,6 +94,23 @@
       "prefixUrl": "/plugins-code/coin-flip/languages/Python/starter-code/prefix.py",
       "suffixUrl": "/plugins-code/coin-flip/languages/Python/starter-code/suffix.py",
       "solutionUrl": "/plugins-code/coin-flip/solutions/solutionCode.py"
+    }
+  },
+  "confidence-intervals": {
+    "instructionsUrl": "/plugins-code/confidence-intervals/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/confidence-intervals/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/confidence-intervals/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/confidence-intervals/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/confidence-intervals/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/confidence-intervals/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/confidence-intervals/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/confidence-intervals/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/confidence-intervals/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/confidence-intervals/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/confidence-intervals/solutions/solutionCode.py"
     }
   },
   "console": {
@@ -268,6 +302,23 @@
       "solutionUrl": "/plugins-code/heat-transfer/solutions/solutionCode.py"
     }
   },
+  "least-squares-regression": {
+    "instructionsUrl": "/plugins-code/least-squares-regression/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/least-squares-regression/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/least-squares-regression/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/least-squares-regression/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/least-squares-regression/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/least-squares-regression/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/least-squares-regression/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/least-squares-regression/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/least-squares-regression/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/least-squares-regression/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/least-squares-regression/solutions/solutionCode.py"
+    }
+  },
   "limiting-reactant": {
     "instructionsUrl": "/plugins-code/limiting-reactant/instructions.md",
     "BasicJS": {
@@ -407,6 +458,23 @@
       "solutionUrl": "/plugins-code/simple-harmonic-motion/solutions/solutionCode.js"
     }
   },
+  "summary-statistics": {
+    "instructionsUrl": "/plugins-code/summary-statistics/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/summary-statistics/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/summary-statistics/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/summary-statistics/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/summary-statistics/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/summary-statistics/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/summary-statistics/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/summary-statistics/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/summary-statistics/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/summary-statistics/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/summary-statistics/solutions/solutionCode.py"
+    }
+  },
   "supply-demand": {
     "instructionsUrl": "/plugins-code/supply-demand/instructions.md",
     "BasicJS": {
@@ -430,6 +498,23 @@
       "prefixUrl": "/plugins-code/synapse-transmission/languages/Python/starter-code/prefix.py",
       "suffixUrl": "/plugins-code/synapse-transmission/languages/Python/starter-code/suffix.py",
       "solutionUrl": "/plugins-code/synapse-transmission/solutions/solutionCode.py"
+    }
+  },
+  "t-test": {
+    "instructionsUrl": "/plugins-code/t-test/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/t-test/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/t-test/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/t-test/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/t-test/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/t-test/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/t-test/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/t-test/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/t-test/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/t-test/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/t-test/solutions/solutionCode.py"
     }
   }
 }
