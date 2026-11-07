@@ -24,11 +24,14 @@ const RAISE_MS = 500;
 // Layout, in the shared VIEW width. The demand curve sits on top and the total revenue bars below it, on the same quantity scale. The left edge leaves room for dollar ticks of up to six characters, like $3,000, or $48K on an axis that reaches $10,000, whose graph writes every amount in short form.
 const LEFT = PAD.left + 16;
 const RIGHT = VIEW.width - PAD.right;
+// The legend and the key (what each stretch's number and color mean, then what the brackets show) get rows of their own above the demand graph, out of the curve's reach: the price axis ends at least 5% above the highest price, so no point is drawn within 8 px of DEMAND_TOP, and an elasticity label rises at most 18 px above its stretch.
 const LEGEND_Y = 14;
-const DEMAND_TOP = 34;
-const DEMAND_BOTTOM = 206;
-const REVENUE_TOP = 250;
-const REVENUE_BOTTOM = 372;
+const KEY_Y = 28;
+const BRACKET_KEY_Y = 42;
+const DEMAND_TOP = 56;
+const DEMAND_BOTTOM = 228;
+const REVENUE_TOP = 272;
+const REVENUE_BOTTOM = 394;
 const HEIGHT = REVENUE_BOTTOM + 48;
 const POINT_R = 3.5;
 const LABEL_GAP = 14;
@@ -47,7 +50,7 @@ const RANGE_COLOR: Record<Range, string> = {
 /** A number with at most two decimals and no trailing zeros, written with a true minus sign. A number that isn't 0 but would round to 0 that way keeps two significant digits instead, like 0.0014. */
 const fmt = (v: number) => String(Number(v !== 0 && Math.abs(v) < 0.005 ? v.toPrecision(2) : v.toFixed(2))).replace(/-/g, "−");
 
-/** Dollars with thousands separators, like $2,400 or −$450, with cents only when the amount isn't a whole number of dollars, like $12.50. */
+/** Dollars with thousands separators, like $3,150 or −$800, with cents only when the amount isn't a whole number of dollars, like $12.50. */
 function money(v: number): string {
   const cents = Math.round(Math.abs(v) * 100);
   if (cents === 0) return "$0";
@@ -55,14 +58,14 @@ function money(v: number): string {
   return `${v < 0 ? "−" : ""}$${digits}`;
 }
 
-/** Dollars in short form, like $5K, $48K or $2.25M, for a graph whose axis reaches $10,000. An amount under $1,000 has no short form, so it's written as money writes it, like $450 or $12.50. */
+/** Dollars in short form, like $5K, $48K or $2.25M, for a graph whose axis reaches $10,000. An amount under $1,000 has no short form, so it's written as money writes it, like $800 or $12.50. */
 function moneyShort(v: number): string {
   if (Math.round(Math.abs(v) * 100) < 100000) return money(v);
   const digits = Math.abs(v).toLocaleString("en-US", { notation: "compact", maximumSignificantDigits: 3 });
   return `${v < 0 ? "−" : ""}$${digits}`;
 }
 
-/** A change in dollars with its sign, like +$450 or −$450, written by `write`. */
+/** A change in dollars with its sign, like +$800 or −$800, or $0 for no change, written by `write`. */
 const moneyChange = (v: number, write: (v: number) => string = money) => (v > 0 && write(v) !== "$0" ? `+${write(v)}` : write(v));
 
 /** A quantity with thousands separators, like 20,000. */
@@ -161,11 +164,11 @@ function describeWalk(walk: Walk): string {
   const tops = walk.topPoints.map((j) => money(prices[j])).join(" and ");
   const tested = stretches
     .filter((s) => s.tested)
-    .map((s) => `${between(s.index)}: price ${percent(s.percentPrice)}, quantity ${percent(s.percentQuantity)}, total revenue ${moneyChange(s.revenueChange)}`);
+    .map((s) => `${between(s.index)}: price ${percent(s.percentPrice)}, quantity demanded ${percent(s.percentQuantity)}, change in total revenue ${moneyChange(s.revenueChange)}`);
   return (
     `Demand curve through ${prices.length} prices. Your elasticity and range for each price increase: ${each.join("; ")}. ` +
     `Total revenue at each price: ${revenues.map(money).join(", ")}; the highest is ${money(walk.topRevenue)}, at ${tops}.` +
-    (tested.length > 0 ? ` Tested price increases: ${tested.join("; ")}.` : "")
+    (tested.length > 0 ? ` Tested price increases, with percentage changes by the midpoint method: ${tested.join("; ")}.` : "")
   );
 }
 
@@ -245,9 +248,14 @@ function Plot({ walk, t, timing }: { walk: Walk; t: number; timing: Timing }) {
         <line key={`rgrid-${r}`} x1={LEFT} y1={sr(r)} x2={RIGHT} y2={sr(r)} stroke={color.grid} />
       ))}
 
-      <text x={RIGHT - 4} y={DEMAND_TOP + 12} textAnchor="end" style={type.tick}>
+      <text x={RIGHT - 4} y={KEY_Y} textAnchor="end" style={type.tick}>
         Number: your elasticity · Color: your describe
       </text>
+      {raiseLabelP > 0 && tested.length > 0 && (
+        <text x={RIGHT - 4} y={BRACKET_KEY_Y} textAnchor="end" opacity={raiseLabelP} style={type.tick}>
+          Brackets: % changes by the midpoint method
+        </text>
+      )}
 
       {/* Total revenue at each price, rising as the walk reaches it. */}
       {revenues.map((r, j) => {
@@ -279,7 +287,7 @@ function Plot({ walk, t, timing }: { walk: Walk; t: number; timing: Timing }) {
           </g>
         ))}
 
-      {/* Each tested price increase: guides from its two points to the axes, and brackets on the axes with the percentage changes in price and in quantity demanded. */}
+      {/* Each tested price increase: guides from its two points to the axes, and brackets on the axes with the percentage changes in price and in quantity demanded, both by the midpoint method. */}
       {raiseP > 0 &&
         tested.map((s) => {
           const { a, b } = geometry[s.index];

@@ -1,9 +1,9 @@
 import { action, observable } from "mobx";
 import { Message, Range } from "./messages";
 
-/** The percentage change from an old value to a new one, measured from where the change starts: (new − old) ÷ old × 100. */
+/** The percentage change from an old value to a new one by the midpoint method: the change divided by the average of the two values, (new − old) ÷ ((new + old) ÷ 2) × 100. The average is the same whichever way the change goes, so a change and the change that undoes it have the same size. */
 export function percentChange(oldValue: number, newValue: number): number {
-    return ((newValue - oldValue) / oldValue) * 100;
+    return ((newValue - oldValue) / ((newValue + oldValue) / 2)) * 100;
 }
 
 /** Total revenue at one price of the schedule: the price times the quantity demanded there. */
@@ -19,7 +19,7 @@ export interface Stretch {
     elasticity: number;
     /** What the student's describe function returned for that elasticity. */
     range: Range;
-    /** The percentage changes in price and in quantity demanded, each measured from the stretch's lower price. */
+    /** The percentage changes in price and in quantity demanded for the price increase, both by the midpoint method. */
     percentPrice: number;
     percentQuantity: number;
     /** Total revenue at the higher price minus total revenue at the lower one. */

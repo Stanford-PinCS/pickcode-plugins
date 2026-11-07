@@ -1,10 +1,23 @@
 // Hidden helper. Walks up the demand schedule one price increase at a time. For each stretch between two neighboring prices it asks the student's elasticity function for the price elasticity of demand and their describe function for how demand is described there, then sends everything to the graphs on the right, which add the total revenue (price × quantity) at each price.
 const RANGE_NAMES = ["elastic", "inelastic", "unit elastic"];
-// The most total revenue the graphs can label: from $10,000 up they write it in short form, like $48K, and past this the short form stops being short.
-const MAX_REVENUE = 1e15;
+// The prices and quantities the graphs can label: every price from $0.10 to $1,000,000 and every quantity from 1 to 1,000,000,000.
+const LOWEST_PRICE = 0.1;
+const HIGHEST_PRICE = 1e6;
+const LOWEST_QUANTITY = 1;
+const HIGHEST_QUANTITY = 1e9;
 
 function walkDemand(prices, quantities, elasticity, describe, raises = []) {
-    const show = (value) => (typeof value === "string" ? JSON.stringify(value) : String(value));
+    // Shows a value the way it looks in code, so a string "3" or a list [3] can't pass for the number 3. Numbers, undefined and functions go through String, since JSON.stringify would show NaN as null.
+    const show = (value) => {
+        if (typeof value === "string" || (typeof value === "object" && value !== null)) {
+            try {
+                return JSON.stringify(value) ?? String(value);
+            } catch (e) {
+                return String(value);
+            }
+        }
+        return String(value);
+    };
     if (!Array.isArray(prices) || !Array.isArray(quantities)) {
         throw new Error("walkDemand needs two lists of numbers: the prices first, then the quantities.");
     }
@@ -18,8 +31,15 @@ function walkDemand(prices, quantities, elasticity, describe, raises = []) {
         if (typeof value !== "number" || !Number.isFinite(value)) {
             throw new Error(`Every price and quantity should be a number, but one of them is ${show(value)}.`);
         }
-        if (value <= 0) {
-            throw new Error(`Every price and quantity should be more than 0, because percentage changes are measured from them, but one of them is ${value}.`);
+    }
+    for (const price of prices) {
+        if (price < LOWEST_PRICE || price > HIGHEST_PRICE) {
+            throw new Error(`Every price should be from $0.10 to $1,000,000, but one of them is ${price}.`);
+        }
+    }
+    for (const quantity of quantities) {
+        if (quantity < LOWEST_QUANTITY || quantity > HIGHEST_QUANTITY) {
+            throw new Error(`Every quantity should be from 1 to 1,000,000,000, but one of them is ${quantity}.`);
         }
     }
     for (let i = 1; i < prices.length; i++) {
@@ -32,11 +52,6 @@ function walkDemand(prices, quantities, elasticity, describe, raises = []) {
             throw new Error(`By the law of demand, the quantity demanded should fall as the price rises, but it's ${quantities[i - 1]} at $${prices[i - 1]} and ${quantities[i]} at $${prices[i]}.`);
         }
     }
-    for (let i = 0; i < prices.length; i++) {
-        if (!(prices[i] * quantities[i] <= MAX_REVENUE)) {
-            throw new Error(`The total revenue at $${prices[i]} is ${prices[i]} × ${quantities[i]}, more than the graphs can show. Use smaller prices or quantities.`);
-        }
-    }
     if (typeof elasticity !== "function") {
         throw new Error("walkDemand needs your elasticity function as its third input.");
     }
@@ -44,7 +59,7 @@ function walkDemand(prices, quantities, elasticity, describe, raises = []) {
         throw new Error("walkDemand needs your describe function as its fourth input.");
     }
     if (!Array.isArray(raises)) {
-        throw new Error("raises should be a list of prices, like [10, 25], or [] for none.");
+        throw new Error("raises should be a list of prices, like [15, 35, 55], or [] for none.");
     }
     for (const price of raises) {
         if (!prices.slice(0, -1).includes(price)) {

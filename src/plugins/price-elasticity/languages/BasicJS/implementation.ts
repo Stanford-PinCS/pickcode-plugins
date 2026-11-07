@@ -2,8 +2,11 @@ import { Message, Range } from "../../messages";
 
 const MIN_PRICES = 3;
 const MAX_PRICES = 15;
-/** The most total revenue the graphs can label: from $10,000 up they write it in short form, like $48K, and past this the short form stops being short. */
-const MAX_REVENUE = 1e15;
+/** Each price from $0.10 to $1,000,000 and each quantity from 1 to 1,000,000,000. In that range every axis gets round ticks that read as distinct labels (a step of at least $0.05 on the price and total revenue axes, and 0.5 on the quantity axis), short forms stay short (at most $1.5M, 1.5B and $1500T), and no total revenue passes 1e15. */
+const LOWEST_PRICE = 0.1;
+const HIGHEST_PRICE = 1e6;
+const LOWEST_QUANTITY = 1;
+const HIGHEST_QUANTITY = 1e9;
 const RANGES: readonly Range[] = ["elastic", "unit elastic", "inelastic"];
 
 function toNumber(value: unknown, message: string): number {
@@ -41,8 +44,8 @@ const createExports = (sendMessage: (message: Message) => void) => {
         /**
          * Draws the demand curve with each stretch (the price increase from one price to the next) colored by its range and labeled with its elasticity, and the total revenue at each price below it.
          *
-         * @param prices       - The schedule's prices, from 3 to 15 positive numbers from lowest to highest
-         * @param quantities   - The quantity demanded at each price, each a positive number lower than the one before it, with each price × quantity at most 1e15
+         * @param prices       - The schedule's prices, from 3 to 15 numbers from 0.1 to 1e6 (dollars), from lowest to highest
+         * @param quantities   - The quantity demanded at each price, each a number from 1 to 1e9 and lower than the one before it
          * @param elasticities - What the student's elasticity function returned for each stretch, one fewer than the prices
          * @param ranges       - What the student's describe function returned for each stretch: "elastic", "inelastic" or "unit elastic"
          * @param raises       - The prices whose increase to the next price the student wants to test (any but the highest)
@@ -56,18 +59,19 @@ const createExports = (sendMessage: (message: Message) => void) => {
             if (p.length < MIN_PRICES || p.length > MAX_PRICES) {
                 throw new Error(`showDemand needs from ${MIN_PRICES} to ${MAX_PRICES} prices, but it got ${p.length}.`);
             }
-            if ([...p, ...q].some((v) => v <= 0)) {
-                throw new Error("showDemand needs every price and quantity to be more than 0.");
+            const badPrice = p.find((v) => !(v >= LOWEST_PRICE && v <= HIGHEST_PRICE));
+            if (badPrice !== undefined) {
+                throw new Error(`showDemand needs every price to be from $0.10 to $1,000,000, but one of them is ${badPrice}.`);
+            }
+            const badQuantity = q.find((v) => !(v >= LOWEST_QUANTITY && v <= HIGHEST_QUANTITY));
+            if (badQuantity !== undefined) {
+                throw new Error(`showDemand needs every quantity to be from 1 to 1,000,000,000, but one of them is ${badQuantity}.`);
             }
             if (p.some((v, i) => i > 0 && v <= p[i - 1])) {
                 throw new Error("showDemand needs the prices in order from lowest to highest, each one higher than the last.");
             }
             if (q.some((v, i) => i > 0 && v >= q[i - 1])) {
                 throw new Error("showDemand needs each quantity to be lower than the one before it: by the law of demand, the quantity demanded falls as the price rises.");
-            }
-            const tooBig = p.findIndex((v, i) => !(v * q[i] <= MAX_REVENUE));
-            if (tooBig >= 0) {
-                throw new Error(`showDemand: the total revenue at a price of ${p[tooBig]}, ${p[tooBig]} × ${q[tooBig]}, is more than the graphs can show.`);
             }
             const e = toNumbers(elasticities, "elasticities");
             const r = toList(ranges, "ranges").map(toRange);

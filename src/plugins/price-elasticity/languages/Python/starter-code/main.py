@@ -2,8 +2,8 @@
 # Change elasticity so it measures the price elasticity of demand, then fix describe.
 
 # The theater's demand schedule: the quantity of tickets demanded at each price.
-prices = [5, 10, 15, 20, 25, 30, 35]
-quantities = [210, 180, 150, 120, 90, 60, 30]
+prices = [15, 25, 35, 45, 55, 65]
+quantities = [130, 110, 90, 70, 50, 30]
 
 # Price increases to test: each is a price the theater might raise to the next one.
 raises = []

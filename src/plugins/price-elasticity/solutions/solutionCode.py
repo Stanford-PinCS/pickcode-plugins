@@ -2,16 +2,18 @@
 # Change elasticity so it measures the price elasticity of demand, then fix describe.
 
 # The theater's demand schedule: the quantity of tickets demanded at each price.
-prices = [5, 10, 15, 20, 25, 30, 35]
-quantities = [210, 180, 150, 120, 90, 60, 30]
+prices = [15, 25, 35, 45, 55, 65]
+quantities = [130, 110, 90, 70, 50, 30]
 
 # Price increases to test: each is a price the theater might raise to the next one.
-raises = [10, 25]
+raises = [15, 35, 55]
 
 # Returns the magnitude of the price elasticity of demand for a change from old to new.
 def elasticity(oldPrice, oldQuantity, newPrice, newQuantity):
-    percentChangeQuantity = (newQuantity - oldQuantity) / oldQuantity * 100
-    percentChangePrice = (newPrice - oldPrice) / oldPrice * 100
+    averageQuantity = (oldQuantity + newQuantity) / 2
+    averagePrice = (oldPrice + newPrice) / 2
+    percentChangeQuantity = (newQuantity - oldQuantity) / averageQuantity * 100
+    percentChangePrice = (newPrice - oldPrice) / averagePrice * 100
     return abs(percentChangeQuantity / percentChangePrice)
 
 # Describes demand with elasticity e: "elastic", "inelastic" or "unit elastic".
