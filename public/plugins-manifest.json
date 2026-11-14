@@ -18,6 +18,15 @@
   },
   "binomial-distribution": {
     "instructionsUrl": "/plugins-code/binomial-distribution/instructions.md",
+    "catalog": {
+      "title": "Binomial Distribution",
+      "description": "How many of 10 free throws will she make? Build a binomial distribution and check it against 10,000 simulated sessions.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Statistics",
+      "course": "AP Statistics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/binomial-distribution/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/binomial-distribution/languages/BasicJS/starter-code/main.js",
@@ -98,6 +107,15 @@
   },
   "comparative-advantage": {
     "instructionsUrl": "/plugins-code/comparative-advantage/instructions.md",
+    "catalog": {
+      "title": "Comparative Advantage",
+      "description": "Can trade help a country that makes more of everything? Compare opportunity costs and watch both countries gain.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Microeconomics",
+      "course": "AP Microeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/comparative-advantage/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/comparative-advantage/languages/BasicJS/starter-code/main.js",
@@ -115,6 +133,15 @@
   },
   "confidence-intervals": {
     "instructionsUrl": "/plugins-code/confidence-intervals/instructions.md",
+    "catalog": {
+      "title": "Confidence Intervals",
+      "description": "Do most students want a later start time? Build 100 confidence intervals and see how many capture the true proportion.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Statistics",
+      "course": "AP Statistics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/confidence-intervals/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/confidence-intervals/languages/BasicJS/starter-code/main.js",
@@ -219,6 +246,15 @@
   },
   "exchange-rates": {
     "instructionsUrl": "/plugins-code/exchange-rates/instructions.md",
+    "catalog": {
+      "title": "Exchange Rates",
+      "description": "Shift the demand for a currency and watch it appreciate or depreciate, and see what that does to a country's exports.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Macroeconomics",
+      "course": "AP Macroeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/exchange-rates/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/exchange-rates/languages/BasicJS/starter-code/main.js",
@@ -236,6 +272,15 @@
   },
   "externalities": {
     "instructionsUrl": "/plugins-code/externalities/instructions.md",
+    "catalog": {
+      "title": "Externalities",
+      "description": "Paper mills pollute a river. Compare the market quantity with the socially optimal quantity, and fix the gap with a tax.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Microeconomics",
+      "course": "AP Microeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/externalities/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/externalities/languages/BasicJS/starter-code/main.js",
@@ -286,6 +331,15 @@
   },
   "game-theory": {
     "instructionsUrl": "/plugins-code/game-theory/instructions.md",
+    "catalog": {
+      "title": "Game Theory",
+      "description": "Two airlines each pick a high or low price. Find their dominant strategies and the Nash equilibrium, and see why they'd collude.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Microeconomics",
+      "course": "AP Microeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/game-theory/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/game-theory/languages/BasicJS/starter-code/main.js",
@@ -372,6 +426,15 @@
   },
   "least-squares-regression": {
     "instructionsUrl": "/plugins-code/least-squares-regression/instructions.md",
+    "catalog": {
+      "title": "Least-Squares Regression",
+      "description": "Do students who study longer score higher? Find the least-squares regression line and read its residuals.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Statistics",
+      "course": "AP Statistics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/least-squares-regression/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/least-squares-regression/languages/BasicJS/starter-code/main.js",
@@ -406,6 +469,15 @@
   },
   "marginal-revenue-product": {
     "instructionsUrl": "/plugins-code/marginal-revenue-product/instructions.md",
+    "catalog": {
+      "title": "Marginal Revenue Product",
+      "description": "How many pickers should an orchard hire? Keep hiring while each worker's marginal revenue product covers the wage.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Microeconomics",
+      "course": "AP Microeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/marginal-revenue-product/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/marginal-revenue-product/languages/BasicJS/starter-code/main.js",
@@ -456,6 +528,15 @@
   },
   "money-creation": {
     "instructionsUrl": "/plugins-code/money-creation/instructions.md",
+    "catalog": {
+      "title": "Money Creation",
+      "description": "How much new money can banks create from one $1,000 deposit? Follow the loans from bank to bank to the money multiplier.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Macroeconomics",
+      "course": "AP Macroeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/money-creation/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/money-creation/languages/BasicJS/starter-code/main.js",
@@ -512,6 +593,15 @@
   },
   "price-elasticity": {
     "instructionsUrl": "/plugins-code/price-elasticity/instructions.md",
+    "catalog": {
+      "title": "Price Elasticity of Demand",
+      "description": "Should a theater raise its ticket price? Measure the price elasticity of demand and see what happens to total revenue.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Microeconomics",
+      "course": "AP Microeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/price-elasticity/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/price-elasticity/languages/BasicJS/starter-code/main.js",
@@ -529,6 +619,15 @@
   },
   "price-index": {
     "instructionsUrl": "/plugins-code/price-index/instructions.md",
+    "catalog": {
+      "title": "Price Indices and Inflation",
+      "description": "Did Rosa's raises keep up with prices? Build a consumer price index, measure inflation and find her real wage.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Macroeconomics",
+      "course": "AP Macroeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/price-index/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/price-index/languages/BasicJS/starter-code/main.js",
@@ -546,6 +645,15 @@
   },
   "production-possibilities": {
     "instructionsUrl": "/plugins-code/production-possibilities/instructions.md",
+    "catalog": {
+      "title": "Production Possibilities Curve",
+      "description": "What does one more unit of consumption goods cost? Find opportunity costs along a PPC and watch growth shift it outward.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Macroeconomics",
+      "course": "AP Macroeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/production-possibilities/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/production-possibilities/languages/BasicJS/starter-code/main.js",
@@ -563,6 +671,15 @@
   },
   "profit-maximization": {
     "instructionsUrl": "/plugins-code/profit-maximization/instructions.md",
+    "catalog": {
+      "title": "Profit Maximization",
+      "description": "How many crates should a tomato farm grow? Compare marginal revenue with marginal cost, and find when to shut down.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Microeconomics",
+      "course": "AP Microeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/profit-maximization/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/profit-maximization/languages/BasicJS/starter-code/main.js",
@@ -580,6 +697,15 @@
   },
   "quantity-theory": {
     "instructionsUrl": "/plugins-code/quantity-theory/instructions.md",
+    "catalog": {
+      "title": "Quantity Theory of Money",
+      "description": "What happens to prices when the money supply keeps growing? Use the quantity theory of money to follow 10 years of inflation.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Macroeconomics",
+      "course": "AP Macroeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/quantity-theory/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/quantity-theory/languages/BasicJS/starter-code/main.js",
@@ -647,6 +773,15 @@
   },
   "spending-multiplier": {
     "instructionsUrl": "/plugins-code/spending-multiplier/instructions.md",
+    "catalog": {
+      "title": "Spending Multiplier",
+      "description": "How far does $100 million of new spending go? Follow round after round of spending to the expenditure multiplier.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Macroeconomics",
+      "course": "AP Macroeconomics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/spending-multiplier/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/spending-multiplier/languages/BasicJS/starter-code/main.js",
@@ -664,6 +799,15 @@
   },
   "summary-statistics": {
     "instructionsUrl": "/plugins-code/summary-statistics/instructions.md",
+    "catalog": {
+      "title": "Summary Statistics",
+      "description": "How long does the trip to school take? Find the median and quartiles of 25 answers and draw them as a boxplot.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Statistics",
+      "course": "AP Statistics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/summary-statistics/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/summary-statistics/languages/BasicJS/starter-code/main.js",
@@ -706,6 +850,15 @@
   },
   "t-test": {
     "instructionsUrl": "/plugins-code/t-test/instructions.md",
+    "catalog": {
+      "title": "One-Sample t-Test",
+      "description": "Do the cereal boxes really hold 500 grams? Carry out a one-sample t-test and see what its p-value tells you.",
+      "runtime": "javascript",
+      "subject": "Math",
+      "gradeBand": "High School",
+      "topic": "Statistics",
+      "course": "AP Statistics"
+    },
     "BasicJS": {
       "implUrl": "/plugins-code/t-test/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/t-test/languages/BasicJS/starter-code/main.js",
