@@ -7,25 +7,122 @@ import ts from "typescript";
 import { defineConfig } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
+type LanguageEntry = {
+  implUrl: string;
+  // Reference solution for this language, used to verify a student's
+  // code produces the same message sequence. Not every plugin has one.
+  solutionUrl?: string;
+  // Starter/prefix/suffix code for this language, read from that
+  // language's starter-code/ folder. Not every plugin has all three.
+  starterUrl?: string;
+  prefixUrl?: string;
+  suffixUrl?: string;
+};
+
+/** How the site's /plugins page lists a plugin, from its optional catalog.json. The title comes from instructions.md's "# " heading unless catalog.json sets one. */
+type CatalogInfo = {
+  title: string;
+  description: string;
+  subject?: string;
+  gradeBand?: string;
+  topic?: string;
+  course?: string;
+  runtime: "javascript" | "python";
+};
+
 type Manifest = {
   [pluginName: string]: {
     instructionsUrl?: string;
-    [language: string]:
-      | {
-          implUrl: string;
-          // Reference solution for this language, used to verify a student's
-          // code produces the same message sequence. Not every plugin has one.
-          solutionUrl?: string;
-          // Starter/prefix/suffix code for this language, read from that
-          // language's starter-code/ folder. Not every plugin has all three.
-          starterUrl?: string;
-          prefixUrl?: string;
-          suffixUrl?: string;
-        }
-      | string
-      | undefined;
+    catalog?: CatalogInfo;
+    [language: string]: LanguageEntry | CatalogInfo | string | undefined;
   };
 };
+
+// What a plugin's catalog.json may set. The interactive-lessons-site lists a built plugin on /plugins from these, so a new plugin shows up with the right title, subject and course without an admin step.
+const CATALOG_KEYS = ["title", "description", "subject", "gradeBand", "topic", "course", "runtime"];
+// The site's own lists (SUBJECTS and GRADE_BANDS in interactive-lessons-site src/lib/pluginMeta.ts). Keep them in step: the site ignores a value it doesn't know.
+const CATALOG_SUBJECTS = ["Math", "Science", "History", "English"];
+const CATALOG_GRADE_BANDS = ["Middle School", "High School", "College"];
+const CATALOG_RUNTIMES = ["javascript", "python"];
+const MAX_DESCRIPTION = 300;
+
+/** The text of a markdown file's first "# " heading, or undefined when it has none. */
+function firstHeading(markdown: string): string | undefined {
+  const match = /^#\s+(.+?)\s*#*\s*$/m.exec(markdown);
+  return match ? match[1].trim() : undefined;
+}
+
+/** Reads and checks a plugin's optional catalog.json. Returns undefined when there's none; throws a message naming the plugin and the problem when it's malformed, so the build fails instead of listing the plugin wrongly. */
+async function readCatalog(pluginName: string, pluginPath: string): Promise<CatalogInfo | undefined> {
+  let text: string;
+  try {
+    text = await fs.readFile(path.join(pluginPath, "catalog.json"), "utf8");
+  } catch {
+    return undefined;
+  }
+  const where = `src/plugins/${pluginName}/catalog.json`;
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch (e) {
+    throw new Error(`${where} isn't valid JSON: ${(e as Error).message}`);
+  }
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    throw new Error(`${where} should be a JSON object, like {"description": "...", "subject": "Math"}.`);
+  }
+  const record = raw as Record<string, unknown>;
+  for (const [key, value] of Object.entries(record)) {
+    if (!CATALOG_KEYS.includes(key)) {
+      throw new Error(`${where} has an unknown key "${key}". It can set: ${CATALOG_KEYS.join(", ")}.`);
+    }
+    if (typeof value !== "string" || !value.trim()) {
+      throw new Error(`${where}: "${key}" should be a non-empty string.`);
+    }
+  }
+  const field = (key: string) => (record[key] as string | undefined)?.trim();
+  const oneOf = (key: string, allowed: string[]) => {
+    const value = field(key);
+    if (value !== undefined && !allowed.includes(value)) {
+      throw new Error(`${where}: "${key}" is "${value}", but it should be one of: ${allowed.join(", ")}.`);
+    }
+    return value;
+  };
+
+  const description = field("description");
+  if (!description) {
+    throw new Error(`${where} needs a "description": one or two sentences for the plugin's card on /plugins.`);
+  }
+  if (description.length > MAX_DESCRIPTION) {
+    throw new Error(`${where}: "description" is ${description.length} characters; keep it under ${MAX_DESCRIPTION}.`);
+  }
+
+  let title = field("title");
+  if (!title) {
+    try {
+      title = firstHeading(await fs.readFile(path.join(pluginPath, "instructions.md"), "utf8"));
+    } catch {
+      // no instructions.md; the error below says what to add
+    }
+  }
+  if (!title) {
+    throw new Error(`${where} has no title: start instructions.md with a "# Title" line, or set "title".`);
+  }
+
+  const catalog: CatalogInfo = {
+    title,
+    description,
+    runtime: (oneOf("runtime", CATALOG_RUNTIMES) ?? "javascript") as CatalogInfo["runtime"],
+  };
+  const subject = oneOf("subject", CATALOG_SUBJECTS);
+  const gradeBand = oneOf("gradeBand", CATALOG_GRADE_BANDS);
+  const topic = field("topic");
+  const course = field("course");
+  if (subject) catalog.subject = subject;
+  if (gradeBand) catalog.gradeBand = gradeBand;
+  if (topic) catalog.topic = topic;
+  if (course) catalog.course = course;
+  return catalog;
+}
 
 // File extension used for each language's starter-code/{main,prefix,suffix}
 // files.
@@ -67,17 +164,15 @@ function manifestPlugin() {
         // no instructions.md for this plugin, that's fine
       }
 
+      const catalog = await readCatalog(pluginName, pluginPath);
+      if (catalog) manifest[pluginName].catalog = catalog;
+
       const languagesDir = path.join(pluginPath, "languages");
       for (const lang of await fs.readdir(languagesDir)) {
         const langPath = path.join(languagesDir, lang);
         if (!(await fs.stat(langPath)).isDirectory()) continue;
 
-        const entry: {
-          implUrl: string;
-          starterUrl?: string;
-          prefixUrl?: string;
-          suffixUrl?: string;
-        } = {
+        const entry: LanguageEntry = {
           implUrl: `/plugins-code/${pluginName}/languages/${lang}/implementation.js`,
         };
 
@@ -111,7 +206,7 @@ function manifestPlugin() {
         SOLUTION_FILE_TO_LANGUAGE
       )) {
         const langEntry = manifest[pluginName][lang];
-        if (!langEntry || typeof langEntry === "string") continue;
+        if (!langEntry || typeof langEntry === "string" || !("implUrl" in langEntry)) continue;
 
         try {
           await fs.access(path.join(solutionsDir, solutionFile));
@@ -140,9 +235,14 @@ function manifestPlugin() {
     configureServer() {
       // Dev: keep writing a runtime copy into /public so the dev server can serve it
       const out = path.resolve(__dirname, "public", "plugins-manifest.json");
+      // A half-written plugin folder (no languages/ yet) or a malformed catalog.json used to reject here and take the dev server down; log it and keep the last good manifest instead.
       const regenerate = async () => {
-        const manifest = await buildManifest();
-        await fs.writeFile(out, JSON.stringify(manifest, null, 2));
+        try {
+          const manifest = await buildManifest();
+          await fs.writeFile(out, JSON.stringify(manifest, null, 2));
+        } catch (e) {
+          console.error(`plugins-manifest.json not regenerated: ${(e as Error).message}`);
+        }
       };
       regenerate();
       chokidar
