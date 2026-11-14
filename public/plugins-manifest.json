@@ -16,6 +16,23 @@
       "solutionUrl": "/plugins-code/acid-base-titration/solutions/solutionCode.py"
     }
   },
+  "binomial-distribution": {
+    "instructionsUrl": "/plugins-code/binomial-distribution/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/binomial-distribution/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/binomial-distribution/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/binomial-distribution/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/binomial-distribution/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/binomial-distribution/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/binomial-distribution/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/binomial-distribution/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/binomial-distribution/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/binomial-distribution/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/binomial-distribution/solutions/solutionCode.py"
+    }
+  },
   "canvas": {
     "BasicJS": {
       "implUrl": "/plugins-code/canvas/languages/BasicJS/implementation.js",
@@ -77,6 +94,40 @@
       "prefixUrl": "/plugins-code/coin-flip/languages/Python/starter-code/prefix.py",
       "suffixUrl": "/plugins-code/coin-flip/languages/Python/starter-code/suffix.py",
       "solutionUrl": "/plugins-code/coin-flip/solutions/solutionCode.py"
+    }
+  },
+  "comparative-advantage": {
+    "instructionsUrl": "/plugins-code/comparative-advantage/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/comparative-advantage/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/comparative-advantage/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/comparative-advantage/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/comparative-advantage/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/comparative-advantage/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/comparative-advantage/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/comparative-advantage/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/comparative-advantage/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/comparative-advantage/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/comparative-advantage/solutions/solutionCode.py"
+    }
+  },
+  "confidence-intervals": {
+    "instructionsUrl": "/plugins-code/confidence-intervals/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/confidence-intervals/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/confidence-intervals/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/confidence-intervals/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/confidence-intervals/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/confidence-intervals/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/confidence-intervals/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/confidence-intervals/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/confidence-intervals/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/confidence-intervals/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/confidence-intervals/solutions/solutionCode.py"
     }
   },
   "console": {
@@ -166,6 +217,40 @@
       "solutionUrl": "/plugins-code/escape-velocity/solutions/solutionCode.js"
     }
   },
+  "exchange-rates": {
+    "instructionsUrl": "/plugins-code/exchange-rates/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/exchange-rates/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/exchange-rates/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/exchange-rates/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/exchange-rates/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/exchange-rates/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/exchange-rates/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/exchange-rates/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/exchange-rates/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/exchange-rates/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/exchange-rates/solutions/solutionCode.py"
+    }
+  },
+  "externalities": {
+    "instructionsUrl": "/plugins-code/externalities/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/externalities/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/externalities/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/externalities/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/externalities/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/externalities/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/externalities/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/externalities/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/externalities/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/externalities/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/externalities/solutions/solutionCode.py"
+    }
+  },
   "force-addition": {
     "instructionsUrl": "/plugins-code/force-addition/instructions.md",
     "BasicJS": {
@@ -197,6 +282,23 @@
       "prefixUrl": "/plugins-code/forgetting-curve/languages/Python/starter-code/prefix.py",
       "suffixUrl": "/plugins-code/forgetting-curve/languages/Python/starter-code/suffix.py",
       "solutionUrl": "/plugins-code/forgetting-curve/solutions/solutionCode.py"
+    }
+  },
+  "game-theory": {
+    "instructionsUrl": "/plugins-code/game-theory/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/game-theory/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/game-theory/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/game-theory/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/game-theory/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/game-theory/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/game-theory/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/game-theory/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/game-theory/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/game-theory/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/game-theory/solutions/solutionCode.py"
     }
   },
   "gas-laws": {
@@ -268,6 +370,23 @@
       "solutionUrl": "/plugins-code/heat-transfer/solutions/solutionCode.py"
     }
   },
+  "least-squares-regression": {
+    "instructionsUrl": "/plugins-code/least-squares-regression/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/least-squares-regression/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/least-squares-regression/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/least-squares-regression/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/least-squares-regression/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/least-squares-regression/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/least-squares-regression/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/least-squares-regression/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/least-squares-regression/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/least-squares-regression/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/least-squares-regression/solutions/solutionCode.py"
+    }
+  },
   "limiting-reactant": {
     "instructionsUrl": "/plugins-code/limiting-reactant/instructions.md",
     "BasicJS": {
@@ -283,6 +402,23 @@
       "prefixUrl": "/plugins-code/limiting-reactant/languages/Python/starter-code/prefix.py",
       "suffixUrl": "/plugins-code/limiting-reactant/languages/Python/starter-code/suffix.py",
       "solutionUrl": "/plugins-code/limiting-reactant/solutions/solutionCode.py"
+    }
+  },
+  "marginal-revenue-product": {
+    "instructionsUrl": "/plugins-code/marginal-revenue-product/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/marginal-revenue-product/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/marginal-revenue-product/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/marginal-revenue-product/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/marginal-revenue-product/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/marginal-revenue-product/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/marginal-revenue-product/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/marginal-revenue-product/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/marginal-revenue-product/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/marginal-revenue-product/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/marginal-revenue-product/solutions/solutionCode.py"
     }
   },
   "marginal-utility": {
@@ -316,6 +452,23 @@
       "implUrl": "/plugins-code/momentum-2d/languages/BasicJS/implementation.js",
       "starterUrl": "/plugins-code/momentum-2d/languages/BasicJS/starter-code/main.js",
       "solutionUrl": "/plugins-code/momentum-2d/solutions/solutionCode.js"
+    }
+  },
+  "money-creation": {
+    "instructionsUrl": "/plugins-code/money-creation/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/money-creation/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/money-creation/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/money-creation/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/money-creation/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/money-creation/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/money-creation/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/money-creation/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/money-creation/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/money-creation/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/money-creation/solutions/solutionCode.py"
     }
   },
   "music": {
@@ -355,6 +508,91 @@
       "prefixUrl": "/plugins-code/population-ecology/languages/Python/starter-code/prefix.py",
       "suffixUrl": "/plugins-code/population-ecology/languages/Python/starter-code/suffix.py",
       "solutionUrl": "/plugins-code/population-ecology/solutions/solutionCode.py"
+    }
+  },
+  "price-elasticity": {
+    "instructionsUrl": "/plugins-code/price-elasticity/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/price-elasticity/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/price-elasticity/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/price-elasticity/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/price-elasticity/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/price-elasticity/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/price-elasticity/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/price-elasticity/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/price-elasticity/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/price-elasticity/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/price-elasticity/solutions/solutionCode.py"
+    }
+  },
+  "price-index": {
+    "instructionsUrl": "/plugins-code/price-index/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/price-index/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/price-index/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/price-index/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/price-index/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/price-index/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/price-index/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/price-index/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/price-index/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/price-index/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/price-index/solutions/solutionCode.py"
+    }
+  },
+  "production-possibilities": {
+    "instructionsUrl": "/plugins-code/production-possibilities/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/production-possibilities/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/production-possibilities/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/production-possibilities/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/production-possibilities/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/production-possibilities/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/production-possibilities/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/production-possibilities/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/production-possibilities/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/production-possibilities/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/production-possibilities/solutions/solutionCode.py"
+    }
+  },
+  "profit-maximization": {
+    "instructionsUrl": "/plugins-code/profit-maximization/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/profit-maximization/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/profit-maximization/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/profit-maximization/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/profit-maximization/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/profit-maximization/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/profit-maximization/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/profit-maximization/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/profit-maximization/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/profit-maximization/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/profit-maximization/solutions/solutionCode.py"
+    }
+  },
+  "quantity-theory": {
+    "instructionsUrl": "/plugins-code/quantity-theory/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/quantity-theory/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/quantity-theory/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/quantity-theory/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/quantity-theory/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/quantity-theory/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/quantity-theory/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/quantity-theory/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/quantity-theory/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/quantity-theory/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/quantity-theory/solutions/solutionCode.py"
     }
   },
   "reaction-kinetics": {
@@ -407,6 +645,40 @@
       "solutionUrl": "/plugins-code/simple-harmonic-motion/solutions/solutionCode.js"
     }
   },
+  "spending-multiplier": {
+    "instructionsUrl": "/plugins-code/spending-multiplier/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/spending-multiplier/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/spending-multiplier/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/spending-multiplier/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/spending-multiplier/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/spending-multiplier/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/spending-multiplier/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/spending-multiplier/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/spending-multiplier/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/spending-multiplier/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/spending-multiplier/solutions/solutionCode.py"
+    }
+  },
+  "summary-statistics": {
+    "instructionsUrl": "/plugins-code/summary-statistics/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/summary-statistics/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/summary-statistics/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/summary-statistics/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/summary-statistics/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/summary-statistics/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/summary-statistics/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/summary-statistics/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/summary-statistics/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/summary-statistics/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/summary-statistics/solutions/solutionCode.py"
+    }
+  },
   "supply-demand": {
     "instructionsUrl": "/plugins-code/supply-demand/instructions.md",
     "BasicJS": {
@@ -430,6 +702,23 @@
       "prefixUrl": "/plugins-code/synapse-transmission/languages/Python/starter-code/prefix.py",
       "suffixUrl": "/plugins-code/synapse-transmission/languages/Python/starter-code/suffix.py",
       "solutionUrl": "/plugins-code/synapse-transmission/solutions/solutionCode.py"
+    }
+  },
+  "t-test": {
+    "instructionsUrl": "/plugins-code/t-test/instructions.md",
+    "BasicJS": {
+      "implUrl": "/plugins-code/t-test/languages/BasicJS/implementation.js",
+      "starterUrl": "/plugins-code/t-test/languages/BasicJS/starter-code/main.js",
+      "prefixUrl": "/plugins-code/t-test/languages/BasicJS/starter-code/prefix.js",
+      "suffixUrl": "/plugins-code/t-test/languages/BasicJS/starter-code/suffix.js",
+      "solutionUrl": "/plugins-code/t-test/solutions/solutionCode.js"
+    },
+    "Python": {
+      "implUrl": "/plugins-code/t-test/languages/Python/implementation.js",
+      "starterUrl": "/plugins-code/t-test/languages/Python/starter-code/main.py",
+      "prefixUrl": "/plugins-code/t-test/languages/Python/starter-code/prefix.py",
+      "suffixUrl": "/plugins-code/t-test/languages/Python/starter-code/suffix.py",
+      "solutionUrl": "/plugins-code/t-test/solutions/solutionCode.py"
     }
   }
 }

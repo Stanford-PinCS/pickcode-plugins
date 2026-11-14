@@ -24,7 +24,8 @@ async function loadImplementationCode(
     // PyRuntime handles camelCase <-> snake_case bridging.
     const pythonUrl = `/plugins-code/${name}/languages/Python/implementation.js`;
     const pythonRes = await fetch(pythonUrl);
-    if (pythonRes.ok) {
+    // The dev server answers a missing file with the app's index.html and a 200, so only a non-HTML response is a real Python implementation.
+    if (pythonRes.ok && !(pythonRes.headers.get("content-type") ?? "").includes("text/html")) {
       return pythonRes.text();
     }
     const basicUrl = `/plugins-code/${name}/languages/BasicJS/implementation.js`;
