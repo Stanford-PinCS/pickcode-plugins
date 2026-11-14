@@ -24,12 +24,22 @@ Each plugin has exactly these files. Nothing else goes in a plugin folder.
 | `Plugin.tsx`        | Wiring                                | Logic, styling                     |
 | `instructions.md`   | Student-facing explanation            | HTML, styling                      |
 | `languages/<lang>/` | Starter code + exports                | Rendering                          |
+| `catalog.json`      | How /plugins lists it (optional)      | The title, anything but its keys   |
 
 `instructions.md` may end with a hidden `<!-- pincs-key-terms … -->` block: the
 plugin's key terms, written by Plugin Studio's Key terms tab.
 `PluginInstructions` hides the block and underlines the terms in the text. It's
 the one exception to "no HTML" in that file, so keep it at the end when you edit
 the instructions. See `docs/term-definitions.md` in interactive-lessons-site.
+
+`catalog.json` is how the site's /plugins page lists the plugin. It sets
+`description` (required, one or two sentences for the card), `subject` (Math,
+Science, History or English), `gradeBand` (Middle School, High School or
+College), `topic`, `course` (one of the site's courses, e.g. "AP Statistics")
+and `runtime` (`javascript`, the default, or `python`). The title is the
+`# Title` line of `instructions.md`; set `title` only when the card must differ.
+The build checks the file and copies it into `plugins-manifest.json` under
+`catalog`; a mistake fails the build. See README's "Publishing".
 
 ## Hard rules
 

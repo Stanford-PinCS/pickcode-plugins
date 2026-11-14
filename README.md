@@ -45,3 +45,25 @@ You can get started making a new plugin by running the command `npm run init-plu
 To get your plugin up and running for real, or to change an existing plugin, you need to make your changes in another branch and submit a pull request. Soon after the pull request is merged, the plugin will be available in Pickcode's development environment. Before a pull request can be merged, it requires approval from whoever administers the plugin.
 
 To be available in Pickcode's production environment, the code changes need to go out in a production release. Only the pickcode team can put out a production release.
+
+### Listing a plugin on /plugins
+
+Give the plugin a `catalog.json` next to its `instructions.md`:
+
+```json
+{
+  "description": "How long does the trip to school take? Find the median and quartiles of 25 answers and draw them as a boxplot.",
+  "subject": "Math",
+  "gradeBand": "High School",
+  "topic": "Statistics",
+  "course": "AP Statistics"
+}
+```
+
+- `description` is required: one or two sentences for the plugin's card.
+- `subject` is one of Math, Science, History or English, and `gradeBand` one of Middle School, High School or College. These are the site's filters.
+- `course` is one of the site's courses (interactive-lessons-site `src/lib/pluginMeta.ts`); a new course is added there first.
+- `runtime` is `javascript` (the default) or `python`: the language the plugin opens in on /plugins.
+- The card's title is the `# Title` line of `instructions.md`. Set `title` only when the card must say something else.
+
+The build checks the file and copies it into `plugins-manifest.json` under `catalog`, so a typo fails the build instead of listing the plugin wrongly. Once the build is deployed, the site creates the plugin's catalog entry from it and queues its preview clip; the plugin appears on /plugins when the clip is ready (or as soon as an admin uploads a picture). Admins can still change everything in /admin, and their edits are kept: the site only fills in a plugin it has no entry for yet.
